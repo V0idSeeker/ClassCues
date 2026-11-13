@@ -17,6 +17,16 @@ The point of the game is to learn a subject by teaching it. Students ask why thi
 - Get a report after each quiz: class average, each student's answers and why they lost points, and three tips.
 - Keep a best score per lesson and a score per course. Export and share lessons or whole courses as files.
 
+## Install it as an app
+
+The hosted game can be installed like an app, with its own icon and window:
+
+- **Chrome or Edge on a computer**: the install icon at the right of the address bar, or menu, **Install Class Is In Session**.
+- **Android**: menu, **Add to Home screen** or **Install app**.
+- **iPhone or iPad (Safari)**: Share, **Add to Home Screen**.
+
+Once opened, the game itself starts without a connection. Teaching still needs your AI provider: online for Groq, Gemini and OpenRouter, or a model on your own computer for fully offline play. A new version is picked up the next time the game is opened online.
+
 ## Quick start
 
 You need [Node.js](https://nodejs.org) 20 or newer.
