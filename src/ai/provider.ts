@@ -11,7 +11,8 @@ export class AiError extends Error {
 
 /** baseUrl is the full chat-completions address, e.g. https://openrouter.ai/api/v1/chat/completions */
 export interface ProviderSettings { baseUrl: string; apiKey: string; thinkingOff: boolean }
-export interface ChatMessage { role: 'system' | 'user'; content: string }
+/** image: a picture sent along with the text, as a data URL. Only models that read pictures get it. */
+export interface ChatMessage { role: 'system' | 'user'; content: string; image?: string }
 export interface LogEntry { at: string; schema: string; model: string; messages: ChatMessage[]; status: number; response: string }
 
 export interface CallOptions<T> {
@@ -59,6 +60,8 @@ function lessThinking(baseUrl: string): object {
 const mustThink = new Set<string>();
 /** Address+model pairs that refused the strict schema format. They get plain JSON mode with the schema written in the prompt. */
 const plainJson = new Set<string>();
+/** Address+model pairs that refused a picture. They get the text only. */
+const noImages = new Set<string>();
 
 function parseContent(responseText: string): unknown {
   try {
@@ -118,15 +121,20 @@ async function callModel<T>(p: ProviderSettings, o: CallOptions<T>, model: strin
   const doFetch = o.fetchImpl ?? fetch;
   const sleep = o.sleep ?? ((ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms)));
   const target = `${p.baseUrl}|${model}`;
+  const hasImage = o.messages.some(m => m.image);
+  // The OpenAI format for a message with a picture: a list of parts instead of plain text.
+  const wire = (list: ChatMessage[]) => list.map(m => (m.image && !noImages.has(target)
+    ? { role: m.role, content: [{ type: 'text', text: m.content }, { type: 'image_url', image_url: { url: m.image } }] }
+    : { role: m.role, content: m.content }));
   const makeBody = () => JSON.stringify({
     ...(model ? { model } : {}),
     ...(plainJson.has(target)
       ? {
-          messages: [...o.messages, { role: 'system', content: `Reply with one JSON object only, no other text. It must match this JSON schema exactly:\n${JSON.stringify(o.schema)}` }],
+          messages: wire([...o.messages, { role: 'system', content: `Reply with one JSON object only, no other text. It must match this JSON schema exactly:\n${JSON.stringify(o.schema)}` }]),
           response_format: { type: 'json_object' },
         }
       : {
-          messages: o.messages,
+          messages: wire(o.messages),
           response_format: { type: 'json_schema', json_schema: { name: o.schemaName, strict: true, schema: o.schema } },
         }),
     // Reasoning models burn the token budget thinking and return empty content otherwise.
@@ -152,7 +160,13 @@ async function callModel<T>(p: ProviderSettings, o: CallOptions<T>, model: strin
     } finally {
       clearTimeout(timer);
     }
-    o.log?.({ at: new Date().toISOString(), schema: o.schemaName, model, messages: o.messages, status: res.status, response: text });
+    o.log?.({ at: new Date().toISOString(), schema: o.schemaName, model, messages: o.messages.map(m => (m.image ? { role: m.role, content: `${m.content} [a picture was attached]` } : m)), status: res.status, response: text });
+
+    // A model that cannot read pictures refuses the request. Send it again as text only.
+    if (hasImage && !noImages.has(target) && [400, 404, 415, 422].includes(res.status) && /image|vision|multimodal|modalit|content.{0,40}(string|array)/i.test(text)) {
+      noImages.add(target);
+      continue;
+    }
 
     // Some models refuse to have thinking turned off. Send the same request again without those flags.
     if (res.status === 400 && p.thinkingOff && !mustThink.has(target) && /reasoning|thinking|chat_template_kwargs/i.test(text)) {

@@ -141,6 +141,30 @@ describe('callJson', () => {
     expect('chat_template_kwargs' in body).toBe(false);
   });
 
+  it('sends a picture as an image part, and never writes it to the log', async () => {
+    const here = { ...p, baseUrl: 'http://eyes/v1/chat/completions' };
+    const entries: LogEntry[] = [];
+    const { fetchImpl, opts } = setup([() => reply('{"ok":true}')]);
+    await callJson(here, { ...opts, messages: [{ role: 'user', content: 'look', image: 'data:image/jpeg;base64,AAAA' }], log: e => entries.push(e) });
+    const body = JSON.parse((fetchImpl.mock.calls[0] as unknown as [string, RequestInit])[1].body as string);
+    expect(body.messages[0].content).toEqual([{ type: 'text', text: 'look' }, { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,AAAA' } }]);
+    expect(JSON.stringify(entries)).not.toContain('AAAA');
+    expect(entries[0].messages[0].content).toContain('a picture was attached');
+  });
+
+  it('sends text only to a model that refuses pictures, and remembers it', async () => {
+    const here = { ...p, baseUrl: 'http://no-eyes/v1/chat/completions' };
+    const refuse = () => new Response(JSON.stringify({ error: { message: 'This model does not support image input' } }), { status: 400 });
+    const { fetchImpl, opts } = setup([refuse, () => reply('{"ok":true}'), () => reply('{"ok":true}')]);
+    const withPicture = { ...opts, messages: [{ role: 'user' as const, content: 'look', image: 'data:image/jpeg;base64,AAAA' }] };
+    expect(await callJson(here, withPicture)).toEqual({ ok: true });
+    await callJson(here, withPicture);
+    const contents = fetchImpl.mock.calls.map(c => JSON.parse((c as unknown as [string, RequestInit])[1].body as string).messages[0].content);
+    expect(Array.isArray(contents[0])).toBe(true);
+    expect(contents[1]).toBe('look');
+    expect(contents[2]).toBe('look');
+  });
+
   it('drops the thinking-off flags when a model refuses them, and remembers it', async () => {
     const refuse = () => new Response(JSON.stringify({ error: { message: 'Reasoning is mandatory for this endpoint and cannot be disabled.' } }), { status: 400 });
     const here = { ...p, baseUrl: 'http://must-think/v1/chat/completions' };

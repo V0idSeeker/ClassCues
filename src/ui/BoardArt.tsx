@@ -42,6 +42,19 @@ export async function addPicture(file: File, existing: string | null): Promise<s
   return canvas.toDataURL('image/webp', 0.8);
 }
 
+/** The board picture as students see it: on the green board, as a compact image for the AI. */
+export async function pictureForStudents(art: string): Promise<string> {
+  const canvas = document.createElement('canvas');
+  canvas.width = ART_W;
+  canvas.height = ART_H;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return art;
+  ctx.fillStyle = '#2f5d50';
+  ctx.fillRect(0, 0, ART_W, ART_H);
+  ctx.drawImage(await loadImage(art), 0, 0, ART_W, ART_H);
+  return canvas.toDataURL('image/jpeg', 0.7);
+}
+
 export default function BoardArt({ art, drawing, color, onChange }: Props) {
   const ref = useRef<HTMLCanvasElement>(null);
   const last = useRef<{ x: number; y: number } | null>(null);

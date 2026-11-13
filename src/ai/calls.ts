@@ -62,7 +62,7 @@ function caller(d: AiDeps) {
 export function makeAi(d: AiDeps): Ai {
   const call = caller(d);
   return {
-    noteTaker: (state, boardAdded, say) => call(d.studentModel, 'note_taker', noteTakerSchema, noteTakerPrompt(state, boardAdded, say), isNoteTaker),
+    noteTaker: (state, boardAdded, say, picture) => call(d.studentModel, 'note_taker', noteTakerSchema, noteTakerPrompt(state, boardAdded, say, picture), isNoteTaker),
     reaction: (state, student) => call(d.studentModel, 'student_reaction', reactionSchema, reactionPrompt(state, student), isReaction),
     answer: (state, student, question) => call(d.studentModel, 'student_answer', answerSchema, answerPrompt(state, student, question), isAnswer),
     quizTaker: (student, questions) => call(d.studentModel, 'quiz_taker', quizTakerSchema, quizTakerPrompt(student, questions), isQuizTaker),

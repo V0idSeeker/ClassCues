@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import { autoModel, autoModels, listModelInfo, pickFreeDefault, pickGeminiDefault, statedSize } from './models';
+import { autoModel, autoModels, canReadPictures, listModelInfo, pickFreeDefault, pickGeminiDefault, statedSize } from './models';
 
 const listing = {
   data: [
-    { id: 'paid/big', supported_parameters: ['structured_outputs'] },
+    { id: 'paid/big', supported_parameters: ['structured_outputs'], architecture: { input_modalities: ['text', 'image'] } },
     { id: 'zeta/model:free', supported_parameters: ['structured_outputs', 'tools'] },
     { id: 'liquid/lfm-3-1.7b:free', supported_parameters: ['structured_outputs'] },
     { id: 'google/gemma-4-26b-it:free', supported_parameters: ['response_format'] },
@@ -18,7 +18,8 @@ describe('listModelInfo', () => {
     const models = await listModelInfo('https://openrouter.ai/api/v1/chat/completions', 'k', f as unknown as typeof fetch);
     expect((f.mock.calls[0] as unknown as [string])[0]).toBe('https://openrouter.ai/api/v1/models');
     expect(models.map(m => m.id)).toEqual(['beta/model:free', 'google/gemma-4-26b-it:free', 'liquid/lfm-3-1.7b:free', 'zeta/model:free', 'paid/big']);
-    expect(models.find(m => m.id === 'google/gemma-4-26b-it:free')).toEqual({ id: 'google/gemma-4-26b-it:free', free: true, structured: false });
+    expect(models.find(m => m.id === 'google/gemma-4-26b-it:free')).toEqual({ id: 'google/gemma-4-26b-it:free', free: true, structured: false, vision: false });
+    expect(models.find(m => m.id === 'paid/big')!.vision).toBe(true);
   });
 
   it('returns an empty list when the provider cannot be read', async () => {
@@ -26,6 +27,18 @@ describe('listModelInfo', () => {
     expect(await listModelInfo('http://x/v1/chat/completions', '', down as unknown as typeof fetch)).toEqual([]);
     const bad = vi.fn(async () => new Response('nope', { status: 500 }));
     expect(await listModelInfo('http://x/v1/chat/completions', '', bad as unknown as typeof fetch)).toEqual([]);
+  });
+});
+
+describe('canReadPictures', () => {
+  const list = [{ id: 'a/eyes', free: false, structured: true, vision: true }, { id: 'a/blind', free: false, structured: true, vision: false }];
+
+  it('trusts the provider list, knows Gemini, and lets the player decide for the rest', () => {
+    expect(canReadPictures('https://openrouter.ai/api/v1/chat/completions', 'a/eyes', list, false)).toBe(true);
+    expect(canReadPictures('https://openrouter.ai/api/v1/chat/completions', 'a/blind', list, false)).toBe(false);
+    expect(canReadPictures('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', 'models/gemini-3.6-flash', [], false)).toBe(true);
+    expect(canReadPictures('http://127.0.0.1:11434/v1/chat/completions', 'llava', [], false)).toBe(false);
+    expect(canReadPictures('http://127.0.0.1:11434/v1/chat/completions', 'llava', [], true)).toBe(true);
   });
 });
 

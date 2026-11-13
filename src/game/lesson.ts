@@ -81,12 +81,17 @@ export function startLesson(chapter: Chapter, personas: Persona[], rng: Rng, now
     text: p.openingLines[Math.floor(rng() * p.openingLines.length)],
   }));
 
-  return { chapter, students, transcript, board: '', boardPages: [''], boardPage: 0, boardCaptions: [''], turns: 0, startedAt: now };
+  return { chapter, students, transcript, board: '', boardPages: [''], boardPage: 0, boardCaptions: [''], boardPicture: null, seenPictures: [], turns: 0, startedAt: now };
 }
 
 /** The board the class is looking at right now. */
 export function visibleBoard(state: LessonState): string {
   return boardText(state.boardPages[state.boardPage] ?? state.board, state.boardCaptions[state.boardPage]);
+}
+
+/** A short key for a picture, enough to tell whether the class has seen it before. */
+export function pictureKey(picture: string): string {
+  return `${picture.length}:${picture.slice(-32)}`;
 }
 
 export const PICTURE_PREFIX = 'Picture on the board: ';

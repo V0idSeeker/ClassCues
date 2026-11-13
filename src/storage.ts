@@ -15,6 +15,8 @@ export interface Settings {
   debugLog: boolean;
   /** Students speak aloud with the browser's voices. */
   voiceOn: boolean;
+  /** The player says the model reads pictures. For local or unlisted models, where the game cannot tell. */
+  forceVision: boolean;
 }
 
 export const PRESETS: Record<string, { label: string; baseUrl: string; setup: string }> = {
@@ -52,10 +54,10 @@ export const PRESETS: Record<string, { label: string; baseUrl: string; setup: st
 
 const DEFAULTS: Settings = {
   baseUrl: PRESETS.openrouter.baseUrl, apiKey: '', studentModel: '', graderModel: '',
-  thinkingOff: true, rememberKey: true, dailyLimit: 0, debugLog: false, voiceOn: true,
+  thinkingOff: true, rememberKey: true, dailyLimit: 0, debugLog: false, voiceOn: true, forceVision: false,
 };
 
-const K = { settings: 'ts.settings', key: 'ts.key', used: 'ts.used', lesson: 'ts.lesson5', art: 'ts.art', memory: 'ts.memory', scores: 'ts.scores', levels: 'ts.levels' };
+const K = { settings: 'ts.settings', key: 'ts.key', used: 'ts.used', lesson: 'ts.lesson6', art: 'ts.art', memory: 'ts.memory', scores: 'ts.scores', levels: 'ts.levels' };
 
 /** True once the player has saved settings at least once. */
 export const hasSettings = (): boolean => localStorage.getItem(K.settings) !== null;

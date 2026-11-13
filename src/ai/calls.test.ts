@@ -71,6 +71,19 @@ describe('prompts keep judge knowledge away from students', () => {
     }
   });
 
+  it('attaches the board picture for students to see', () => {
+    const pic = 'data:image/jpeg;base64,PICTURE';
+    const noted = noteTakerPrompt(state, '', 'Look.', pic);
+    expect(noted[1].image).toBe(pic);
+    expect(noted[1].content).toContain('new picture on the board');
+    expect(noteTakerPrompt(state, '', 'Look.')[1].image).toBeUndefined();
+    const withBoard = { ...state, boardPicture: pic };
+    expect(reactionPrompt(withBoard, aisha)[1].image).toBe(pic);
+    expect(answerPrompt(withBoard, aisha, 'What do you see?')[1].image).toBe(pic);
+    expect(reactionPrompt(state, aisha)[1].image).toBeUndefined();
+    expect(quizTakerPrompt(aisha, builtInChapter.quiz).every(m => m.image === undefined)).toBe(true);
+  });
+
   it('student calls get only notebook and beliefs', () => {
     for (const text of [all(reactionPrompt(state, aisha)), all(answerPrompt(state, aisha, 'What is a variable?')), all(quizTakerPrompt(tom, builtInChapter.quiz))]) {
       expect(text).not.toContain(KEY_PHRASE);

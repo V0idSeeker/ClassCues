@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { makeAi, ping } from './ai/calls';
 import type { AiDeps } from './ai/calls';
-import { autoModels, listModelInfo } from './ai/models';
+import { autoModels, canReadPictures, listModelInfo } from './ai/models';
 import { preferModel } from './ai/provider';
 import { AiError } from './ai/provider';
 import { studentPool } from './content';
@@ -59,6 +59,17 @@ export default function App() {
     log: settings.debugLog ? addLog : undefined,
   }), [settings, autoList]);
   const ai = useMemo(() => makeAi(deps), [deps]);
+
+  // Can the students' model see pictures? Only then is drawing on the board offered.
+  const [vision, setVision] = useState(false);
+  useEffect(() => {
+    let current = true;
+    void listModelInfo(settings.baseUrl, settings.apiKey).then(list => {
+      const model = settings.studentModel || autoModels(settings.baseUrl, list)[0] || '';
+      if (current) setVision(canReadPictures(settings.baseUrl, model, list, settings.forceVision));
+    });
+    return () => { current = false; };
+  }, [settings.baseUrl, settings.apiKey, settings.studentModel, settings.forceVision]);
 
   // Find out once which of those models answers, so the first lesson call does not wait on a silent one.
   const probed = useRef('');
@@ -186,6 +197,7 @@ export default function App() {
       {screen === 'classroom' && lesson && (
         <Classroom
           state={lesson} used={used} busy={busy} error={error}
+          canSeePictures={vision}
           voiceOn={settings.voiceOn} onVoice={on => { const next = { ...settings, voiceOn: on }; saveSettings(next); setSettings(next); }}
           onTurn={t => { queue.current.push(t); void pump(); }}
           onHear={id => void act(s => hearStudent(s, id))}

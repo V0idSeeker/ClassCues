@@ -60,6 +60,23 @@ describe('teachTurn', () => {
     expect((await teachTurn(start(), { say: 'hi', board: '' }, ai, () => 0, 1000, 0)).state.boardCaptions).toEqual(['']);
   });
 
+  it('shows the class a new picture once: it counts as something new the first time only', async () => {
+    const ai = fakeAi();
+    const pic = 'data:image/jpeg;base64,' + 'A'.repeat(80);
+    const first = await teachTurn(start(), { say: '', board: '', picture: pic }, ai, () => 0, 1000, 0);
+    expect(first.state).toMatchObject({ turns: 1, boardPicture: pic });
+    expect(first.state.transcript.at(-1)).toEqual({ who: 'board', text: '(a new picture)' });
+    expect((ai.noteTaker as ReturnType<typeof vi.fn>).mock.calls[0][3]).toBe(pic);
+    const again = await teachTurn(first.state, { say: '', board: '', picture: pic }, ai, () => 0, 2000, 0);
+    expect(again.state.turns).toBe(1);
+    expect(ai.noteTaker).toHaveBeenCalledTimes(1);
+    const spoken = await teachTurn(first.state, { say: 'Look at the box.', board: '', picture: pic }, ai, () => 0, 3000, 0);
+    expect((ai.noteTaker as ReturnType<typeof vi.fn>).mock.calls[1][3]).toBeNull();
+    expect(spoken.state.boardPicture).toBe(pic);
+    const hidden = await teachTurn(spoken.state, { say: '', board: '' }, ai, () => 0, 4000, 0);
+    expect(hidden.state.boardPicture).toBeNull();
+  });
+
   it('costs no turn and no request when nothing new was said or written', async () => {
     const ai = fakeAi();
     const s = { ...start(), board: 'x = 5\ny = 2' };

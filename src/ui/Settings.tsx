@@ -79,6 +79,7 @@ export default function Settings({ settings, used, onSave, onPlay }: Props) {
         <input id="limit" type="number" min={0} value={s.dailyLimit} onChange={e => set({ dailyLimit: Math.max(0, Number(e.target.value) || 0) })} />
 
         <label className="check"><input type="checkbox" checked={s.thinkingOff} onChange={e => set({ thinkingOff: e.target.checked })} />Ask the model not to "think" first (turn off if the provider rejects requests)</label>
+        <label className="check"><input type="checkbox" checked={s.forceVision} onChange={e => set({ forceVision: e.target.checked })} />My model can read pictures (drawing on the board is offered only for models that can; Gemini and marked OpenRouter models are detected by themselves)</label>
         <label className="check"><input type="checkbox" checked={s.voiceOn} onChange={e => set({ voiceOn: e.target.checked })} />Students speak aloud (uses your browser's voices; text is always shown)</label>
         <label className="check"><input type="checkbox" checked={s.debugLog} onChange={e => set({ debugLog: e.target.checked })} />Keep a debug log of AI requests (never includes the key)</label>
 

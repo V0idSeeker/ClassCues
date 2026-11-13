@@ -73,6 +73,10 @@ export interface LessonState {
   boardPage: number;
   /** For each board: what its picture shows, in the teacher's words. Students cannot see pictures, only this text. */
   boardCaptions: string[];
+  /** The picture on the board that is on show, as students see it (a data URL), or null. Only set when the model reads pictures. */
+  boardPicture: string | null;
+  /** Short keys of the pictures the class has already seen, so a picture is new only once. */
+  seenPictures: string[];
   turns: number;
   startedAt: number;
 }
@@ -81,7 +85,7 @@ export interface LessonState {
  * One teacher turn: what was said, and the text of all boards at that moment.
  * pages and page say how that text is spread over boards and which one is on show; without them there is one board.
  */
-export interface Turn { say: string; board: string; pages?: string[]; page?: number; captions?: string[] }
+export interface Turn { say: string; board: string; pages?: string[]; page?: number; captions?: string[]; picture?: string | null }
 
 export interface NoteTakerResult {
   students: { id: string; new_notes: Note[]; beliefs_dropped: string[]; emotion: Emotion }[];
@@ -95,7 +99,8 @@ export interface GraderInputRow { student_id: string; answer: string; notes: str
 
 /** The five lesson calls. Implemented by src/ai/calls.ts, faked in tests. */
 export interface Ai {
-  noteTaker(state: LessonState, boardAdded: string, say: string): Promise<NoteTakerResult>;
+  /** picture: a new picture on the board, for models that read pictures. */
+  noteTaker(state: LessonState, boardAdded: string, say: string, picture?: string | null): Promise<NoteTakerResult>;
   reaction(state: LessonState, student: Student): Promise<ReactionResult>;
   answer(state: LessonState, student: Student, question: string): Promise<AnswerResult>;
   quizTaker(student: Student, questions: QuizQuestion[]): Promise<QuizTakerResult>;

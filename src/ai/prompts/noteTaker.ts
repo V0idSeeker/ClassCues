@@ -1,9 +1,9 @@
 import { atmosphere, visibleBoard } from '../../game/lesson';
 import type { LessonState } from '../../game/types';
 import type { ChatMessage } from '../provider';
-import { QUOTED_RULE, facts, lastLines } from './shared';
+import { QUOTED_RULE, facts, lastLines, withPicture } from './shared';
 
-export function noteTakerPrompt(state: LessonState, boardAdded: string, say: string): ChatMessage[] {
+export function noteTakerPrompt(state: LessonState, boardAdded: string, say: string, picture?: string | null): ChatMessage[] {
   return [
     {
       role: 'system',
@@ -25,11 +25,12 @@ export function noteTakerPrompt(state: LessonState, boardAdded: string, say: str
         '- recent_class_transcript shows what was said just before, by the teacher and by students. Use it only to understand what the teacher means now, for example which question the teacher is answering.',
         '- Something a classmate said becomes a normal note only if the teacher confirmed it in teacher_dialogue. If the teacher corrected it, note the correction.',
         '- If a classmate answered or claimed something and the teacher moved on without confirming or correcting it, up to three students with low attention may write it down as hearsay: the note starts with "<classmate name> said:" and distorted is true. They may feel CONFUSED.',
-        '- Never add knowledge the teacher did not say or write. This rule is the most important.',
+        '- When board_picture says a picture is attached, the students can see it on the board. They may note what it shows, in their own words, as far as they understand it. A picture the teacher did not explain teaches less than one the teacher explained.',
+        '- Never add knowledge the teacher did not say, write or draw. This rule is the most important.',
         QUOTED_RULE,
       ].join('\n'),
     },
-    facts(
+    withPicture(facts(
       { objectives: state.chapter.objectives },
       { students: state.students.map(s => ({ id: s.persona.id, attention: s.persona.traits.attention, learning_style: s.persona.learning_style, feels_now: s.emotion, wrong_beliefs: s.beliefs })) },
       { class_atmosphere: (({ bored, confused, teacherTurnsSinceStudentSpoke }) => ({
@@ -40,8 +41,9 @@ export function noteTakerPrompt(state: LessonState, boardAdded: string, say: str
       // of a lesson and free tiers cap the text sent per minute.
       { recent_class_transcript: lastLines(state, 8) },
       { board_added: boardAdded },
+      ...(picture ? [{ board_picture: 'The teacher put a new picture on the board. It is attached to this message.' }] : []),
       { teacher_dialogue: say },
-    ),
+    ), picture),
     { role: 'system', content: 'Reminder: notes come only from teacher_dialogue and board_added, read in the light of recent_class_transcript. No outside knowledge.' },
   ];
 }

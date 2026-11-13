@@ -15,6 +15,11 @@ export function facts(...items: object[]): ChatMessage {
   return { role: 'user', content: JSON.stringify(items) };
 }
 
+/** Attaches a picture to a message, for models that read pictures. */
+export function withPicture(message: ChatMessage, picture: string | null | undefined): ChatMessage {
+  return picture ? { ...message, image: picture } : message;
+}
+
 export function who(s: Student): string {
   return `You are ${s.persona.name}, a student. Personality: ${s.persona.personality} Learning style: ${s.persona.learning_style}.`;
 }

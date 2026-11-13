@@ -1,4 +1,4 @@
-import { EMOTIONS, applyNotes, boardAdded, patchStudent, pickReactor, shouldReact } from './lesson';
+import { EMOTIONS, applyNotes, boardAdded, patchStudent, pickReactor, pictureKey, shouldReact } from './lesson';
 import { gradeMcq, gradeWritten, planQuiz } from './quiz';
 import type { Answer, Grade } from './quiz';
 import { pick } from './rng';
@@ -28,15 +28,22 @@ export async function teachTurn(
     boardPages,
     boardPage: Math.min(Math.max(turn.page ?? 0, 0), boardPages.length - 1),
     boardCaptions: boardPages.map((_, i) => turn.captions?.[i] ?? ''),
+    boardPicture: turn.picture ?? null,
   };
-  if (!say && !added) return { state: { ...state, ...boards }, reactedAt: null };
+  // A picture is new to the class the first time it is on show.
+  const picture = turn.picture && !state.seenPictures.includes(pictureKey(turn.picture)) ? turn.picture : null;
+  if (!say && !added && !picture) return { state: { ...state, ...boards }, reactedAt: null };
 
   const lines: TranscriptLine[] = [];
   if (say) lines.push({ who: 'teacher', text: say });
   if (added) lines.push({ who: 'board', text: added });
-  let next: LessonState = { ...state, transcript: [...state.transcript, ...lines], ...boards, turns: state.turns + 1 };
+  if (picture) lines.push({ who: 'board', text: '(a new picture)' });
+  let next: LessonState = {
+    ...state, transcript: [...state.transcript, ...lines], ...boards, turns: state.turns + 1,
+    seenPictures: picture ? [...state.seenPictures, pictureKey(picture)] : state.seenPictures,
+  };
 
-  next = applyNotes(next, await ai.noteTaker(next, added, say), rng);
+  next = applyNotes(next, await ai.noteTaker(next, added, say, picture), rng);
 
   // The teacher spoke to one student by name: that student replies, nobody else.
   const named = namedStudent(next, say);

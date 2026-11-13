@@ -4,6 +4,8 @@ export interface ModelInfo {
   free: boolean;
   /** The provider says this model supports the strict answer format the game needs. */
   structured: boolean;
+  /** The provider says this model accepts pictures. */
+  vision: boolean;
 }
 
 /** Models the provider offers, from its OpenAI-compatible /models address, free ones first. Empty if it cannot be read. */
@@ -17,10 +19,11 @@ export async function listModelInfo(baseUrl: string, apiKey: string, fetchImpl: 
     if (!Array.isArray(data)) return [];
     const models = data
       .map(m => {
-        const entry = m as { id?: unknown; supported_parameters?: unknown };
+        const entry = m as { id?: unknown; supported_parameters?: unknown; architecture?: { input_modalities?: unknown } };
+        const inputs = Array.isArray(entry?.architecture?.input_modalities) ? entry.architecture.input_modalities : [];
         const id = String(entry?.id ?? '');
         const params = Array.isArray(entry?.supported_parameters) ? entry.supported_parameters : [];
-        return { id, free: id.endsWith(':free'), structured: params.includes('structured_outputs') };
+        return { id, free: id.endsWith(':free'), structured: params.includes('structured_outputs'), vision: inputs.includes('image') };
       })
       .filter(m => m.id)
       .sort((a, b) => a.id.localeCompare(b.id));
@@ -68,6 +71,16 @@ function groqCandidates(models: ModelInfo[]): string[] {
   return models.map(m => m.id)
     .filter(id => !notChat.test(id) && (statedSize(id) ?? 0) >= MIN_SIZE)
     .sort((a, b) => (statedSize(b) ?? 0) - (statedSize(a) ?? 0) || a.localeCompare(b));
+}
+
+/**
+ * Can this model see a picture on the board? Gemini models can. OpenRouter says so per model.
+ * For other providers the game cannot know, so the player says so in Settings (force).
+ */
+export function canReadPictures(baseUrl: string, modelId: string, models: ModelInfo[], force: boolean): boolean {
+  if (force) return true;
+  if (baseUrl.includes('generativelanguage.googleapis.com')) return true;
+  return models.find(m => m.id === modelId)?.vision ?? false;
 }
 
 /** Size in billions of parameters when the model name states it: "lfm-3-1.7b:free" gives 1.7. */

@@ -4,7 +4,7 @@ import { MAX_TURNS, atmosphere, boardText, classClock, coverage } from '../game/
 import type { LessonState, Turn } from '../game/types';
 import { loadArt, saveArt } from '../storage';
 import { speak, stopSpeaking } from '../voice';
-import BoardArt, { addPicture } from './BoardArt';
+import BoardArt, { addPicture, pictureForStudents } from './BoardArt';
 import { HAND, SCENE_VIEWBOX, STATE, portraitSvg, sceneSvg } from './scene';
 
 interface Props {
@@ -12,6 +12,8 @@ interface Props {
   used: number;
   busy: boolean;
   error: string;
+  /** The students' model reads pictures: drawing on the board is offered, and students see it. */
+  canSeePictures: boolean;
   voiceOn: boolean;
   onVoice(on: boolean): void;
   onTurn(t: Turn): void;
@@ -39,10 +41,18 @@ export default function Classroom(p: Props) {
   const [art, setArt] = useState<(string | null)[]>(() => { const saved = loadArt(); return state.boardPages.map((_, i) => saved[i] ?? null); });
   const [drawing, setDrawing] = useState(false);
   const [chalk, setChalk] = useState('#f5f7f2');
+  const drawingNow = drawing && p.canSeePictures;
+  // Each board's picture as the students' model gets it, made ready whenever a picture changes.
+  const [seen, setSeen] = useState<(string | null)[]>([]);
+  useEffect(() => {
+    let current = true;
+    void Promise.all(art.map(a => (a ? pictureForStudents(a).catch(() => null) : null))).then(list => { if (current) setSeen(list); });
+    return () => { current = false; };
+  }, [art]);
   const keepArt = (next: (string | null)[]) => { setArt(next); saveArt(next); };
   const allText = (allPages = pages, allCaps = caps) => allPages.map((t, i) => boardText(t, allCaps[i])).join('\n');
   const turnWith = (say: string, allPages = pages, no = pageNo, allCaps = caps): Turn =>
-    ({ say, board: allText(allPages, allCaps), pages: allPages, page: no, captions: allCaps });
+    ({ say, board: allText(allPages, allCaps), pages: allPages, page: no, captions: allCaps, picture: p.canSeePictures ? seen[no] ?? null : null });
   const [wiped, setWiped] = useState<string | null>(null);
   const [text, setText] = useState('');
   const [sel, setSel] = useState(state.students[0].persona.id);
@@ -147,9 +157,11 @@ export default function Classroom(p: Props) {
 
   const boardBox = (className: string) => (
     <>
-      <BoardArt key={pageNo} art={art[pageNo] ?? null} drawing={drawing} color={chalk}
-        onChange={picture => keepArt(art.map((a, i) => (i === pageNo ? picture : a)))} />
-      <textarea ref={boardRef} className={`${className}${drawing ? ' under' : ''}`} spellCheck={false} placeholder="Click the board and write…"
+      {p.canSeePictures && (
+        <BoardArt key={pageNo} art={art[pageNo] ?? null} drawing={drawingNow} color={chalk}
+          onChange={picture => keepArt(art.map((a, i) => (i === pageNo ? picture : a)))} />
+      )}
+      <textarea ref={boardRef} className={`${className}${drawingNow ? ' under' : ''}`} spellCheck={false} placeholder="Click the board and write…"
         aria-label="The board. Students copy what you write here. Select words to erase or change them."
         value={board} onChange={e => setBoard(e.target.value)}
         onBlur={() => { if (allText() !== state.board) p.onTurn(turnWith('')); }} />
@@ -238,6 +250,8 @@ export default function Classroom(p: Props) {
             {wiped !== null && <button onClick={() => { setBoard(wiped); setWiped(null); }}>Undo wipe</button>}
           </div>
 
+          {!p.canSeePictures && <p className="dim" style={{ margin: 0 }}>Drawing on the board is off: the AI model in use cannot read pictures. Gemini models can; so can some OpenRouter models. Change it in Settings.</p>}
+          {p.canSeePictures && <>
           <div className="row">
             <button className={drawing ? 'gold' : ''} aria-pressed={drawing} onClick={() => setDrawing(!drawing)}>{drawing ? 'Drawing: click to type again' : 'Draw on the board'}</button>
             {drawing && [['#f5f7f2', 'White chalk'], ['#ffe08a', 'Yellow chalk'], ['#ff9aa8', 'Pink chalk'], ['#9fd4f5', 'Blue chalk']].map(([c, name]) => (
@@ -249,12 +263,13 @@ export default function Classroom(p: Props) {
             {art[pageNo] && <button onClick={() => keepArt(art.map((a, i) => (i === pageNo ? null : a)))}>Clear the picture</button>}
           </div>
           {(art[pageNo] || caps[pageNo]) && (
-            <label htmlFor="caption" style={{ marginTop: 0 }}>What the picture shows. Students cannot see pictures: they read this description instead.
+            <label htmlFor="caption" style={{ marginTop: 0 }}>Students see this picture with your next sentence. Optional: also say in words what it shows.
               <input id="caption" value={caps[pageNo] ?? ''} placeholder="For example: a box labelled score with the number 10 inside"
                 onChange={e => setCaps(caps.map((c, i) => (i === pageNo ? e.target.value : c)))}
                 onBlur={() => { if (allText() !== state.board) p.onTurn(turnWith('')); }} />
             </label>
           )}
+          </>}
 
           <div className="panel say">
             <textarea aria-label="What you say to the class" placeholder="Type what you say to the class… End with a question mark and a student will answer." value={text}
