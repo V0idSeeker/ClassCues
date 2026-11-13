@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["wants_to_speak", "message", "emotion"],
+  "properties": {
+    "wants_to_speak": { "type": "boolean" },
+    "message": { "type": "string" },
+    "emotion": { "type": "string", "enum": ["CURIOUS", "CONFUSED", "BORED", "HAPPY", "NEUTRAL"] }
+  }
+}

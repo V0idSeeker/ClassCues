@@ -1,0 +1,19 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["answers"],
+  "properties": {
+    "answers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["question_id", "answer"],
+        "properties": {
+          "question_id": { "type": "string" },
+          "answer": { "type": "string" }
+        }
+      }
+    }
+  }
+}

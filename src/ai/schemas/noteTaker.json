@@ -1,0 +1,33 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["students"],
+  "properties": {
+    "students": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "new_notes", "beliefs_dropped", "emotion"],
+        "properties": {
+          "id": { "type": "string" },
+          "new_notes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["text", "objective", "distorted"],
+              "properties": {
+                "text": { "type": "string" },
+                "objective": { "type": ["string", "null"] },
+                "distorted": { "type": "boolean" }
+              }
+            }
+          },
+          "beliefs_dropped": { "type": "array", "items": { "type": "string" } },
+          "emotion": { "type": "string", "enum": ["CURIOUS", "CONFUSED", "BORED", "HAPPY", "NEUTRAL"] }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["answer", "emotion"],
+  "properties": {
+    "answer": { "type": "string" },
+    "emotion": { "type": "string", "enum": ["CURIOUS", "CONFUSED", "BORED", "HAPPY", "NEUTRAL"] }
+  }
+}

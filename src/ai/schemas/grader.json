@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["results"],
+  "properties": {
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["student_id", "score", "max", "supported_by_notes", "feedback"],
+        "properties": {
+          "student_id": { "type": "string" },
+          "score": { "type": "number" },
+          "max": { "type": "number" },
+          "supported_by_notes": { "type": "boolean" },
+          "feedback": { "type": "string" }
+        }
+      }
+    }
+  }
+}
