@@ -1,0 +1,111 @@
+import { describe, expect, it, vi } from 'vitest';
+import { builtInChapter, students } from '../content';
+import { patchStudent, startLesson } from './lesson';
+import { askStudent, hearStudent, pickForClassQuestion, runQuiz, teachTurn } from './runLesson';
+import type { Ai } from './types';
+
+const start = () => startLesson(builtInChapter, students, () => 0.5, 0);
+
+function fakeAi(over: Partial<Ai> = {}): Ai {
+  return {
+    noteTaker: vi.fn(async s => ({
+      students: s.students.map(st => ({ id: st.persona.id, new_notes: [{ text: 'a variable stores a value', objective: 'obj-1', distorted: false }], beliefs_dropped: [], emotion: 'HAPPY' as const })),
+    })),
+    reaction: vi.fn(async () => ({ wants_to_speak: true, message: 'Can I call it pizza?', emotion: 'CURIOUS' as const })),
+    answer: vi.fn(async () => ({ answer: 'It stores a value?', emotion: 'NEUTRAL' as const })),
+    quizTaker: vi.fn(async (_s, qs) => ({ answers: qs.map(q => ({ question_id: q.id, answer: 'It stores a value' })) })),
+    grader: vi.fn(async (_q, rows) => ({ results: rows.map(r => ({ student_id: r.student_id, score: 1, max: 2, supported_by_notes: true, feedback: 'Half right.' })) })),
+    ...over,
+  };
+}
+
+describe('teachTurn', () => {
+  it('uses a turn, records the speech and gives every student notes', async () => {
+    const ai = fakeAi();
+    const out = await teachTurn(start(), { say: 'A variable is a name that stores a value.', board: '' }, ai, () => 0, 1000, 0);
+    expect(out.state.turns).toBe(1);
+    expect(out.state.transcript.at(-1)).toEqual({ who: 'teacher', text: 'A variable is a name that stores a value.' });
+    expect(out.state.students.every(s => s.notes.length === 1 && s.emotion === 'HAPPY')).toBe(true);
+    expect(out.reactedAt).toBeNull();
+  });
+
+  it('sends only the new board lines and remembers the board', async () => {
+    const ai = fakeAi();
+    const first = await teachTurn(start(), { say: '', board: 'x = 5' }, ai, () => 0, 1000, 0);
+    await teachTurn(first.state, { say: '', board: 'x = 5\ny = 2' }, ai, () => 0, 2000, 0);
+    expect((ai.noteTaker as ReturnType<typeof vi.fn>).mock.calls[1][1]).toBe('y = 2');
+    expect(first.state.board).toBe('x = 5');
+    expect(first.state.transcript.at(-1)).toEqual({ who: 'board', text: 'x = 5' });
+  });
+
+  it('costs no turn and no request when nothing new was said or written', async () => {
+    const ai = fakeAi();
+    const s = { ...start(), board: 'x = 5\ny = 2' };
+    const out = await teachTurn(s, { say: '  ', board: 'x = 5' }, ai, () => 0, 1000, 0);
+    expect(out.state.turns).toBe(0);
+    expect(out.state.board).toBe('x = 5');
+    expect(ai.noteTaker).not.toHaveBeenCalled();
+  });
+
+  it('lets one student raise a hand on every third turn', async () => {
+    const ai = fakeAi();
+    const out = await teachTurn({ ...start(), turns: 2 }, { say: 'More.', board: '' }, ai, () => 0, 10000, 0);
+    const up = out.state.students.filter(s => s.handUp);
+    expect(up).toHaveLength(1);
+    expect(up[0].pendingLine).toBe('Can I call it pizza?');
+    expect(up[0].emotion).toBe('CURIOUS');
+    expect(out.reactedAt).toBe(10000);
+  });
+
+  it('leaves the hand down when the student has nothing to say', async () => {
+    const ai = fakeAi({ reaction: async () => ({ wants_to_speak: false, message: '', emotion: 'BORED' }) });
+    const out = await teachTurn({ ...start(), turns: 2 }, { say: 'More.', board: '' }, ai, () => 0, 10000, 0);
+    expect(out.state.students.some(s => s.handUp)).toBe(false);
+  });
+});
+
+describe('calling on students', () => {
+  it('hears a raised hand without an AI call', () => {
+    const s = patchStudent(start(), 'leo', { handUp: true, pendingLine: 'Can I call it pizza?' });
+    const out = hearStudent(s, 'leo');
+    expect(out.transcript.at(-1)).toEqual({ who: 'Leo', text: 'Can I call it pizza?' });
+    const leo = out.students.find(x => x.persona.id === 'leo')!;
+    expect(leo.handUp).toBe(false);
+    expect(leo.pendingLine).toBeNull();
+  });
+
+  it('asks a student a question and records both lines', async () => {
+    const out = await askStudent(start(), 'maya', 'What is a variable?', fakeAi());
+    expect(out.transcript.slice(-2)).toEqual([{ who: 'teacher', text: 'What is a variable?' }, { who: 'Maya', text: 'It stores a value?' }]);
+    expect(out.turns).toBe(0);
+  });
+
+  it('picks a raised hand first for a class question', () => {
+    const s = patchStudent(start(), 'yuki', { handUp: true, pendingLine: 'But why?' });
+    expect(pickForClassQuestion(s, () => 0).persona.id).toBe('yuki');
+    expect(pickForClassQuestion(start(), () => 0).persona.id).toBe('aisha');
+  });
+});
+
+describe('runQuiz', () => {
+  it('with no notes: sends students only the written questions and grades everything', async () => {
+    const ai = fakeAi();
+    const progress = vi.fn();
+    const out = await runQuiz(start(), ai, () => 0, progress);
+    const asked = (ai.quizTaker as ReturnType<typeof vi.fn>).mock.calls[0][1].map((q: { id: string }) => q.id);
+    expect(asked).toEqual(['q3', 'q5', 'q6']);
+    expect(ai.quizTaker).toHaveBeenCalledTimes(10);
+    expect(ai.grader).toHaveBeenCalledTimes(3);
+    expect(out.grades).toHaveLength(60);
+    expect(out.answers.aisha).toHaveLength(6);
+    expect(out.grades.find(g => g.student_id === 'aisha' && g.question_id === 'q3')!.fraction).toBe(0.5);
+    expect(progress).toHaveBeenLastCalledWith(13, 13);
+  });
+
+  it('gives zero when the grader skips a student or the student skips a question', async () => {
+    const ai = fakeAi({ quizTaker: async () => ({ answers: [] }), grader: async () => ({ results: [] }) });
+    const out = await runQuiz(start(), ai, () => 0, () => {});
+    expect(out.answers.aisha.find(a => a.question_id === 'q3')!.answer).toBe('');
+    expect(out.grades.find(g => g.student_id === 'aisha' && g.question_id === 'q3')).toMatchObject({ fraction: 0, feedback: 'Not graded.' });
+  });
+});
