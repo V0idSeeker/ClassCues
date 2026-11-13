@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { makeAi } from './ai/calls';
-import { listModelInfo, pickFreeDefault } from './ai/models';
+import { autoModel, listModelInfo } from './ai/models';
+import { isGemini, isOpenRouter } from './ai/provider';
 import { AiError } from './ai/provider';
 import { studentPool } from './content';
 import { mustRingBell, quizReserve } from './game/budget';
@@ -36,16 +37,16 @@ export default function App() {
   const running = useRef(false);
   const lastReact = useRef(0);
 
-  // No model chosen on OpenRouter: use one fixed free model that supports the game's answer format.
-  const [autoModel, setAutoModel] = useState('');
+  // No model chosen: on OpenRouter and Gemini, use one fixed model that fits the game.
+  const [auto, setAuto] = useState('');
   useEffect(() => {
     let current = true;
-    setAutoModel('');
-    if (settings.studentModel || !settings.baseUrl.includes('openrouter.ai')) return;
-    void listModelInfo(settings.baseUrl, settings.apiKey).then(list => { if (current) setAutoModel(pickFreeDefault(list) ?? ''); });
+    setAuto('');
+    if (settings.studentModel || !(isOpenRouter(settings.baseUrl) || isGemini(settings.baseUrl))) return;
+    void listModelInfo(settings.baseUrl, settings.apiKey).then(list => { if (current) setAuto(autoModel(settings.baseUrl, list)); });
     return () => { current = false; };
   }, [settings.baseUrl, settings.apiKey, settings.studentModel]);
-  const effective = useMemo(() => ({ ...settings, studentModel: settings.studentModel || autoModel }), [settings, autoModel]);
+  const effective = useMemo(() => ({ ...settings, studentModel: settings.studentModel || auto }), [settings, auto]);
 
   const ai = useMemo(() => makeAi({
     provider: effective,

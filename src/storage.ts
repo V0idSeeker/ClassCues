@@ -22,6 +22,11 @@ export const PRESETS: Record<string, { label: string; baseUrl: string; setup: st
     baseUrl: 'https://openrouter.ai/api/v1/chat/completions',
     setup: 'Create a key at openrouter.ai and paste it below. Leave the model empty to play on free models (about 50 requests a day, roughly one lesson), or pick one from the list: names ending in :free cost nothing, the others need credit on your OpenRouter account.',
   },
+  gemini: {
+    label: 'Google Gemini',
+    baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+    setup: 'Create a free key at aistudio.google.com ("Get API key") and paste it below. Leave the model empty to use a fast Flash model, or pick one from the list. The free tier allows many requests a day but only a few per minute: if you see "too many requests", wait a minute.',
+  },
   ollama: {
     label: 'Ollama (local)',
     baseUrl: 'http://127.0.0.1:11434/v1/chat/completions',

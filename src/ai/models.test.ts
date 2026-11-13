@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { listModelInfo, pickFreeDefault, statedSize } from './models';
+import { autoModel, listModelInfo, pickFreeDefault, pickGeminiDefault, statedSize } from './models';
 
 const listing = {
   data: [
@@ -26,6 +26,22 @@ describe('listModelInfo', () => {
     expect(await listModelInfo('http://x/v1/chat/completions', '', down as unknown as typeof fetch)).toEqual([]);
     const bad = vi.fn(async () => new Response('nope', { status: 500 }));
     expect(await listModelInfo('http://x/v1/chat/completions', '', bad as unknown as typeof fetch)).toEqual([]);
+  });
+});
+
+describe('pickGeminiDefault', () => {
+  const g = (id: string) => ({ id, free: false, structured: false });
+  const gemini = ['models/gemini-2.5-flash', 'models/gemini-3.8-flash', 'models/gemini-3.8-flash-lite', 'models/gemini-3.8-pro', 'models/gemini-4.0-flash-preview', 'models/gemini-3.8-flash-image', 'models/text-embedding-004'].map(g);
+
+  it('picks the newest general flash model', () => {
+    expect(pickGeminiDefault(gemini)).toBe('models/gemini-3.8-flash');
+    expect(pickGeminiDefault([g('models/gemini-3.8-pro')])).toBeNull();
+  });
+
+  it('chooses the default by provider address', () => {
+    expect(autoModel('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', gemini)).toBe('models/gemini-3.8-flash');
+    expect(autoModel('https://openrouter.ai/api/v1/chat/completions', [{ id: 'a/b:free', free: true, structured: true }])).toBe('a/b:free');
+    expect(autoModel('http://127.0.0.1:11434/v1/chat/completions', gemini)).toBe('');
   });
 });
 

@@ -30,6 +30,24 @@ export async function listModelInfo(baseUrl: string, apiKey: string, fetchImpl: 
   }
 }
 
+/**
+ * Gemini's default when the player chooses no model: the newest general "flash" model.
+ * Flash models are the fast ones with the largest free allowance.
+ */
+export function pickGeminiDefault(models: ModelInfo[]): string | null {
+  const special = /lite|image|tts|audio|live|embedding|vision|exp|preview|thinking|robotics|computer/i;
+  const fit = models.map(m => m.id).filter(id => /gemini-[\d.]+-flash/i.test(id) && !special.test(id));
+  const version = (id: string) => Number(id.match(/gemini-([\d.]+)-flash/i)?.[1] ?? 0);
+  return fit.sort((a, b) => version(b) - version(a) || a.localeCompare(b))[0] ?? null;
+}
+
+/** The model the game uses when the player leaves the model box empty. Empty text means "let the provider decide". */
+export function autoModel(baseUrl: string, models: ModelInfo[]): string {
+  if (baseUrl.includes('openrouter.ai')) return pickFreeDefault(models) ?? '';
+  if (baseUrl.includes('generativelanguage.googleapis.com')) return pickGeminiDefault(models) ?? '';
+  return '';
+}
+
 /** Size in billions of parameters when the model name states it: "lfm-3-1.7b:free" gives 1.7. */
 export function statedSize(id: string): number | null {
   const m = id.match(/(?:^|[-_/])(\d+(?:\.\d+)?)b(?=[-_:]|$)/i);

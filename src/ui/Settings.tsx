@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ping } from '../ai/calls';
-import { listModelInfo, pickFreeDefault } from '../ai/models';
+import { autoModel, listModelInfo } from '../ai/models';
 import type { ModelInfo } from '../ai/models';
 import { AiError } from '../ai/provider';
 import { PRESETS, addLog, clearMemory, logText } from '../storage';
@@ -15,8 +15,8 @@ export default function Settings({ settings, used, onSave, onPlay }: Props) {
   const set = (patch: Partial<SettingsType>) => { setS({ ...s, ...patch }); setTest(null); };
   const preset = Object.values(PRESETS).find(p => p.baseUrl === s.baseUrl);
   const [models, setModels] = useState<ModelInfo[]>([]);
-  // With no model chosen on OpenRouter, the game uses one fixed free model.
-  const auto = !s.studentModel && s.baseUrl.includes('openrouter.ai') ? pickFreeDefault(models) ?? '' : '';
+  // With no model chosen, the game picks one fixed model that fits (on OpenRouter and Gemini).
+  const auto = s.studentModel ? '' : autoModel(s.baseUrl, models);
 
   // Ask the provider which models it offers, shortly after the address or key stops changing.
   useEffect(() => {
@@ -58,7 +58,7 @@ export default function Settings({ settings, used, onSave, onPlay }: Props) {
           <button type="button" onClick={() => set({ apiKey: '' })}>Remove key</button>
         </div>
 
-        <label htmlFor="model">Model for students (empty: on OpenRouter, a free model is picked for you)</label>
+        <label htmlFor="model">Model for students (empty: a suitable model is picked for you on OpenRouter and Gemini)</label>
         <input id="model" list="models" placeholder="Automatic" value={s.studentModel} onChange={e => set({ studentModel: e.target.value.trim() })} />
         <label htmlFor="grader">Model for grading and for making levels from PDFs (empty: same as students; a stronger model does both better)</label>
         <input id="grader" list="models" placeholder="Same as students" value={s.graderModel} onChange={e => set({ graderModel: e.target.value.trim() })} />
@@ -68,7 +68,7 @@ export default function Settings({ settings, used, onSave, onPlay }: Props) {
             ? `${models.length} models found. Click a model box and type to search the list.`
             : 'No model list from this address yet. Check the address and key, or type a model name by hand.'}
         </p>
-        {auto && <p className="dim">With no model chosen, the game uses this free model: <b>{auto}</b></p>}
+        {auto && <p className="dim">With no model chosen, the game uses: <b>{auto}</b></p>}
 
         <label htmlFor="limit">Daily request limit for free models (0 = no limit). Used today: {used}</label>
         <input id="limit" type="number" min={0} value={s.dailyLimit} onChange={e => set({ dailyLimit: Math.max(0, Number(e.target.value) || 0) })} />

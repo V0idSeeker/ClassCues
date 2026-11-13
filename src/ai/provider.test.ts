@@ -52,6 +52,17 @@ describe('callJson', () => {
     expect(JSON.parse(init.body as string).model).toBe('openrouter/free');
   });
 
+  it('talks to Gemini its own way: a default model, low thinking, no llama.cpp flag', async () => {
+    const { fetchImpl, opts } = setup([() => reply('{"ok":true}')]);
+    await callJson({ ...p, baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions' }, { ...opts, model: '' });
+    const init = (fetchImpl.mock.calls[0] as unknown as [string, RequestInit])[1];
+    const body = JSON.parse(init.body as string);
+    expect(body.model).toBe('gemini-3.8-flash');
+    expect(body.reasoning_effort).toBe('low');
+    expect('chat_template_kwargs' in body).toBe(false);
+    expect((init.headers as Record<string, string>).Authorization).toBe('Bearer secret-key');
+  });
+
   it('drops the thinking-off flags when a model refuses them, and remembers it', async () => {
     const refuse = () => new Response(JSON.stringify({ error: { message: 'Reasoning is mandatory for this endpoint and cannot be disabled.' } }), { status: 400 });
     const here = { ...p, baseUrl: 'http://must-think/v1/chat/completions' };

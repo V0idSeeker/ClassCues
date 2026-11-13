@@ -30,6 +30,19 @@ export interface CallOptions<T> {
 
 const RATE_WAITS_MS = [5000, 15000];
 export const OPENROUTER_DEFAULT_MODEL = 'openrouter/free';
+/** From Google's own example for its OpenAI-compatible address. Used only when the model list cannot be read. */
+export const GEMINI_DEFAULT_MODEL = 'gemini-3.8-flash';
+export const isOpenRouter = (baseUrl: string) => baseUrl.includes('openrouter.ai');
+export const isGemini = (baseUrl: string) => baseUrl.includes('generativelanguage.googleapis.com');
+
+/**
+ * How to ask a model to think as little as possible. Providers differ:
+ * Gemini's newer models cannot turn thinking off, and it does not know llama.cpp's chat_template_kwargs.
+ */
+function lessThinking(baseUrl: string): object {
+  if (isGemini(baseUrl)) return { reasoning_effort: 'low' };
+  return { reasoning_effort: 'none', chat_template_kwargs: { enable_thinking: false } };
+}
 /** Address+model pairs that refused the thinking-off flags. Remembered so each later call costs one request, not two. */
 const mustThink = new Set<string>();
 
@@ -46,15 +59,15 @@ function parseContent(responseText: string): unknown {
 export async function callJson<T>(p: ProviderSettings, o: CallOptions<T>): Promise<T> {
   const doFetch = o.fetchImpl ?? fetch;
   const sleep = o.sleep ?? ((ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms)));
-  // No model chosen: on OpenRouter use its free-models router; elsewhere send none and let the server decide.
-  const model = o.model || (p.baseUrl.includes('openrouter.ai') ? OPENROUTER_DEFAULT_MODEL : '');
+  // No model chosen: OpenRouter and Gemini get a default; elsewhere send none and let the server decide.
+  const model = o.model || (isOpenRouter(p.baseUrl) ? OPENROUTER_DEFAULT_MODEL : isGemini(p.baseUrl) ? GEMINI_DEFAULT_MODEL : '');
   const target = `${p.baseUrl}|${model}`;
   const makeBody = () => JSON.stringify({
     ...(model ? { model } : {}),
     messages: o.messages,
     response_format: { type: 'json_schema', json_schema: { name: o.schemaName, strict: true, schema: o.schema } },
     // Reasoning models burn the token budget thinking and return empty content otherwise.
-    ...(p.thinkingOff && !mustThink.has(target) ? { reasoning_effort: 'none', chat_template_kwargs: { enable_thinking: false } } : {}),
+    ...(p.thinkingOff && !mustThink.has(target) ? lessThinking(p.baseUrl) : {}),
   });
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (p.apiKey) headers.Authorization = `Bearer ${p.apiKey}`;
