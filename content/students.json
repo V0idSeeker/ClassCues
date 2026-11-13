@@ -287,7 +287,7 @@
     "personality": "Friendly and curious. Wants to know how everything fits together.",
     "openingLines": [
       "Good morning! Is this linked to last week?",
-      "I have a question already.",
+      "I wonder how this works.",
       "I like new topics."
     ],
     "look": {
@@ -662,7 +662,7 @@
     "personality": "Lively and imaginative. Follows ideas further than the lesson goes.",
     "openingLines": [
       "What if we did it backwards?",
-      "I have so many questions.",
+      "I like guessing how things work.",
       "Hi! What is today about?"
     ],
     "look": {

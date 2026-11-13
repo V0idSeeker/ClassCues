@@ -31,9 +31,13 @@ export async function teachTurn(
 
   next = applyNotes(next, await ai.noteTaker(next, added, say), rng);
 
-  // The teacher asked the class something: one student answers aloud right away.
-  if (say.includes('?')) {
-    const asked = pickForClassQuestion(next, rng);
+  // The teacher spoke to one student by name: that student replies, nobody else.
+  const named = namedStudent(next, say);
+  if (named?.pendingLine) return { state: hearStudent(next, named.persona.id), reactedAt: null };
+
+  // Otherwise a question to the whole class gets one answer aloud right away.
+  if (named || say.includes('?')) {
+    const asked = named ?? pickForClassQuestion(next, rng);
     const a = await ai.answer(next, asked, say);
     next = {
       ...patchStudent(next, asked.persona.id, { emotion: feeling(a.emotion, asked.emotion), handUp: false, pendingLine: null }),
@@ -57,6 +61,17 @@ export async function teachTurn(
   // 'note' lines tell the player what happened; they are not speech.
   if (speaks) next = { ...next, transcript: [...next.transcript, { who: 'note', text: `${student.persona.name} raised a hand. Click their desk to hear them.` }] };
   return { state: next, reactedAt: now };
+}
+
+/** The student the teacher addressed by name, if any. With several names, the one mentioned first. */
+export function namedStudent(state: LessonState, say: string): Student | null {
+  let best: { at: number; student: Student } | null = null;
+  for (const student of state.students) {
+    const name = student.persona.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const at = say.search(new RegExp(`(^|[^\\p{L}])${name}(?![\\p{L}])`, 'iu'));
+    if (at >= 0 && (!best || at < best.at)) best = { at, student };
+  }
+  return best ? best.student : null;
 }
 
 /** The teacher calls on a raised hand: the student's waiting line is said aloud. No AI call. */

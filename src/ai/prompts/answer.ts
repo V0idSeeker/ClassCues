@@ -9,7 +9,8 @@ export function answerPrompt(state: LessonState, student: Student, question: str
       content: [
         who(student),
         CONTENT_RULE,
-        'The teacher asks you a question. Answer in one or two short sentences, like a real student.',
+        'The teacher speaks to you directly (teacher_question). Reply in one or two short sentences, like a real student.',
+        'If the teacher invites you to ask or to speak, ask a real question about what confuses you in this lesson, or say what you think.',
         'You know only what is in your_notebook and your_prior_beliefs (which may be wrong).',
         'If they do not cover the question, guess, answer partly, or say you do not know.',
         QUOTED_RULE,

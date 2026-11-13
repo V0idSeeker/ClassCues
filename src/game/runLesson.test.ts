@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { builtInChapter, students } from '../content';
 import { patchStudent, startLesson } from './lesson';
-import { askStudent, hearStudent, pickForClassQuestion, runQuiz, teachTurn } from './runLesson';
+import { askStudent, hearStudent, namedStudent, pickForClassQuestion, runQuiz, teachTurn } from './runLesson';
 import type { Ai } from './types';
 
 const start = () => startLesson(builtInChapter, students, () => 0.5, 0);
@@ -73,6 +73,30 @@ describe('teachTurn', () => {
     expect(ai.answer).toHaveBeenCalledTimes(1);
     expect(ai.reaction).not.toHaveBeenCalled();
     expect(out.state.turns).toBe(1);
+  });
+
+  it('lets the student the teacher names reply, not someone else', async () => {
+    const ai = fakeAi();
+    const out = await teachTurn(start(), { say: 'Go ahead Maya, ask your question.', board: '' }, ai, () => 0, 1000, 0);
+    expect(out.state.transcript.at(-1)).toEqual({ who: 'Maya', text: 'It stores a value?' });
+    expect((ai.answer as ReturnType<typeof vi.fn>).mock.calls[0][1].persona.id).toBe('maya');
+  });
+
+  it('says the waiting line of a named student with a raised hand, without an answer call', async () => {
+    const ai = fakeAi();
+    const s = patchStudent(start(), 'leo', { handUp: true, pendingLine: 'Can I call it pizza?' });
+    const out = await teachTurn(s, { say: 'Yes Leo?', board: '' }, ai, () => 0, 1000, 0);
+    expect(out.state.transcript.at(-1)).toEqual({ who: 'Leo', text: 'Can I call it pizza?' });
+    expect(ai.answer).not.toHaveBeenCalled();
+    expect(out.state.students.find(x => x.persona.id === 'leo')!.handUp).toBe(false);
+  });
+
+  it('finds a name as a whole word only, the first one mentioned', () => {
+    const s = start();
+    expect(namedStudent(s, 'tom, then Sam')!.persona.id).toBe('tom');
+    expect(namedStudent(s, 'Sam and Tom')!.persona.id).toBe('sam');
+    expect(namedStudent(s, 'The same atom is benign')).toBeNull();
+    expect(namedStudent(s, 'What about you, Ben?')!.persona.id).toBe('ben');
   });
 
   it('leaves the hand down when the student has nothing to say', async () => {
