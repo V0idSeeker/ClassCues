@@ -1,0 +1,117 @@
+import { describe, expect, it } from 'vitest';
+import { builtInChapter, students } from '../content';
+import {
+  LESSON_MS, MAX_TURNS, applyNotes, boardAdded, classClock, coverage, hasObjective, lessonOver,
+  mergeTurns, patchStudent, pickReactor, shouldReact, startLesson,
+} from './lesson';
+import type { NoteTakerResult } from './types';
+
+const start = () => startLesson(builtInChapter, students, () => 0.5, 0);
+const find = (s: ReturnType<typeof start>, id: string) => s.students.find(x => x.persona.id === id)!;
+const notesFor = (id: string, text: string, objective: string | null = 'obj-1', distorted = false): NoteTakerResult => ({
+  students: [{ id, new_notes: [{ text, objective, distorted }], beliefs_dropped: [], emotion: 'HAPPY' }],
+});
+
+describe('startLesson', () => {
+  it('hands out wrong beliefs: carrier two, struggling one, two others one each', () => {
+    const s = start();
+    expect(find(s, 'tom').beliefs).toHaveLength(2);
+    expect(find(s, 'sam').beliefs).toHaveLength(1);
+    expect(s.students.filter(x => x.beliefs.length > 0)).toHaveLength(4);
+  });
+
+  it('opens with two pre-written student lines and no turns used', () => {
+    const s = start();
+    expect(s.transcript).toHaveLength(2);
+    expect(s.turns).toBe(0);
+  });
+
+  it('works when the chapter has no misconceptions', () => {
+    const s = startLesson({ ...builtInChapter, common_misconceptions: [] }, students, () => 0.5, 0);
+    expect(s.students.every(x => x.beliefs.length === 0)).toBe(true);
+  });
+});
+
+describe('applyNotes', () => {
+  it('keeps a note for an attentive student and drops it for an inattentive one', () => {
+    const r: NoteTakerResult = { students: [...notesFor('aisha', 'a variable stores a value').students, ...notesFor('leo', 'a variable stores a value').students] };
+    const s = applyNotes(start(), r, () => 0.9);
+    expect(find(s, 'aisha').notes).toHaveLength(1);
+    expect(find(s, 'leo').notes).toHaveLength(0);
+  });
+
+  it('does not store the same note twice', () => {
+    let s = applyNotes(start(), notesFor('aisha', 'A variable stores a value'), () => 0);
+    s = applyNotes(s, notesFor('aisha', 'a variable  stores a value'), () => 0);
+    expect(find(s, 'aisha').notes).toHaveLength(1);
+  });
+
+  it('clears an objective id the chapter does not have', () => {
+    const s = applyNotes(start(), notesFor('aisha', 'something', 'obj-99'), () => 0);
+    expect(find(s, 'aisha').notes[0].objective).toBeNull();
+  });
+
+  it('removes a corrected belief and sets the emotion', () => {
+    const before = start();
+    const first = find(before, 'tom').beliefs[0].id;
+    const s = applyNotes(before, { students: [{ id: 'tom', new_notes: [], beliefs_dropped: [first], emotion: 'CURIOUS' }] }, () => 0);
+    expect(find(s, 'tom').beliefs.map(b => b.id)).not.toContain(first);
+    expect(find(s, 'tom').emotion).toBe('CURIOUS');
+  });
+
+  it('ignores students the model invented', () => {
+    const s = applyNotes(start(), notesFor('nobody', 'x'), () => 0);
+    expect(s.students.every(x => x.notes.length === 0)).toBe(true);
+  });
+});
+
+describe('coverage', () => {
+  it('counts students with an undistorted note on the objective', () => {
+    let s = applyNotes(start(), notesFor('aisha', 'a variable stores a value', 'obj-1'), () => 0);
+    s = applyNotes(s, notesFor('tom', 'variables are equations', 'obj-1', true), () => 0);
+    expect(coverage(s)['obj-1']).toBe(1);
+    expect(coverage(s)['obj-4']).toBe(0);
+    expect(hasObjective(find(s, 'tom'), 'obj-1')).toBe(false);
+  });
+});
+
+describe('board and turns', () => {
+  it('finds lines added to the board', () => {
+    expect(boardAdded('a\nb', 'a\nb\nc')).toBe('c');
+    expect(boardAdded('a\nb', 'a')).toBe('');
+    expect(boardAdded('', ' x = 5 \n')).toBe('x = 5');
+  });
+
+  it('merges queued turns into one', () => {
+    expect(mergeTurns([{ say: 'one', board: 'a' }, { say: ' ', board: 'a\nb' }, { say: 'two', board: 'a\nb\nc' }]))
+      .toEqual({ say: 'one\ntwo', board: 'a\nb\nc' });
+  });
+
+  it('ends the lesson at the turn cap or the time cap', () => {
+    const s = start();
+    expect(lessonOver(s, 1000)).toBe(false);
+    expect(lessonOver({ ...s, turns: MAX_TURNS }, 1000)).toBe(true);
+    expect(lessonOver(s, LESSON_MS)).toBe(true);
+  });
+
+  it('shows the 15 real minutes as a 45-minute class clock', () => {
+    expect(classClock(start(), LESSON_MS / 3)).toBe('15:00');
+    expect(classClock(start(), LESSON_MS * 2)).toBe('45:00');
+  });
+});
+
+describe('reactions', () => {
+  it('reacts every third turn and not within six seconds of the last one', () => {
+    expect(shouldReact(3, 0, 6000)).toBe(true);
+    expect(shouldReact(2, 0, 6000)).toBe(false);
+    expect(shouldReact(3, 0, 5999)).toBe(false);
+  });
+
+  it('never picks a student whose hand is already up', () => {
+    let s = start();
+    for (const st of s.students.slice(1)) s = patchStudent(s, st.persona.id, { handUp: true });
+    expect(pickReactor(s, () => 0.99)!.persona.id).toBe(s.students[0].persona.id);
+    s = patchStudent(s, s.students[0].persona.id, { handUp: true });
+    expect(pickReactor(s, () => 0.5)).toBeNull();
+  });
+});
