@@ -1,0 +1,120 @@
+{
+  "id": "python-intro-2",
+  "subject": "Programming",
+  "level": "Beginner",
+  "title": "Intro to Python",
+  "chapters": [
+    {
+      "format": 1,
+      "id": "py-conditions",
+      "title": "Making Decisions with if",
+      "objectives": [
+        { "id": "obj-1", "text": "An if statement runs its block only when its condition is True" },
+        { "id": "obj-2", "text": "== compares two values; = assigns a value" },
+        { "id": "obj-3", "text": "In if / elif / else only the first branch whose condition is True runs" },
+        { "id": "obj-4", "text": "Indentation decides which lines belong to a branch" }
+      ],
+      "reference": "A condition is an expression that is either True or False, such as age >= 18. An if statement runs the indented block under it only when its condition is True; otherwise the block is skipped. Comparisons use == (equal), != (not equal), <, >, <= and >=. A single = is assignment and puts a value into a variable; == asks whether two values are equal. elif adds another condition that is checked only if the ones before it were False. else has no condition and runs when none of the conditions above it were True. Python checks the branches from top to bottom and runs only the first one whose condition is True; the rest are skipped, even if their conditions would also be True. Indentation is part of the language: the lines indented under if belong to that branch. A line back at the left margin is outside the if and runs every time.",
+      "common_misconceptions": [
+        "= and == do the same thing",
+        "Every branch whose condition is True runs, not just the first",
+        "Indentation in Python is only there to look tidy",
+        "else needs its own condition"
+      ],
+      "quiz": [
+        {
+          "id": "q1", "type": "mcq", "objective": "obj-3",
+          "prompt": "mark is 85. The code is: if mark >= 50: print('pass') then elif mark >= 80: print('great') then else: print('fail'). What is printed?",
+          "choices": ["great", "pass and great", "pass", "fail"],
+          "answer_key": "pass"
+        },
+        {
+          "id": "q2", "type": "mcq", "objective": "obj-2",
+          "prompt": "Which line asks whether x is equal to 5, without changing x?",
+          "choices": ["x = 5", "x == 5", "x := 5", "x equals 5"],
+          "answer_key": "x == 5"
+        },
+        {
+          "id": "q3", "type": "short", "objective": "obj-3",
+          "prompt": "In the code of question 1, mark is 85 and 85 >= 80 is True. Why is 'great' still not printed, and how could the code be fixed?",
+          "answer_key": "Python runs only the first branch whose condition is True, and mark >= 50 is checked first. Put the mark >= 80 test first, before mark >= 50.",
+          "rubric": "1 point for: only the first True branch runs. 1 point for: test mark >= 80 before mark >= 50. Max 2."
+        },
+        {
+          "id": "q4", "type": "mcq", "objective": "obj-4",
+          "prompt": "The code is: if age < 18: then an indented line print('child') then, at the left margin, print('done'). age is 30. What is printed?",
+          "choices": ["child and done", "Only done", "Only child", "Nothing"],
+          "answer_key": "Only done"
+        },
+        {
+          "id": "q5", "type": "short", "objective": "obj-1",
+          "prompt": "What decides whether the block under an if statement runs?",
+          "answer_key": "Its condition. The block runs only when the condition is True; when it is False the block is skipped.",
+          "rubric": "1 point for: the condition decides. 1 point for: runs when True, skipped when False. Max 2."
+        },
+        {
+          "id": "q6", "type": "short", "objective": "obj-4",
+          "prompt": "A student removes the spaces in front of a line that was inside an if block. How does that change what the program does?",
+          "answer_key": "The line no longer belongs to the if block. It now runs every time, whether the condition is True or False.",
+          "rubric": "1 point for: the line is no longer part of the if. 1 point for: it now runs every time. Max 2."
+        }
+      ]
+    },
+    {
+      "format": 1,
+      "id": "py-loops",
+      "title": "Repeating with Loops",
+      "objectives": [
+        { "id": "obj-1", "text": "A for loop runs its block once for each item, and the loop variable takes each value in turn" },
+        { "id": "obj-2", "text": "range(n) gives the numbers from 0 up to n - 1" },
+        { "id": "obj-3", "text": "A while loop repeats as long as its condition is True, so something in the block must change the condition" },
+        { "id": "obj-4", "text": "Only the indented block repeats; lines after it run once" }
+      ],
+      "reference": "A loop repeats a block of code. A for loop runs its block once for each item of a sequence: for name in names: print(name) prints every name. The loop variable (name) takes each value in turn; it is a new value on every pass. range(n) gives the numbers 0, 1, 2, up to n - 1, so for i in range(5) runs five times with i equal to 0, 1, 2, 3, 4; it does not include 5. A while loop repeats as long as its condition is True: while count < 3: count = count + 1. The condition is checked before every pass. Something inside the block must eventually make the condition False; if nothing changes it, the loop never stops (an infinite loop). Only the indented block under for or while is repeated. A line after the loop, back at the left margin, runs once, after the loop has finished.",
+      "common_misconceptions": [
+        "range(5) counts from 1 to 5",
+        "A while loop always stops by itself after a while",
+        "The loop variable keeps the same value on every pass",
+        "Lines after the loop, at the left margin, are repeated too"
+      ],
+      "quiz": [
+        {
+          "id": "q1", "type": "mcq", "objective": "obj-2",
+          "prompt": "What does for i in range(4): print(i) print?",
+          "choices": ["1 2 3 4", "0 1 2 3 4", "0 1 2 3", "4 4 4 4"],
+          "answer_key": "0 1 2 3"
+        },
+        {
+          "id": "q2", "type": "mcq", "objective": "obj-3",
+          "prompt": "count starts at 0. The loop is while count < 3: print('hi') with nothing else in the block. What happens?",
+          "choices": ["hi is printed 3 times", "hi is printed once", "Nothing is printed", "hi is printed forever, because count never changes"],
+          "answer_key": "hi is printed forever, because count never changes"
+        },
+        {
+          "id": "q3", "type": "short", "objective": "obj-3",
+          "prompt": "What one line must be added inside the loop of question 2 so that it prints hi exactly 3 times, and why does that work?",
+          "answer_key": "count = count + 1. Each pass makes count one larger, so after three passes count is 3, the condition count < 3 is False and the loop stops.",
+          "rubric": "1 point for count = count + 1 (or count += 1). 1 point for: the condition becomes False after three passes. Max 2."
+        },
+        {
+          "id": "q4", "type": "mcq", "objective": "obj-4",
+          "prompt": "The code is: for i in range(3): then an indented line print('a') then, at the left margin, print('b'). How many times is b printed?",
+          "choices": ["0", "1", "3", "4"],
+          "answer_key": "1"
+        },
+        {
+          "id": "q5", "type": "short", "objective": "obj-1",
+          "prompt": "In for name in ['Ali', 'Sara', 'Omar']: print(name), what value does name have on the second pass, and why?",
+          "answer_key": "Sara. The loop variable takes each item of the list in turn, so on the second pass it holds the second item.",
+          "rubric": "1 point for Sara. 1 point for: the loop variable takes each item in turn. Max 2."
+        },
+        {
+          "id": "q6", "type": "short", "objective": "obj-2",
+          "prompt": "A student wants to print the numbers 1 to 5 and writes for i in range(5): print(i). What is printed instead, and how can it be fixed?",
+          "answer_key": "It prints 0 to 4, because range(5) starts at 0 and stops before 5. Print i + 1 instead, or use range(1, 6).",
+          "rubric": "1 point for: it prints 0 to 4. 1 point for a working fix: print(i + 1) or range(1, 6). Max 2."
+        }
+      ]
+    }
+  ]
+}

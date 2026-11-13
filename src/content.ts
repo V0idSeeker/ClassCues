@@ -1,8 +1,29 @@
-import mod from '../content/modules/python-intro.json';
+import dataStructures from '../content/modules/data-structures.json';
+import pythonMore from '../content/modules/python-intro-2.json';
+import python from '../content/modules/python-intro.json';
+import sql from '../content/modules/sql.json';
 import pool from '../content/students.json';
 import type { Chapter, Look, Persona } from './game/types';
 
-export const builtInChapter = mod.chapters[0] as unknown as Chapter;
+/**
+ * The lesson files that ship with the game, in the order they are shown.
+ * To add a course: put a file in content/modules and add it to this list. Files with the same "title" form one course.
+ */
+const MODULES = [python, pythonMore, dataStructures, sql] as unknown as { title: string; chapters: Chapter[] }[];
+
+/** The first built-in lesson (Python: Variables). Used by tests and scripted lessons. */
+export const builtInChapter = MODULES[0].chapters[0];
+
+/** Built-in courses, each with its lessons in order. */
+export const builtInCourses: { name: string; lessons: Chapter[] }[] = [];
+for (const module of MODULES) {
+  let course = builtInCourses.find(c => c.name === module.title);
+  if (!course) {
+    course = { name: module.title, lessons: [] };
+    builtInCourses.push(course);
+  }
+  for (const lesson of module.chapters) course.lessons.push({ ...lesson, course: module.title, part: course.lessons.length + 1 });
+}
 
 const DEFAULT_LOOK: Look = { hair: 'short', hairColor: '#2b2330', skin: '#e8b98f', shirt: '#3f7fd1', glasses: false };
 

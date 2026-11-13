@@ -1,0 +1,176 @@
+{
+  "id": "sql-basics",
+  "subject": "Databases",
+  "level": "Beginner",
+  "title": "SQL Basics",
+  "chapters": [
+    {
+      "format": 1,
+      "id": "sql-select-where",
+      "title": "SELECT and WHERE",
+      "objectives": [
+        { "id": "obj-1", "text": "A table stores data in rows and columns; SELECT reads data and never changes it" },
+        { "id": "obj-2", "text": "SELECT chooses which columns to show; WHERE chooses which rows" },
+        { "id": "obj-3", "text": "Rows come back in no promised order unless ORDER BY is used" },
+        { "id": "obj-4", "text": "A missing value is NULL, and it is found with IS NULL, not with = NULL" }
+      ],
+      "reference": "A database table stores data in rows and columns. Each row is one record, for example one student; each column is one kind of fact, for example name or age. SELECT reads data: SELECT name, age FROM students shows the name and age columns of every row. SELECT * shows all columns. SELECT never changes the stored data. WHERE keeps only the rows that pass a test: SELECT name FROM students WHERE age > 15 shows the names of students older than 15. So SELECT picks columns and WHERE picks rows. Text values are written in single quotes: WHERE city = 'Oran'. A table has no promised order: without ORDER BY the rows may come back in any order. ORDER BY age sorts from smallest to largest, ORDER BY age DESC from largest to smallest. A missing value is NULL. NULL is not equal to anything, not even to another NULL, so WHERE city = NULL finds nothing; the test is WHERE city IS NULL.",
+      "common_misconceptions": [
+        "SELECT changes the data stored in the table",
+        "WHERE chooses which columns are shown",
+        "Rows always come back in the order they were added",
+        "WHERE city = NULL finds the rows where the city is missing"
+      ],
+      "quiz": [
+        {
+          "id": "q1", "type": "mcq", "objective": "obj-2",
+          "prompt": "The table students has the columns id, name, age, city. You want only the names of students who live in Oran. Which query does that?",
+          "choices": ["SELECT city FROM students WHERE name = 'Oran'", "SELECT name FROM students WHERE city = 'Oran'", "SELECT * FROM students", "SELECT name, city FROM students ORDER BY city"],
+          "answer_key": "SELECT name FROM students WHERE city = 'Oran'"
+        },
+        {
+          "id": "q2", "type": "mcq", "objective": "obj-3",
+          "prompt": "You run SELECT name FROM students twice and the names come back in a different order the second time. What explains it?",
+          "choices": ["The table was damaged", "SELECT shuffles rows on purpose", "Without ORDER BY the database promises no order", "The second query changed the data"],
+          "answer_key": "Without ORDER BY the database promises no order"
+        },
+        {
+          "id": "q3", "type": "short", "objective": "obj-4",
+          "prompt": "Some students have no city stored. A classmate writes WHERE city = NULL and gets no rows. Why, and what should be written instead?",
+          "answer_key": "NULL means the value is missing and it is not equal to anything, so = NULL is never true. The test should be WHERE city IS NULL.",
+          "rubric": "1 point for: NULL is not equal to anything, so the comparison is never true. 1 point for IS NULL. Max 2."
+        },
+        {
+          "id": "q4", "type": "mcq", "objective": "obj-1",
+          "prompt": "After running SELECT name FROM students WHERE age > 15, what has happened to the rows of students aged 15 or less?",
+          "choices": ["They were deleted from the table", "They were moved to another table", "Nothing: they are still stored, they are just not shown", "Their age was set to NULL"],
+          "answer_key": "Nothing: they are still stored, they are just not shown"
+        },
+        {
+          "id": "q5", "type": "short", "objective": "obj-2",
+          "prompt": "Explain the different jobs of SELECT and WHERE in the query SELECT name FROM students WHERE age > 15.",
+          "answer_key": "SELECT name chooses which column is shown. WHERE age > 15 chooses which rows are kept: only students older than 15.",
+          "rubric": "1 point for: SELECT chooses the columns. 1 point for: WHERE chooses the rows. Max 2."
+        },
+        {
+          "id": "q6", "type": "short", "objective": "obj-3",
+          "prompt": "Write what must be added to SELECT name, age FROM students so that the oldest student comes first, and say what it does.",
+          "answer_key": "ORDER BY age DESC. It sorts the rows by age from largest to smallest.",
+          "rubric": "1 point for ORDER BY age DESC. 1 point for explaining that it sorts by age from largest to smallest. Max 2."
+        }
+      ]
+    },
+    {
+      "format": 1,
+      "id": "sql-joins",
+      "title": "Joining Tables",
+      "objectives": [
+        { "id": "obj-1", "text": "A JOIN combines rows of two tables that share a matching value, without changing either table" },
+        { "id": "obj-2", "text": "The ON condition says which rows belong together" },
+        { "id": "obj-3", "text": "INNER JOIN keeps only rows that have a match in both tables" },
+        { "id": "obj-4", "text": "LEFT JOIN keeps every row of the left table and fills the missing right side with NULL" }
+      ],
+      "reference": "Data is often split over several tables. A table students has id and name; a table grades has student_id, subject and mark. The column grades.student_id holds the id of the student a grade belongs to; such a column is called a foreign key. A JOIN combines rows of two tables for one query; it does not change or copy the stored tables. The ON condition says which rows belong together: SELECT name, mark FROM students JOIN grades ON students.id = grades.student_id pairs each student with their grades. The joined columns do not need the same name; only their values must match. An INNER JOIN (plain JOIN) keeps only pairs that match: a student with no grades does not appear at all. A LEFT JOIN keeps every row of the left table: a student with no grades still appears once, with NULL in the columns that come from grades. A student with three grades appears three times in either join, once per matching grade.",
+      "common_misconceptions": [
+        "A JOIN permanently copies one table into the other",
+        "An INNER JOIN also shows rows that have no match",
+        "LEFT JOIN and INNER JOIN always give the same result",
+        "Two tables can only be joined if the columns have the same name"
+      ],
+      "quiz": [
+        {
+          "id": "q1", "type": "mcq", "objective": "obj-3",
+          "prompt": "The table students has 5 students. Only 3 of them have a row in grades, one row each. How many rows does students INNER JOIN grades ON students.id = grades.student_id give?",
+          "choices": ["5", "3", "8", "15"],
+          "answer_key": "3"
+        },
+        {
+          "id": "q2", "type": "mcq", "objective": "obj-4",
+          "prompt": "Same tables. How does a student with no grades appear in students LEFT JOIN grades ON students.id = grades.student_id?",
+          "choices": ["The student does not appear", "The student appears once, with NULL in the grade columns", "The student appears with a mark of 0", "The query stops with an error"],
+          "answer_key": "The student appears once, with NULL in the grade columns"
+        },
+        {
+          "id": "q3", "type": "short", "objective": "obj-2",
+          "prompt": "What is the job of ON students.id = grades.student_id in a join?",
+          "answer_key": "It says which rows belong together: a student row is paired with a grade row only when the student's id equals the grade's student_id.",
+          "rubric": "1 point for: it decides which rows are paired. 1 point for: rows pair when the two values are equal. Max 2."
+        },
+        {
+          "id": "q4", "type": "mcq", "objective": "obj-1",
+          "prompt": "After you run a query that joins students and grades, what has changed in the two stored tables?",
+          "choices": ["The grades were copied into students", "The unmatched students were deleted", "A third table was saved", "Nothing: a join only combines rows for the result of that query"],
+          "answer_key": "Nothing: a join only combines rows for the result of that query"
+        },
+        {
+          "id": "q5", "type": "short", "objective": "obj-4",
+          "prompt": "A teacher wants a list of all students with their marks, including students who have no mark yet. Which join fits, and why?",
+          "answer_key": "A LEFT JOIN with students on the left, because it keeps every student even when there is no matching grade, showing NULL for the mark.",
+          "rubric": "1 point for LEFT JOIN. 1 point for the reason: it keeps students that have no matching grade. Max 2."
+        },
+        {
+          "id": "q6", "type": "short", "objective": "obj-3",
+          "prompt": "A student has three rows in grades. How many times does that student appear in the result of an INNER JOIN with grades, and why?",
+          "answer_key": "Three times, because the join gives one result row for every pair of rows that match, and this student matches three grade rows.",
+          "rubric": "1 point for three. 1 point for the reason: one result row per matching pair. Max 2."
+        }
+      ]
+    },
+    {
+      "format": 1,
+      "id": "sql-group-by",
+      "title": "Counting and Grouping",
+      "objectives": [
+        { "id": "obj-1", "text": "COUNT, SUM, AVG, MIN and MAX turn many rows into one value" },
+        { "id": "obj-2", "text": "GROUP BY makes one result row per group, so each group gets its own total" },
+        { "id": "obj-3", "text": "WHERE filters rows before grouping; HAVING filters groups after" },
+        { "id": "obj-4", "text": "NULL values are skipped by COUNT(column) and AVG, but COUNT(*) counts every row" }
+      ],
+      "reference": "Aggregate functions turn many rows into one value: COUNT counts rows, SUM adds, AVG gives the average, MIN and MAX give the smallest and largest. SELECT AVG(mark) FROM grades gives one number for the whole table. GROUP BY splits the rows into groups that share a value and gives one result row per group: SELECT subject, AVG(mark) FROM grades GROUP BY subject gives one average for each subject. GROUP BY does not sort; use ORDER BY for that. WHERE filters single rows before they are grouped: WHERE mark >= 10 leaves low marks out of the groups. HAVING filters whole groups after grouping and can use aggregates: HAVING COUNT(*) > 5 keeps only groups with more than five rows. WHERE cannot use an aggregate, because the groups do not exist yet when WHERE runs. COUNT(*) counts every row. COUNT(mark) counts only rows where mark is not NULL. AVG and SUM also skip NULL values; a missing mark is not treated as zero.",
+      "common_misconceptions": [
+        "GROUP BY sorts the rows",
+        "WHERE can filter on COUNT(*)",
+        "AVG treats missing (NULL) values as zero",
+        "COUNT(column) and COUNT(*) always give the same number"
+      ],
+      "quiz": [
+        {
+          "id": "q1", "type": "mcq", "objective": "obj-2",
+          "prompt": "The table grades holds 40 rows for 4 subjects. How many rows does SELECT subject, AVG(mark) FROM grades GROUP BY subject give?",
+          "choices": ["1", "4", "10", "40"],
+          "answer_key": "4"
+        },
+        {
+          "id": "q2", "type": "mcq", "objective": "obj-3",
+          "prompt": "You want only the subjects that have more than 5 grades. Where does the test COUNT(*) > 5 go?",
+          "choices": ["In WHERE, before GROUP BY", "In HAVING, after GROUP BY", "In SELECT", "In ORDER BY"],
+          "answer_key": "In HAVING, after GROUP BY"
+        },
+        {
+          "id": "q3", "type": "short", "objective": "obj-3",
+          "prompt": "Why does WHERE COUNT(*) > 5 not work, while HAVING COUNT(*) > 5 does?",
+          "answer_key": "WHERE filters single rows before the groups are made, so there is nothing to count yet. HAVING runs after grouping and filters whole groups, so it can use the count of each group.",
+          "rubric": "1 point for: WHERE runs before grouping, on single rows. 1 point for: HAVING runs after grouping, on groups. Max 2."
+        },
+        {
+          "id": "q4", "type": "mcq", "objective": "obj-4",
+          "prompt": "A table has 10 rows. In 3 of them mark is NULL. What do COUNT(*) and COUNT(mark) give?",
+          "choices": ["10 and 10", "7 and 7", "10 and 7", "7 and 10"],
+          "answer_key": "10 and 7"
+        },
+        {
+          "id": "q5", "type": "short", "objective": "obj-4",
+          "prompt": "Three students have marks 10, 20 and NULL (no mark yet). What does AVG(mark) give, and why is it not 10?",
+          "answer_key": "15. AVG skips the NULL and averages only 10 and 20. It would be 10 only if the missing mark were counted as zero, which it is not.",
+          "rubric": "1 point for 15. 1 point for the reason: NULL is skipped, not counted as zero. Max 2."
+        },
+        {
+          "id": "q6", "type": "short", "objective": "obj-1",
+          "prompt": "What is the difference between SELECT mark FROM grades and SELECT MAX(mark) FROM grades in what they give back?",
+          "answer_key": "The first gives one row for every grade. The second gives a single row with one value: the largest mark.",
+          "rubric": "1 point for: the first gives every row. 1 point for: the second gives one value, the largest. Max 2."
+        }
+      ]
+    }
+  ]
+}

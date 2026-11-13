@@ -1,0 +1,232 @@
+{
+  "id": "data-structures",
+  "subject": "Computer Science",
+  "level": "Beginner",
+  "title": "Data Structures",
+  "chapters": [
+    {
+      "format": 1,
+      "id": "ds-linked-lists",
+      "title": "Linked Lists",
+      "objectives": [
+        { "id": "obj-1", "text": "A linked list is a chain of nodes; each node holds a value and a link to the next node" },
+        { "id": "obj-2", "text": "Reaching an item means following the links one by one from the head" },
+        { "id": "obj-3", "text": "Inserting or removing a node only changes links; no other item is moved" },
+        { "id": "obj-4", "text": "The last node's link is empty (null), and the head is the only way into the list" }
+      ],
+      "reference": "A singly linked list is a chain of nodes. Each node holds a value and a link (pointer) to the next node. The list is reached through one link called the head, which points to the first node. The last node's link is empty (null), which marks the end. Nodes do not have to sit next to each other in memory. To reach the n-th item you start at the head and follow the links one at a time, so reaching a late item takes longer than an early one; there is no jumping straight to a position. To insert a node between A and B you make A point to the new node and the new node point to B. To remove a node you make the node before it point to the node after it. Neither operation moves any other item, unlike an array where later items must be shifted. If the head is lost, the whole list can no longer be reached.",
+      "common_misconceptions": [
+        "You can jump straight to the 5th item of a linked list, like in an array",
+        "Inserting in the middle of a linked list means moving all the later items along",
+        "The nodes of a linked list sit next to each other in memory",
+        "Removing a node also removes all the nodes after it"
+      ],
+      "quiz": [
+        {
+          "id": "q1", "type": "mcq", "objective": "obj-2",
+          "prompt": "A linked list holds 1000 items. Why does reading item 900 take longer than reading item 3?",
+          "choices": ["Item 900 holds a larger value", "The list has to be followed link by link from the head", "The list must be sorted before item 900 can be read", "Item 900 is stored on a slower part of memory"],
+          "answer_key": "The list has to be followed link by link from the head"
+        },
+        {
+          "id": "q2", "type": "mcq", "objective": "obj-3",
+          "prompt": "You insert a new node between node A and node B. What has to change?",
+          "choices": ["Every node after B moves one place along", "Only the value inside the new node", "The head must point to the new node", "A's link points to the new node, and the new node's link points to B"],
+          "answer_key": "A's link points to the new node, and the new node's link points to B"
+        },
+        {
+          "id": "q3", "type": "short", "objective": "obj-4",
+          "prompt": "A program sets the head to null by mistake while the list still has nodes. What happens to the list, and why?",
+          "answer_key": "The nodes can no longer be reached. The head was the only way into the list, and every other node is found only by following links from it.",
+          "rubric": "1 point for saying the list or its nodes are lost or unreachable. 1 point for the reason: the head is the only entry point. Max 2."
+        },
+        {
+          "id": "q4", "type": "mcq", "objective": "obj-1",
+          "prompt": "Which two things does every node of a singly linked list hold?",
+          "choices": ["A value and a link to the next node", "A value and its position number", "A link to the head and a link to the last node", "Two values"],
+          "answer_key": "A value and a link to the next node"
+        },
+        {
+          "id": "q5", "type": "short", "objective": "obj-3",
+          "prompt": "Why is removing the first item fast in a linked list but slow in an array?",
+          "answer_key": "In a linked list you only make the head point to the second node. In an array every later item has to be shifted one place.",
+          "rubric": "1 point for: only the head (one link) changes in a linked list. 1 point for: an array must shift all the later items. Max 2."
+        },
+        {
+          "id": "q6", "type": "short", "objective": "obj-2",
+          "prompt": "You only have the head. Describe step by step how to find the last node.",
+          "answer_key": "Start at the head and keep following the next link until you reach a node whose next link is empty (null). That node is the last one.",
+          "rubric": "1 point for following the links from the head. 1 point for stopping at the node whose link is empty or null. Max 2."
+        }
+      ]
+    },
+    {
+      "format": 1,
+      "id": "ds-stacks",
+      "title": "Stacks",
+      "objectives": [
+        { "id": "obj-1", "text": "A stack is last in, first out: the newest item is the first to come out" },
+        { "id": "obj-2", "text": "Push adds to the top, pop removes from the top, peek looks at the top without removing it" },
+        { "id": "obj-3", "text": "Popping an empty stack is an error, so a program checks first" },
+        { "id": "obj-4", "text": "Stacks fit problems where the most recent thing must be handled first, such as undo and matching brackets" }
+      ],
+      "reference": "A stack is a collection where items are added and removed at one end only, called the top. It is last in, first out (LIFO): the item added most recently is the first one removed, like a pile of plates. Push puts an item on the top. Pop removes the top item and gives it back. Peek gives the top item without removing it. Items below the top cannot be reached until the ones above them are popped. Popping or peeking an empty stack is an error called underflow, so programs check whether the stack is empty first. Stacks suit problems where the most recent thing must be dealt with first: undo in an editor (the last action is undone first), and checking brackets: each opening bracket is pushed, and each closing bracket must match the bracket popped from the top.",
+      "common_misconceptions": [
+        "You can take any item you like out of a stack",
+        "The first item pushed onto a stack is the first one to come out",
+        "Peek removes the top item, just like pop",
+        "Popping an empty stack simply gives back zero"
+      ],
+      "quiz": [
+        {
+          "id": "q1", "type": "mcq", "objective": "obj-1",
+          "prompt": "You do: push 1, push 2, push 3, pop, pop. What is on the top of the stack now?",
+          "choices": ["3", "2", "1", "Nothing, the stack is empty"],
+          "answer_key": "1"
+        },
+        {
+          "id": "q2", "type": "mcq", "objective": "obj-4",
+          "prompt": "Why does a stack fit the undo feature of a text editor?",
+          "choices": ["Actions must be undone in the order they were done", "The most recent action has to be undone first", "Any action can then be undone directly", "A stack uses less memory than any other structure"],
+          "answer_key": "The most recent action has to be undone first"
+        },
+        {
+          "id": "q3", "type": "short", "objective": "obj-4",
+          "prompt": "A program checks the text ( ] using a stack. Explain how it finds out that the brackets do not match.",
+          "answer_key": "It pushes the opening bracket (. When it meets the closing bracket ] it pops the top, which is (, and ( does not match ], so the text is wrong.",
+          "rubric": "1 point for pushing the opening bracket. 1 point for comparing the closing bracket with the popped top and finding a mismatch. Max 2."
+        },
+        {
+          "id": "q4", "type": "mcq", "objective": "obj-2",
+          "prompt": "A stack holds A at the bottom and B on top. You peek, then pop. What do the two operations give back?",
+          "choices": ["Peek gives A, pop gives B", "Peek gives B, pop gives A", "Both give B", "Both give A"],
+          "answer_key": "Both give B"
+        },
+        {
+          "id": "q5", "type": "short", "objective": "obj-3",
+          "prompt": "What goes wrong if a program pops a stack that has nothing in it, and how does a careful program avoid that?",
+          "answer_key": "There is no item to remove, so it is an error (underflow). The program checks whether the stack is empty before it pops.",
+          "rubric": "1 point for: it is an error because there is nothing to remove. 1 point for: check that the stack is not empty first. Max 2."
+        },
+        {
+          "id": "q6", "type": "short", "objective": "obj-1",
+          "prompt": "You push the letters C, A, T one by one and then pop three times. In what order do the letters come out, and why?",
+          "answer_key": "T, A, C. The last letter pushed comes out first, so the order is reversed.",
+          "rubric": "1 point for T, A, C. 1 point for the reason: last in, first out. Max 2."
+        }
+      ]
+    },
+    {
+      "format": 1,
+      "id": "ds-queues",
+      "title": "Queues",
+      "objectives": [
+        { "id": "obj-1", "text": "A queue is first in, first out: the oldest item is the first to come out" },
+        { "id": "obj-2", "text": "Enqueue adds at the back, dequeue removes from the front" },
+        { "id": "obj-3", "text": "A queue and a stack differ only in which item comes out next" },
+        { "id": "obj-4", "text": "Queues fit problems where things must be handled in the order they arrived" }
+      ],
+      "reference": "A queue is a collection where items are added at one end, the back, and removed from the other end, the front. It is first in, first out (FIFO): the item that has waited longest is the first one removed, like people waiting in line. Enqueue adds an item at the back. Dequeue removes the item at the front and gives it back. Items in the middle cannot be removed until they reach the front. Removing from an empty queue is an error. A stack and a queue both hold items in order; the difference is which item comes out next: a stack gives the newest item, a queue gives the oldest. Queues suit problems where things must be handled in the order they arrived, such as print jobs sent to a printer or customers waiting for service.",
+      "common_misconceptions": [
+        "A queue gives back the newest item first",
+        "Dequeue removes the item at the back of the queue",
+        "A queue and a stack are the same thing with different names",
+        "You can take an item from the middle of a queue when it is urgent"
+      ],
+      "quiz": [
+        {
+          "id": "q1", "type": "mcq", "objective": "obj-1",
+          "prompt": "You do: enqueue 1, enqueue 2, enqueue 3, dequeue. Which item is at the front now?",
+          "choices": ["1", "2", "3", "Nothing, the queue is empty"],
+          "answer_key": "2"
+        },
+        {
+          "id": "q2", "type": "mcq", "objective": "obj-4",
+          "prompt": "Three people send documents to one printer. Why should the printer keep them in a queue rather than a stack?",
+          "choices": ["A queue prints the shortest document first", "A queue uses less paper", "A queue prints them in the order they were sent, so nobody is overtaken", "A queue lets the printer print two documents at once"],
+          "answer_key": "A queue prints them in the order they were sent, so nobody is overtaken"
+        },
+        {
+          "id": "q3", "type": "short", "objective": "obj-3",
+          "prompt": "The items A, B, C are added in that order to a stack and to a queue. Each is then emptied. In what order do the items come out of each, and why do the orders differ?",
+          "answer_key": "The stack gives C, B, A because the newest item comes out first. The queue gives A, B, C because the oldest item comes out first.",
+          "rubric": "1 point for stack C, B, A and queue A, B, C. 1 point for the reason: newest first versus oldest first. Max 2."
+        },
+        {
+          "id": "q4", "type": "mcq", "objective": "obj-2",
+          "prompt": "Where does enqueue put a new item, and where does dequeue take an item from?",
+          "choices": ["Both work at the front", "Enqueue at the back, dequeue from the front", "Enqueue at the front, dequeue from the back", "Both work at the back"],
+          "answer_key": "Enqueue at the back, dequeue from the front"
+        },
+        {
+          "id": "q5", "type": "short", "objective": "obj-4",
+          "prompt": "A help desk used a stack by mistake to store waiting customers. What would customers notice?",
+          "answer_key": "The customer who arrived last would be served first, and those who arrived early could wait a very long time or never be served while new customers keep arriving.",
+          "rubric": "1 point for: the newest customer is served first. 1 point for: early customers wait very long or are never served. Max 2."
+        },
+        {
+          "id": "q6", "type": "short", "objective": "obj-1",
+          "prompt": "A queue holds 5 items. How many dequeues are needed before the item that was added last can come out, and why?",
+          "answer_key": "Five dequeues: four to remove the items in front of it and a fifth that removes it, because items leave only from the front in the order they arrived.",
+          "rubric": "1 point for five (or four before it, then it comes out on the fifth). 1 point for the reason: items leave from the front in arrival order. Max 2."
+        }
+      ]
+    },
+    {
+      "format": 1,
+      "id": "ds-binary-trees",
+      "title": "Binary Trees",
+      "objectives": [
+        { "id": "obj-1", "text": "In a binary tree every node has at most two children, a left and a right; the top node is the root and a node with no children is a leaf" },
+        { "id": "obj-2", "text": "In a binary search tree, smaller values go to the left of a node and larger values to the right" },
+        { "id": "obj-3", "text": "Searching a balanced binary search tree is fast because each comparison rules out half of what is left" },
+        { "id": "obj-4", "text": "The shape depends on the order of insertion: values inserted in sorted order make a tall, slow tree" }
+      ],
+      "reference": "A binary tree is made of nodes where each node has at most two children, called the left child and the right child. The node at the top is the root. A node with no children is a leaf. The height of a tree is the number of steps from the root down to the deepest leaf. A binary search tree (BST) is a binary tree with an ordering rule: for every node, all values in its left subtree are smaller and all values in its right subtree are larger. To search, start at the root and compare: go left if the value sought is smaller, right if it is larger, and stop when it is found or there is no child to go to. To insert, follow the same path and attach the new node where the path ends. In a balanced tree each comparison rules out about half of the remaining nodes, so a tree of 1000 values needs only about 10 comparisons. The shape depends on insertion order: inserting values already in sorted order puts each new node to the right of the last one, giving a tall chain that is as slow to search as a linked list.",
+      "common_misconceptions": [
+        "Every node in a binary tree must have exactly two children",
+        "In any binary tree, smaller values are always on the left",
+        "Searching a binary search tree takes the same few steps whatever its shape",
+        "The root is the node at the bottom of the tree"
+      ],
+      "quiz": [
+        {
+          "id": "q1", "type": "mcq", "objective": "obj-2",
+          "prompt": "You insert 8, then 3, then 10, then 6 into an empty binary search tree. Where does 6 end up?",
+          "choices": ["As the left child of 10", "As the right child of 3", "As the left child of 3", "As the right child of 8"],
+          "answer_key": "As the right child of 3"
+        },
+        {
+          "id": "q2", "type": "mcq", "objective": "obj-4",
+          "prompt": "You insert 1, 2, 3, 4, 5 in that order into an empty binary search tree. What shape does the tree have?",
+          "choices": ["A balanced tree with 3 at the root", "A chain where every node has only a right child", "A chain where every node has only a left child", "A tree where 1 has two children"],
+          "answer_key": "A chain where every node has only a right child"
+        },
+        {
+          "id": "q3", "type": "short", "objective": "obj-3",
+          "prompt": "A balanced binary search tree holds 1000 values. Why are only about 10 comparisons needed to find one of them?",
+          "answer_key": "Each comparison chooses the left or the right subtree, which rules out about half of the remaining values. Halving 1000 about ten times leaves one value.",
+          "rubric": "1 point for: each comparison rules out about half. 1 point for linking the halving to about 10 steps for 1000 values. Max 2."
+        },
+        {
+          "id": "q4", "type": "mcq", "objective": "obj-1",
+          "prompt": "Which statement is true of a leaf in a binary tree?",
+          "choices": ["It is the node at the top", "It has exactly two children", "It has no children", "It always holds the smallest value"],
+          "answer_key": "It has no children"
+        },
+        {
+          "id": "q5", "type": "short", "objective": "obj-2",
+          "prompt": "What is the difference between a binary tree and a binary search tree?",
+          "answer_key": "A binary tree only limits each node to at most two children. A binary search tree adds an ordering rule: smaller values on the left of each node and larger values on the right.",
+          "rubric": "1 point for: a binary tree only requires at most two children. 1 point for the ordering rule of a binary search tree. Max 2."
+        },
+        {
+          "id": "q6", "type": "short", "objective": "obj-4",
+          "prompt": "Two binary search trees hold the same 100 values. One was built from values in random order, the other from values in sorted order. Which is slower to search, and why?",
+          "answer_key": "The one built from sorted values. Each new value went to the right of the previous one, so the tree is a tall chain and a search may pass through up to 100 nodes.",
+          "rubric": "1 point for choosing the sorted-order tree. 1 point for the reason: it becomes a tall chain, so nothing is ruled out by a comparison. Max 2."
+        }
+      ]
+    }
+  ]
+}

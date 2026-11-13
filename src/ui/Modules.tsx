@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { generateChapter } from '../ai/calls';
 import type { AiDeps } from '../ai/calls';
-import { builtInChapter } from '../content';
+import { builtInCourses } from '../content';
 import { MAX_LESSON_CHARS, courseScore, splitIntoLessons, suggestedLessonCount } from '../game/course';
 import type { Chapter, QuizQuestion } from '../game/types';
 import { normalizeChapter, packLessons, unpackLessons, validateChapter } from '../game/validate';
@@ -11,7 +11,7 @@ interface Props { deps: AiDeps; lessonRunning: boolean; onPlay(c: Chapter): void
 /** The PDFs the player picked: every page's text in order, and which pages to use. */
 interface Source { names: string[]; pages: string[]; from: number; to: number; title: string; count: number }
 
-const BUILT_IN_COURSE = 'Intro to Python';
+const builtInIds = new Set(builtInCourses.flatMap(c => c.lessons.map(l => l.id)));
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 const clamp = (v: string, min: number, max: number) => Math.min(max, Math.max(min, Number(v) || min));
 
@@ -234,10 +234,10 @@ export default function Modules(p: Props) {
     );
   }
 
-  // Lessons grouped into courses: the built-in one, each imported course in lesson order, then single lessons.
+  // Lessons grouped into courses: the built-in ones, each imported course in lesson order, then single lessons.
   const courseNames = [...new Set(levels.filter(l => l.course).map(l => l.course as string))];
   const groups: { name: string; lessons: Chapter[]; own: boolean }[] = [
-    { name: BUILT_IN_COURSE, lessons: [builtInChapter], own: false },
+    ...builtInCourses.map(c => ({ name: c.name, lessons: c.lessons, own: false })),
     ...courseNames.map(name => ({ name, lessons: levels.filter(l => l.course === name).sort((a, b) => (a.part ?? 0) - (b.part ?? 0)), own: true })),
   ];
   const singles = levels.filter(l => !l.course);
@@ -257,7 +257,7 @@ export default function Modules(p: Props) {
       {groups.map(g => {
         const total = courseScore(scores, g.lessons.map(l => l.id));
         return (
-          <div className="panel" style={{ marginTop: 12 }} key={g.name}>
+          <div className="panel" style={{ marginTop: 12 }} key={`${g.own ? 'own' : 'built-in'}-${g.name}`}>
             <div className="row">
               <h2 className="grow" style={{ margin: 0 }}>{g.name}</h2>
               <span className="pill">{total.average === null ? 'Not taught yet' : `Course score ${total.average}% · ${total.taught} of ${total.lessons} taught`}</span>
@@ -272,9 +272,9 @@ export default function Modules(p: Props) {
                     <b>{c.part ? `${c.part}. ` : ''}{c.title}</b>{' '}
                     <span className="dim">{s ? `Best ${s.best}% · last ${s.last}% · taught ${s.plays}×` : 'Not taught yet'}</span>
                   </span>
-                  {c !== builtInChapter && <button onClick={() => { chapterText.current = ''; setProblems([]); setError(''); setDraft(c); }}>Edit</button>}
-                  {c !== builtInChapter && <button onClick={() => download(c.title, [c])}>Export</button>}
-                  {c !== builtInChapter && <button onClick={() => keep(levels.filter(x => x.id !== c.id))}>Delete</button>}
+                  {!builtInIds.has(c.id) && <button onClick={() => { chapterText.current = ''; setProblems([]); setError(''); setDraft(c); }}>Edit</button>}
+                  {!builtInIds.has(c.id) && <button onClick={() => download(c.title, [c])}>Export</button>}
+                  {!builtInIds.has(c.id) && <button onClick={() => keep(levels.filter(x => x.id !== c.id))}>Delete</button>}
                   <button className="go" onClick={() => p.onPlay(c)}>Teach</button>
                 </div>
               );

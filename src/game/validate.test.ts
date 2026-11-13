@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { builtInChapter, students } from '../content';
+import { builtInChapter, builtInCourses, students } from '../content';
 import { normalizeChapter, packLessons, unpackLessons, validateChapter } from './validate';
 
 const copy = () => JSON.parse(JSON.stringify(builtInChapter));
@@ -62,6 +62,38 @@ describe('sharing several lessons in one file', () => {
     expect(unpackLessons(packLessons([builtInChapter, broken as never]), id)).toMatchObject({ lessons: [], problem: expect.stringContaining('Lesson 2') });
     expect(unpackLessons({ lessons: [] }, id).problem).toContain('no lessons');
     expect(unpackLessons('hello', id).problem).toBeTruthy();
+  });
+});
+
+describe('built-in courses', () => {
+  const lessons = builtInCourses.flatMap(c => c.lessons);
+
+  it('ships several courses, numbered in order', () => {
+    expect(builtInCourses.map(c => c.name)).toEqual(['Intro to Python', 'Data Structures', 'SQL Basics']);
+    for (const c of builtInCourses) expect(c.lessons.map(l => l.part)).toEqual(c.lessons.map((_, i) => i + 1));
+    expect(lessons.every(l => typeof l.course === 'string')).toBe(true);
+  });
+
+  it('has only valid lessons with unique ids', () => {
+    for (const l of lessons) expect([l.title, ...validateChapter(l)]).toEqual([l.title]);
+    expect(new Set(lessons.map(l => l.id)).size).toBe(lessons.length);
+  });
+
+  it('gives every lesson a quiz that covers each goal and mixes both kinds of question', () => {
+    for (const l of lessons) {
+      const tested = new Set(l.quiz.map(q => q.objective));
+      for (const o of l.objectives) expect([l.title, o.id, tested.has(o.id)]).toEqual([l.title, o.id, true]);
+      expect(l.quiz.filter(q => q.type === 'mcq').length).toBeGreaterThanOrEqual(2);
+      expect(l.quiz.filter(q => q.type === 'short').length).toBeGreaterThanOrEqual(2);
+      expect(l.common_misconceptions.length).toBeGreaterThanOrEqual(4);
+    }
+  });
+
+  it('does not always put the right choice first', () => {
+    for (const l of lessons.filter(x => x.id !== 'ch1')) {
+      const positions = new Set(l.quiz.filter(q => q.type === 'mcq').map(q => q.choices!.indexOf(q.answer_key)));
+      expect([l.title, positions.size > 1]).toEqual([l.title, true]);
+    }
   });
 });
 
