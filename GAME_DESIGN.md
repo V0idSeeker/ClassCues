@@ -202,7 +202,7 @@ Attention bars and the refocus action, fact-checker, memory across days, lesson-
 3. Drawn classroom scene, class and board views, student voices, student pool.
 4. PDF import, level review and the Modules screen.
 
-Each deployed version gets a version number shown in the footer and a matching git tag. Rolling back means deploying the previous version by its tag.
+Each deployed version gets a version number shown in the footer and a matching git tag `web-vX.Y.Z`, created by `scripts/deploy.sh` on the exact commit deployed. Rolling back means checking out the previous tag and deploying it; never rebuild "whatever is on main".
 
 ### 0.13 Alternatives considered
 
