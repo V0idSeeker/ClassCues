@@ -1,5 +1,13 @@
-/** Model names the provider offers, from its OpenAI-compatible /models address. Empty list if it cannot be read. */
-export async function listModels(baseUrl: string, apiKey: string, fetchImpl: typeof fetch = fetch): Promise<string[]> {
+export interface ModelInfo {
+  id: string;
+  /** Costs nothing on OpenRouter (name ends in ":free"). */
+  free: boolean;
+  /** The provider says this model supports the strict answer format the game needs. */
+  structured: boolean;
+}
+
+/** Models the provider offers, from its OpenAI-compatible /models address, free ones first. Empty if it cannot be read. */
+export async function listModelInfo(baseUrl: string, apiKey: string, fetchImpl: typeof fetch = fetch): Promise<ModelInfo[]> {
   try {
     const res = await fetchImpl(baseUrl.replace(/\/chat\/completions\/?$/, '/models'), {
       headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {},
@@ -7,10 +15,34 @@ export async function listModels(baseUrl: string, apiKey: string, fetchImpl: typ
     if (!res.ok) return [];
     const data: unknown = (await res.json()).data;
     if (!Array.isArray(data)) return [];
-    const ids = data.map(m => String((m as { id?: unknown })?.id ?? '')).filter(Boolean).sort();
-    // Free models first, so a player without credit sees what they can use.
-    return [...ids.filter(id => id.endsWith(':free')), ...ids.filter(id => !id.endsWith(':free'))];
+    const models = data
+      .map(m => {
+        const entry = m as { id?: unknown; supported_parameters?: unknown };
+        const id = String(entry?.id ?? '');
+        const params = Array.isArray(entry?.supported_parameters) ? entry.supported_parameters : [];
+        return { id, free: id.endsWith(':free'), structured: params.includes('structured_outputs') };
+      })
+      .filter(m => m.id)
+      .sort((a, b) => a.id.localeCompare(b.id));
+    return [...models.filter(m => m.free), ...models.filter(m => !m.free)];
   } catch {
     return [];
   }
+}
+
+/** Size in billions of parameters when the model name states it: "lfm-3-1.7b:free" gives 1.7. */
+export function statedSize(id: string): number | null {
+  const m = id.match(/(?:^|[-_/])(\d+(?:\.\d+)?)b(?=[-_:]|$)/i);
+  return m ? Number(m[1]) : null;
+}
+
+const MIN_SIZE = 8;
+
+/**
+ * The model used when the player chooses none: a free model that supports the game's answer format
+ * and is not tiny. Always the same one, so students behave the same from call to call.
+ */
+export function pickFreeDefault(models: ModelInfo[]): string | null {
+  const fit = models.filter(m => m.free && m.structured && (statedSize(m.id) ?? MIN_SIZE) >= MIN_SIZE).map(m => m.id).sort();
+  return fit[0] ?? null;
 }

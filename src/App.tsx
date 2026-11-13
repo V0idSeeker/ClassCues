@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { makeAi } from './ai/calls';
+import { listModelInfo, pickFreeDefault } from './ai/models';
 import { AiError } from './ai/provider';
 import { students } from './content';
 import { mustRingBell, quizReserve } from './game/budget';
@@ -35,13 +36,24 @@ export default function App() {
   const running = useRef(false);
   const lastReact = useRef(0);
 
+  // No model chosen on OpenRouter: use one fixed free model that supports the game's answer format.
+  const [autoModel, setAutoModel] = useState('');
+  useEffect(() => {
+    let current = true;
+    setAutoModel('');
+    if (settings.studentModel || !settings.baseUrl.includes('openrouter.ai')) return;
+    void listModelInfo(settings.baseUrl, settings.apiKey).then(list => { if (current) setAutoModel(pickFreeDefault(list) ?? ''); });
+    return () => { current = false; };
+  }, [settings.baseUrl, settings.apiKey, settings.studentModel]);
+  const effective = useMemo(() => ({ ...settings, studentModel: settings.studentModel || autoModel }), [settings, autoModel]);
+
   const ai = useMemo(() => makeAi({
-    provider: settings,
-    studentModel: settings.studentModel,
-    graderModel: settings.graderModel || settings.studentModel,
+    provider: effective,
+    studentModel: effective.studentModel,
+    graderModel: effective.graderModel || effective.studentModel,
     onRequest: () => setUsed(bumpUsed()),
-    log: settings.debugLog ? addLog : undefined,
-  }), [settings]);
+    log: effective.debugLog ? addLog : undefined,
+  }), [effective]);
 
   function commit(state: LessonState) {
     lessonRef.current = state;
@@ -145,7 +157,7 @@ export default function App() {
       )}
 
       {screen === 'modules' && (
-        <Modules settings={settings} lessonRunning={lesson !== null} onResume={() => setScreen('classroom')} onRequest={() => setUsed(bumpUsed())} onPlay={play} onSettings={() => setScreen('settings')} />
+        <Modules settings={effective} lessonRunning={lesson !== null} onResume={() => setScreen('classroom')} onRequest={() => setUsed(bumpUsed())} onPlay={play} onSettings={() => setScreen('settings')} />
       )}
 
       {screen === 'classroom' && lesson && (

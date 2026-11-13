@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ping } from '../ai/calls';
-import { listModels } from '../ai/models';
+import { listModelInfo, pickFreeDefault } from '../ai/models';
+import type { ModelInfo } from '../ai/models';
 import { AiError } from '../ai/provider';
 import { PRESETS, addLog, logText } from '../storage';
 import type { Settings as SettingsType } from '../storage';
@@ -13,19 +14,21 @@ export default function Settings({ settings, used, onSave, onPlay }: Props) {
   const [testing, setTesting] = useState(false);
   const set = (patch: Partial<SettingsType>) => { setS({ ...s, ...patch }); setTest(null); };
   const preset = Object.values(PRESETS).find(p => p.baseUrl === s.baseUrl);
-  const [models, setModels] = useState<string[]>([]);
+  const [models, setModels] = useState<ModelInfo[]>([]);
+  // With no model chosen on OpenRouter, the game uses one fixed free model.
+  const auto = !s.studentModel && s.baseUrl.includes('openrouter.ai') ? pickFreeDefault(models) ?? '' : '';
 
   // Ask the provider which models it offers, shortly after the address or key stops changing.
   useEffect(() => {
     let current = true;
-    const timer = setTimeout(() => { void listModels(s.baseUrl, s.apiKey).then(list => { if (current) setModels(list); }); }, 400);
+    const timer = setTimeout(() => { void listModelInfo(s.baseUrl, s.apiKey).then(list => { if (current) setModels(list); }); }, 400);
     return () => { current = false; clearTimeout(timer); };
   }, [s.baseUrl, s.apiKey]);
 
   async function testConnection() {
     setTesting(true);
     try {
-      await ping({ provider: s, studentModel: s.studentModel, graderModel: s.graderModel || s.studentModel, log: s.debugLog ? addLog : undefined });
+      await ping({ provider: s, studentModel: s.studentModel || auto, graderModel: s.graderModel || s.studentModel || auto, log: s.debugLog ? addLog : undefined });
       setTest({ ok: true, text: 'Connection works.' });
     } catch (e) {
       setTest({ ok: false, text: e instanceof AiError ? e.message : `Something went wrong: ${String(e)}` });
@@ -59,12 +62,13 @@ export default function Settings({ settings, used, onSave, onPlay }: Props) {
         <input id="model" list="models" placeholder="Automatic" value={s.studentModel} onChange={e => set({ studentModel: e.target.value.trim() })} />
         <label htmlFor="grader">Model for grading and for making levels from PDFs (empty: same as students; a stronger model does both better)</label>
         <input id="grader" list="models" placeholder="Same as students" value={s.graderModel} onChange={e => set({ graderModel: e.target.value.trim() })} />
-        <datalist id="models">{models.map(m => <option key={m} value={m} />)}</datalist>
+        <datalist id="models">{models.map(m => <option key={m.id} value={m.id} />)}</datalist>
         <p className="dim" role="status">
           {models.length > 0
             ? `${models.length} models found. Click a model box and type to search the list.`
             : 'No model list from this address yet. Check the address and key, or type a model name by hand.'}
         </p>
+        {auto && <p className="dim">With no model chosen, the game uses this free model: <b>{auto}</b></p>}
 
         <label htmlFor="limit">Daily request limit for free models (0 = no limit). Used today: {used}</label>
         <input id="limit" type="number" min={0} value={s.dailyLimit} onChange={e => set({ dailyLimit: Math.max(0, Number(e.target.value) || 0) })} />
