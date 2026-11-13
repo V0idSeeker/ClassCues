@@ -20,8 +20,8 @@ export interface AiDeps {
   provider: ProviderSettings;
   studentModel: string;
   graderModel: string;
-  /** Models to try, best first, when the player chose no model. */
-  autoModels?: string[];
+  /** Models to try, best first, when the player chose no model. A function lets calls wait until the provider's model list has loaded. */
+  autoModels?: string[] | (() => Promise<string[]>);
   /** Told which automatically chosen model answered. */
   onModel?: (model: string) => void;
   onRequest?: () => void;
@@ -49,9 +49,11 @@ const isGrader = (v: unknown): v is GraderResult =>
     && typeof r.supported_by_notes === 'boolean' && typeof r.feedback === 'string');
 const isPing = (v: unknown): v is { ok: boolean } => rec(v) && typeof v.ok === 'boolean';
 
+const candidatesOf = async (d: AiDeps): Promise<string[]> => (typeof d.autoModels === 'function' ? d.autoModels() : d.autoModels ?? []);
+
 function caller(d: AiDeps) {
-  return <T>(model: string, schemaName: string, schema: object, messages: ChatMessage[], guard: (v: unknown) => v is T) =>
-    callJson<T>(d.provider, { model, models: d.autoModels, onModel: d.onModel, schemaName, schema, messages, guard, onRequest: d.onRequest, log: d.log, fetchImpl: d.fetchImpl, sleep: d.sleep });
+  return async <T>(model: string, schemaName: string, schema: object, messages: ChatMessage[], guard: (v: unknown) => v is T) =>
+    callJson<T>(d.provider, { model, models: model ? undefined : await candidatesOf(d), onModel: d.onModel, schemaName, schema, messages, guard, onRequest: d.onRequest, log: d.log, fetchImpl: d.fetchImpl, sleep: d.sleep });
 }
 
 export function makeAi(d: AiDeps): Ai {
@@ -74,25 +76,34 @@ export async function generateChapter(d: AiDeps, chapterText: string): Promise<C
 }
 
 const PING: ChatMessage[] = [{ role: 'user', content: 'Reply with the JSON {"ok": true}.' }];
+/** After the first model answers, better-ranked ones get this long to answer too. */
+const PING_GRACE_MS = 3000;
 
 /**
- * One tiny call, used by "Test connection". With several automatic models to choose from,
- * it asks them all at once and keeps the first that answers, so a silent model costs no waiting.
+ * One tiny call, used by "Test connection". With several automatic models to choose from, it asks
+ * them all at once, so a silent model costs no waiting, and keeps the best-ranked one that answers.
  */
 export async function ping(d: AiDeps): Promise<{ ok: boolean }> {
-  const candidates = d.studentModel ? [] : d.autoModels ?? [];
+  const candidates = d.studentModel ? [] : await candidatesOf(d);
   if (candidates.length < 2) return caller(d)(d.studentModel, 'ping', pingSchema, PING, isPing);
-  let won = false;
+
+  const sleep = d.sleep ?? ((ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms)));
+  const answered = new Map<string, { ok: boolean }>();
+  const tries = candidates.map(async model => {
+    const value = await callJson(d.provider, {
+      model, schemaName: 'ping', schema: pingSchema, messages: PING, guard: isPing, timeoutMs: 30000, patient: false,
+      onRequest: d.onRequest, log: d.log, fetchImpl: d.fetchImpl, sleep: d.sleep,
+    });
+    answered.set(model, value);
+  });
   try {
-    return await Promise.any(candidates.map(async model => {
-      const value = await callJson(d.provider, {
-        model, schemaName: 'ping', schema: pingSchema, messages: PING, guard: isPing, timeoutMs: 30000, patient: false,
-        onRequest: d.onRequest, log: d.log, fetchImpl: d.fetchImpl, sleep: d.sleep,
-      });
-      if (!won) { won = true; preferModel(d.provider.baseUrl, model); d.onModel?.(model); }
-      return value;
-    }));
+    await Promise.any(tries);
   } catch (e) {
     throw e instanceof AggregateError ? e.errors[0] : e;
   }
+  await Promise.race([Promise.allSettled(tries), sleep(PING_GRACE_MS)]);
+  const best = candidates.find(model => answered.has(model)) as string;
+  preferModel(d.provider.baseUrl, best);
+  d.onModel?.(best);
+  return answered.get(best) as { ok: boolean };
 }

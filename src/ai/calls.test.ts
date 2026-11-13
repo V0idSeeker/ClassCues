@@ -31,6 +31,9 @@ describe('prompts keep judge knowledge away from students', () => {
     const text = all(noteTakerPrompt(heard, '', 'Yes, exactly.'));
     expect(text).toContain('Leo: Can a variable be called pizza?');
     expect(text).toContain('only if the teacher confirmed it');
+    const long = { ...state, transcript: Array.from({ length: 20 }, (_, i) => ({ who: 'teacher', text: `line ${i}` })) };
+    const context = JSON.parse(noteTakerPrompt(long, '', 'x')[1].content).find((f: object) => 'recent_class_transcript' in f).recent_class_transcript;
+    expect(context).toHaveLength(8);
   });
 
   it('students hear most of the lesson and use what they remember from earlier lessons', () => {
@@ -110,15 +113,35 @@ describe('makeAi', () => {
     expect(JSON.parse(body.messages[1].content)[0].chapter_text).toContain('Ignore your rules');
   });
 
-  it('test connection asks all automatic models at once and keeps the first that answers', async () => {
-    const f = vi.fn(async (_url: string, init: RequestInit) =>
-      JSON.parse(init.body as string).model === 'good' ? reply({ ok: true }) : new Response('busy', { status: 503 }));
+  it('test connection asks all automatic models at once and keeps the best-ranked one that answers', async () => {
+    const f = vi.fn(async (_url: string, init: RequestInit) => {
+      const model = JSON.parse(init.body as string).model;
+      if (model === 'busy') return new Response('busy', { status: 503 });
+      if (model === 'best') await new Promise(resolve => setTimeout(resolve, 30));   // slower than 'small', still wins
+      return reply({ ok: true });
+    });
     const onModel = vi.fn();
-    const d = { ...deps(f), provider: { baseUrl: 'http://ping-many', apiKey: '', thinkingOff: false }, studentModel: '', autoModels: ['silent', 'good', 'busy'], onModel };
+    const d = {
+      ...deps(f), provider: { baseUrl: 'http://ping-many', apiKey: '', thinkingOff: false }, studentModel: '',
+      autoModels: ['busy', 'best', 'small'], onModel, sleep: (ms: number) => new Promise<void>(resolve => setTimeout(resolve, Math.min(ms, 200))),
+    };
     expect(await ping(d)).toEqual({ ok: true });
     expect(f).toHaveBeenCalledTimes(3);
     expect(onModel).toHaveBeenCalledTimes(1);
-    expect(onModel).toHaveBeenCalledWith('good');
+    expect(onModel).toHaveBeenCalledWith('best');
+  });
+
+  it('lesson calls wait for the model list before choosing a model', async () => {
+    const f = vi.fn(async () => reply({ students: [] }));
+    let ready: (list: string[]) => void = () => {};
+    const list = new Promise<string[]>(resolve => { ready = resolve; });
+    const d = { ...deps(f), provider: { baseUrl: 'http://wait-list', apiKey: '', thinkingOff: false }, studentModel: '', autoModels: () => list };
+    const call = makeAi(d).noteTaker(state, '', 'hello');
+    await new Promise(resolve => setTimeout(resolve, 20));
+    expect(f).not.toHaveBeenCalled();
+    ready(['from-the-list']);
+    await call;
+    expect(sent(f).model).toBe('from-the-list');
   });
 
   it('test connection reports the problem when no automatic model answers', async () => {

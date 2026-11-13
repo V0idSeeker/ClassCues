@@ -39,21 +39,20 @@ export default function App() {
   const lastReact = useRef(0);
 
   // No model chosen: on OpenRouter, Gemini and Groq the game tries a short list of fitting models, best first.
-  const [autoList, setAutoList] = useState<string[]>([]);
-  useEffect(() => {
-    let current = true;
-    setAutoList([]);
-    preferModel(settings.baseUrl, loadGoodModel(settings.baseUrl));
-    if (settings.studentModel) return;
-    void listModelInfo(settings.baseUrl, settings.apiKey).then(list => { if (current) setAutoList(autoModels(settings.baseUrl, list)); });
-    return () => { current = false; };
-  }, [settings.baseUrl, settings.apiKey, settings.studentModel]);
+  // The list comes from the provider; AI calls wait for it, so no call goes out with a guessed model name.
+  const autoList = useMemo<Promise<string[]>>(
+    () => (settings.studentModel
+      ? Promise.resolve([])
+      : listModelInfo(settings.baseUrl, settings.apiKey).then(list => autoModels(settings.baseUrl, list))),
+    [settings.baseUrl, settings.apiKey, settings.studentModel],
+  );
+  useEffect(() => { preferModel(settings.baseUrl, loadGoodModel(settings.baseUrl)); }, [settings.baseUrl]);
 
   const deps = useMemo<AiDeps>(() => ({
     provider: settings,
     studentModel: settings.studentModel,
     graderModel: settings.graderModel || settings.studentModel,
-    autoModels: autoList,
+    autoModels: () => autoList,
     onModel: model => saveGoodModel(settings.baseUrl, model),
     onRequest: () => setUsed(bumpUsed()),
     log: settings.debugLog ? addLog : undefined,
@@ -63,9 +62,13 @@ export default function App() {
   // Find out once which of those models answers, so the first lesson call does not wait on a silent one.
   const probed = useRef('');
   useEffect(() => {
-    if (autoList.length < 2 || loadGoodModel(settings.baseUrl) || probed.current === settings.baseUrl) return;
-    probed.current = settings.baseUrl;
-    void ping(deps).catch(() => {});
+    let current = true;
+    void autoList.then(list => {
+      if (!current || list.length < 2 || loadGoodModel(settings.baseUrl) || probed.current === settings.baseUrl) return;
+      probed.current = settings.baseUrl;
+      void ping(deps).catch(() => {});
+    });
+    return () => { current = false; };
   }, [deps]);
 
   function commit(state: LessonState) {

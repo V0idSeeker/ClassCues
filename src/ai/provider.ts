@@ -35,6 +35,7 @@ export interface CallOptions<T> {
   log?: (e: LogEntry) => void;
 }
 
+const BAD_JSON_MESSAGE = 'The AI answered in a format the game cannot read, twice. Try again, or pick a stronger model.';
 /** Waits before asking again when the provider says "too many requests" or "overloaded". */
 const BUSY_WAITS_MS = [5000, 15000];
 export const OPENROUTER_DEFAULT_MODEL = 'openrouter/free';
@@ -43,8 +44,6 @@ export const GEMINI_DEFAULT_MODEL = 'gemini-3.8-flash';
 export const isOpenRouter = (baseUrl: string) => baseUrl.includes('openrouter.ai');
 export const isGemini = (baseUrl: string) => baseUrl.includes('generativelanguage.googleapis.com');
 export const isGroq = (baseUrl: string) => baseUrl.includes('api.groq.com');
-/** Used only when Groq's model list cannot be read. */
-export const GROQ_DEFAULT_MODEL = 'llama-3.3-70b-versatile';
 
 /**
  * How to ask a model to think as little as possible. Providers differ:
@@ -80,14 +79,14 @@ export function preferModel(baseUrl: string, model: string): void {
 const FULL_TIMEOUT_MS = 90000;
 /** With other models to fall back on, do not wait long for a silent one. */
 const FALLBACK_TIMEOUT_MS = 40000;
-const TRY_NEXT: AiErrorKind[] = ['timeout', 'unavailable', 'model', 'rate'];
+const TRY_NEXT: AiErrorKind[] = ['timeout', 'unavailable', 'model', 'rate', 'badjson'];
 
 export async function callJson<T>(p: ProviderSettings, o: CallOptions<T>): Promise<T> {
   if (o.model) return callModel(p, o, o.model, o.timeoutMs ?? FULL_TIMEOUT_MS, o.patient ?? true);
 
   // No model chosen: try the given candidates, else the provider's default, else send none and let the server decide.
   const given = o.models && o.models.length > 0 ? o.models
-    : [isOpenRouter(p.baseUrl) ? OPENROUTER_DEFAULT_MODEL : isGemini(p.baseUrl) ? GEMINI_DEFAULT_MODEL : isGroq(p.baseUrl) ? GROQ_DEFAULT_MODEL : ''];
+    : [isOpenRouter(p.baseUrl) ? OPENROUTER_DEFAULT_MODEL : isGemini(p.baseUrl) ? GEMINI_DEFAULT_MODEL : ''];
   const first = working.get(p.baseUrl);
   const list = first && given.includes(first) ? [first, ...given.filter(m => m !== first)] : given;
   const timeoutMs = list.length > 1 ? Math.min(o.timeoutMs ?? FULL_TIMEOUT_MS, FALLBACK_TIMEOUT_MS) : o.timeoutMs ?? FULL_TIMEOUT_MS;
@@ -172,15 +171,20 @@ async function callModel<T>(p: ProviderSettings, o: CallOptions<T>, model: strin
     if (res.status === 429) {
       throw new AiError('rate', 'The AI provider says: too many requests. Wait a minute, or check your daily limit.');
     }
+    // Some providers check the JSON themselves and answer 400 when the model wrote something invalid. Same as a bad answer.
+    if (res.status === 400 && /json_validate_failed|failed to generate json/i.test(text)) {
+      if (badAnswers++ < 1) continue;
+      throw new AiError('badjson', BAD_JSON_MESSAGE);
+    }
     if (res.status === 401 || res.status === 403) throw new AiError('auth', 'The AI provider rejected the key. Check the API key in Settings.');
     if (res.status === 402) throw new AiError('quota', 'This model needs credit and the account has none (or has reached its limit). Pick a model ending in :free, leave the model empty, or add credit at your provider.');
-    if (res.status === 404 || (res.status === 400 && /model/i.test(text))) throw new AiError('model', 'The AI provider does not know this model name. Check the model in Settings.');
+    if (res.status === 404 || (res.status === 400 && /model/i.test(text))) throw new AiError('model', 'The AI provider does not know this model, or no model could be picked automatically. Choose a model from the list in Settings.');
     if (res.status >= 500) throw new AiError('unavailable', 'The AI provider is overloaded or down right now. Try again in a moment, or pick another model in Settings.');
     if (!res.ok) throw new AiError('http', `The AI provider answered with error ${res.status}.`);
 
     const value = parseContent(text);
     if (value !== undefined && o.guard(value)) return value;
     if (badAnswers++ < 1) continue;
-    throw new AiError('badjson', 'The AI answered in a format the game cannot read, twice. Try again, or pick a stronger model.');
+    throw new AiError('badjson', BAD_JSON_MESSAGE);
   }
 }

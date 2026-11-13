@@ -25,9 +25,9 @@ export function knowledge(s: Student): object {
   };
 }
 
-export function lastLines(state: LessonState): string[] {
-  // 40 lines is most of a 20-turn lesson, so students hear the whole class, not just the last minute.
-  return recentLines(state, 40).map(l => `${l.who}: ${l.text}`);
+/** 40 lines is most of a 20-turn lesson, so a student hears the whole class, not just the last minute. */
+export function lastLines(state: LessonState, n = 40): string[] {
+  return recentLines(state, n).map(l => `${l.who}: ${l.text}`);
 }
 
 export function reminder(s: Student): ChatMessage {

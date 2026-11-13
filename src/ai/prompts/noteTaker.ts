@@ -28,7 +28,9 @@ export function noteTakerPrompt(state: LessonState, boardAdded: string, say: str
       { objectives: state.chapter.objectives },
       { students: state.students.map(s => ({ id: s.persona.id, attention: s.persona.traits.attention, learning_style: s.persona.learning_style, wrong_beliefs: s.beliefs })) },
       { board_full: state.board },
-      { recent_class_transcript: lastLines(state) },
+      // Only the last few lines: enough to see which question the teacher is answering. This is the largest request
+      // of a lesson and free tiers cap the text sent per minute.
+      { recent_class_transcript: lastLines(state, 8) },
       { board_added: boardAdded },
       { teacher_dialogue: say },
     ),

@@ -98,6 +98,16 @@ describe('callJson', () => {
     expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 
+  it('treats a provider-side "failed to generate JSON" as a bad answer: retry, then the next model', async () => {
+    const failed = () => new Response(JSON.stringify({ error: { message: "Failed to generate JSON. Please adjust your prompt.", code: 'json_validate_failed' } }), { status: 400 });
+    const here = { ...p, baseUrl: 'http://json-fail/v1/chat/completions' };
+    const { fetchImpl, opts } = setup([failed, failed, () => reply('{"ok":true}')]);
+    expect(await callJson(here, { ...opts, model: '', models: ['weak', 'strong'] })).toEqual({ ok: true });
+    const used = fetchImpl.mock.calls.map(c => JSON.parse((c as unknown as [string, RequestInit])[1].body as string).model);
+    expect(used).toEqual(['weak', 'weak', 'strong']);
+    expect(await kindOf(callJson(here, { ...setup([failed]).opts, model: 'mine' }))).toBe('badjson');
+  });
+
   it('does not fall back when the player chose the model, or when the key is wrong', async () => {
     const here = { ...p, baseUrl: 'http://no-fallback/v1/chat/completions' };
     const chosen = setup([() => reply('', 503)]);
@@ -122,11 +132,11 @@ describe('callJson', () => {
     expect(bodies[2].response_format).toEqual({ type: 'json_object' });
   });
 
-  it('talks to Groq with a default model and no thinking options', async () => {
+  it('talks to Groq with models from its own list only, and no thinking options', async () => {
     const { fetchImpl, opts } = setup([() => reply('{"ok":true}')]);
-    await callJson({ ...p, baseUrl: 'https://api.groq.com/openai/v1/chat/completions' }, { ...opts, model: '' });
+    await callJson({ ...p, baseUrl: 'https://api.groq.com/openai/v1/chat/completions' }, { ...opts, model: '', models: ['openai/gpt-oss-120b'] });
     const body = JSON.parse((fetchImpl.mock.calls[0] as unknown as [string, RequestInit])[1].body as string);
-    expect(body.model).toBe('llama-3.3-70b-versatile');
+    expect(body.model).toBe('openai/gpt-oss-120b');
     expect('reasoning_effort' in body).toBe(false);
     expect('chat_template_kwargs' in body).toBe(false);
   });
