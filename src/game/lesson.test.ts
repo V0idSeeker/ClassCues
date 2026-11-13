@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { builtInChapter, studentPool, students } from '../content';
 import {
-  LESSON_MS, MAX_TURNS, applyNotes, drawClass, boardAdded, classClock, coverage, hasObjective, lessonOver,
+  LESSON_MS, MAX_TURNS, applyNotes, drawClass, memoryFor, rememberLesson, boardAdded, classClock, coverage, hasObjective, lessonOver,
   mergeTurns, patchStudent, pickReactor, shouldReact, startLesson,
 } from './lesson';
 import type { NoteTakerResult } from './types';
@@ -91,6 +91,31 @@ describe('applyNotes', () => {
   it('ignores students the model invented', () => {
     const s = applyNotes(start(), notesFor('nobody', 'x'), () => 0);
     expect(s.students.every(x => x.notes.length === 0)).toBe(true);
+  });
+});
+
+describe('memory across lessons', () => {
+  const taught = () => applyNotes(start(), notesFor('aisha', 'a variable stores a value'), () => 0);
+
+  it('keeps each student\u2019s notes after a lesson and gives them back in the next one', () => {
+    const memory = rememberLesson({}, taught());
+    expect(memory.aisha).toEqual([{ chapterId: 'ch1', title: 'Variables', notes: ['a variable stores a value'] }]);
+    const next = startLesson({ ...builtInChapter, id: 'ch2', title: 'Loops' }, students, () => 0.5, 0, memory);
+    expect(find(next, 'aisha').memory).toEqual(['From the lesson "Variables": a variable stores a value']);
+    expect(find(next, 'leo').memory).toEqual([]);
+    expect(find(next, 'aisha').notes).toEqual([]);
+  });
+
+  it('starts fresh when the same level is taught again', () => {
+    const memory = rememberLesson({}, taught());
+    expect(find(startLesson(builtInChapter, students, () => 0.5, 0, memory), 'aisha').memory).toEqual([]);
+    expect(memoryFor(memory, 'aisha', 'ch1')).toEqual([]);
+  });
+
+  it('keeps only the last three lessons and replaces a repeated one', () => {
+    let memory = {};
+    for (const id of ['a', 'b', 'c', 'd', 'b']) memory = rememberLesson(memory, { ...taught(), chapter: { ...builtInChapter, id, title: id } });
+    expect((memory as Record<string, { chapterId: string }[]>).aisha.map(m => m.chapterId)).toEqual(['c', 'd', 'b']);
   });
 });
 

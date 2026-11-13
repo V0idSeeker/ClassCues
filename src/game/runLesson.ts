@@ -43,6 +43,12 @@ export async function teachTurn(
       ...patchStudent(next, asked.persona.id, { emotion: feeling(a.emotion, asked.emotion), handUp: false, pendingLine: null }),
       transcript: [...next.transcript, { who: asked.persona.name, text: a.answer.trim() }],
     };
+    // Sometimes a classmate wants to react to that answer: agree, disagree or add to it.
+    if (rng() < PEER_REACT_CHANCE) {
+      const others: LessonState = { ...next, students: next.students.filter(s => s.persona.id !== asked.persona.id) };
+      const peer = pickReactor(others, rng);
+      if (peer) next = await react(next, peer, ai);
+    }
     // An answer is not a raised hand, so it does not delay the next one.
     return { state: next, reactedAt: null };
   }
@@ -50,17 +56,26 @@ export async function teachTurn(
   if (!shouldReact(next.turns, lastReactionAt, now)) return { state: next, reactedAt: null };
   const student = pickReactor(next, rng);
   if (!student) return { state: next, reactedAt: null };
-  const r = await ai.reaction(next, student);
+  return { state: await react(next, student, ai), reactedAt: now };
+}
+
+/** How often a classmate gets the chance to react after a student answered aloud. */
+export const PEER_REACT_CHANCE = 0.5;
+
+/** One student decides whether to raise a hand, and with what line. */
+async function react(state: LessonState, student: Student, ai: Ai): Promise<LessonState> {
+  const r = await ai.reaction(state, student);
   const message = r.message.trim();
   const speaks = r.wants_to_speak && message.length > 0;
-  next = patchStudent(next, student.persona.id, {
+  const next = patchStudent(state, student.persona.id, {
     emotion: feeling(r.emotion, student.emotion),
     handUp: speaks,
     pendingLine: speaks ? message : null,
   });
   // 'note' lines tell the player what happened; they are not speech.
-  if (speaks) next = { ...next, transcript: [...next.transcript, { who: 'note', text: `${student.persona.name} raised a hand. Click their desk to hear them.` }] };
-  return { state: next, reactedAt: now };
+  return speaks
+    ? { ...next, transcript: [...next.transcript, { who: 'note', text: `${student.persona.name} raised a hand. Click their desk to hear them.` }] }
+    : next;
 }
 
 /** The student the teacher addressed by name, if any. With several names, the one mentioned first. */
@@ -136,7 +151,7 @@ export async function runQuiz(
     const r = await ai.grader(q, state.students.map(st => ({
       student_id: st.persona.id,
       answer: answerOf(st.persona.id, q.id) || '(no answer)',
-      notes: st.notes.map(n => n.text),
+      notes: [...st.memory, ...st.notes.map(n => n.text)],
     })));
     for (const st of state.students) {
       const row = r.results.find(x => x.student_id === st.persona.id);

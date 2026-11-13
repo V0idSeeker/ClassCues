@@ -31,7 +31,30 @@ export function drawClass(pool: Persona[], rng: Rng, size = 10): Persona[] {
   return draw(picked, picked.length, rng);
 }
 
-export function startLesson(chapter: Chapter, personas: Persona[], rng: Rng, now: number): LessonState {
+/** What each student (by id) kept from past lessons. Newest lesson last. */
+export type ClassMemory = Record<string, { chapterId: string; title: string; notes: string[] }[]>;
+export const MEMORY_LESSONS = 3;
+export const MEMORY_NOTES = 8;
+
+/** After a lesson: every student keeps some of their notes, right or wrong. Only the last few lessons stay. */
+export function rememberLesson(memory: ClassMemory, state: LessonState): ClassMemory {
+  const next: ClassMemory = { ...memory };
+  for (const s of state.students) {
+    const before = (memory[s.persona.id] ?? []).filter(m => m.chapterId !== state.chapter.id);
+    const notes = s.notes.slice(0, MEMORY_NOTES).map(n => n.text);
+    next[s.persona.id] = [...before, { chapterId: state.chapter.id, title: state.chapter.title, notes }].slice(-MEMORY_LESSONS);
+  }
+  return next;
+}
+
+/** A student's memory lines for a new lesson. The same chapter is left out, so replaying a level starts fresh. */
+export function memoryFor(memory: ClassMemory, studentId: string, chapterId: string): string[] {
+  return (memory[studentId] ?? [])
+    .filter(m => m.chapterId !== chapterId)
+    .flatMap(m => m.notes.map(text => `From the lesson "${m.title}": ${text}`));
+}
+
+export function startLesson(chapter: Chapter, personas: Persona[], rng: Rng, now: number, memory: ClassMemory = {}): LessonState {
   const beliefs: Belief[] = chapter.common_misconceptions.map((text, i) => ({ id: `b${i + 1}`, text }));
   const take = (n: number, from: number): Belief[] =>
     beliefs.length === 0 ? [] : Array.from({ length: Math.min(n, beliefs.length) }, (_, k) => beliefs[(from + k) % beliefs.length]);
@@ -41,6 +64,7 @@ export function startLesson(chapter: Chapter, personas: Persona[], rng: Rng, now
   const students: Student[] = personas.map(p => ({
     persona: p,
     notes: [],
+    memory: memoryFor(memory, p.id, chapter.id),
     emotion: 'NEUTRAL',
     handUp: false,
     pendingLine: null,

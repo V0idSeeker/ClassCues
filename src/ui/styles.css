@@ -61,6 +61,7 @@ label.check { display: flex; gap: 8px; align-items: center; } label.check input 
 .paper h2 { color: var(--ink); line-height: 30px; margin: 0; }
 .paper ul { list-style: none; margin: 4px 0 0; padding: 0; font-family: "Segoe Print", "Comic Sans MS", "Bradley Hand", cursive; font-size: 14px; line-height: 26px; }
 .paper li.bent { color: #9a5b00; } .paper li.bent::after { content: "  (bent by a wrong belief)"; font: 700 11px system-ui, sans-serif; }
+.paper li.old { color: #5b6889; }
 .paper li.wrong { color: #c2331f; } .paper li.wrong::after { content: "  ✗ wrong belief, not corrected yet"; font: 700 11px system-ui, sans-serif; }
 
 .say textarea { min-height: 56px; }

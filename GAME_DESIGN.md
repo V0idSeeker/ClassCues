@@ -95,6 +95,15 @@ The player sees the room from the teacher's position. Reference mockup: `docs/mo
 - **Class.** Each lesson draws 10 from the pool: one of each archetype from §3.3 (eager, quiet, class clown, skeptic, misconception carrier, struggling) plus four others at random.
 - **Wrong beliefs.** Student files hold no subject-specific beliefs, because the subject changes with the chapter. At lesson start, code hands out the chapter's `common_misconceptions`: the misconception carrier gets two, the struggling student one, and two other students picked at random get one each.
 
+### 0.4b What students hear and remember
+
+- **One shared conversation.** Every student call gets the last 40 lines of class talk (most of a 20-turn lesson): what the teacher said, what was written on the board, and what classmates asked and answered.
+- **Notes are the lasting memory.** A student keeps only what lands in their notebook. The note-taker sees the recent talk as context, so "Yes, exactly" after a classmate's question produces a real note.
+- **Classmates' words.** Something a classmate said becomes a normal note only if the teacher confirmed it. If the teacher corrected it, students note the correction. If the teacher moved on without confirming or correcting, up to three low-attention students may write it down as hearsay ("<name> said: ..."), which does not count toward the lesson goals. The report warns about it.
+- **Students react to each other.** After a student answers aloud, there is a 50% chance that one classmate gets to react: agree, disagree or add something. They raise a hand; the teacher decides whether to hear them.
+- **Speaking to one student.** When the teacher's sentence contains a student's name, that student replies and nobody else. If their hand was up, they say the line they were waiting with.
+- **Memory across lessons.** After a quiz, each student keeps up to 8 of their notes from that lesson, right or wrong, for their next 3 lessons. They can use them when speaking and in quizzes. Teaching the same level again starts fresh, so a replay still measures that day's teaching. Settings has "Make students forget earlier lessons".
+
 ### 0.5 AI calls and request budget
 
 Flow of one lesson:
@@ -193,7 +202,7 @@ Limits:
 
 ### 0.11 Not in v1
 
-Attention bars and the refocus action, fact-checker, memory across days, lesson-prep screen, teacher XP and titles, microphone input, multiplayer, daily challenges, inspector characters, OCR for scanned PDFs, illustrated character art. See also the general non-goals in §1.4.
+Attention bars and the refocus action, fact-checker, lesson-prep screen, teacher XP and titles, microphone input, multiplayer, daily challenges, inspector characters, OCR for scanned PDFs, illustrated character art. See also the general non-goals in §1.4.
 
 ### 0.12 Build order
 

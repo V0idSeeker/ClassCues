@@ -3,7 +3,7 @@ import { ping } from '../ai/calls';
 import { listModelInfo, pickFreeDefault } from '../ai/models';
 import type { ModelInfo } from '../ai/models';
 import { AiError } from '../ai/provider';
-import { PRESETS, addLog, logText } from '../storage';
+import { PRESETS, addLog, clearMemory, logText } from '../storage';
 import type { Settings as SettingsType } from '../storage';
 
 interface Props { settings: SettingsType; used: number; onSave(s: SettingsType): void; onPlay(): void }
@@ -80,6 +80,7 @@ export default function Settings({ settings, used, onSave, onPlay }: Props) {
         <div className="row" style={{ marginTop: 12 }}>
           <button type="button" onClick={testConnection} disabled={testing}>{testing ? 'Testing…' : 'Test connection'}</button>
           <button type="button" onClick={() => navigator.clipboard.writeText(logText())}>Copy debug log</button>
+          <button type="button" onClick={() => { clearMemory(); setTest({ ok: true, text: 'Students have forgotten all earlier lessons.' }); }}>Make students forget earlier lessons</button>
           <span className="grow" />
           <button type="button" className="go" onClick={() => { onSave(s); onPlay(); }}>Save and choose a level</button>
         </div>

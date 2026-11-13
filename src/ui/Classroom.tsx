@@ -150,6 +150,7 @@ export default function Classroom(p: Props) {
                 {student.notes.map((n, i) => <li key={i} className={n.distorted ? 'bent' : ''}>{n.text}</li>)}
                 {student.beliefs.map(b => <li key={b.id} className="wrong">{b.text}</li>)}
                 {student.notes.length + student.beliefs.length === 0 && <li>(empty)</li>}
+                {student.memory.map((m, i) => <li key={`m${i}`} className="old">{m}</li>)}
               </ul>
             )}
           </div>

@@ -65,10 +65,10 @@ describe('teachTurn', () => {
 
   it('has a student answer aloud when the teacher asks the class a question', async () => {
     const ai = fakeAi();
-    const out = await teachTurn(start(), { say: 'Who can tell me what a variable is?', board: '' }, ai, () => 0, 1000, 0);
+    const out = await teachTurn(start(), { say: 'Who can tell me what a variable is?', board: '' }, ai, () => 0.9, 1000, 0);
     expect(out.state.transcript.slice(-2)).toEqual([
       { who: 'teacher', text: 'Who can tell me what a variable is?' },
-      { who: 'Aisha', text: 'It stores a value?' },
+      { who: 'Ben', text: 'It stores a value?' },
     ]);
     expect(ai.answer).toHaveBeenCalledTimes(1);
     expect(ai.reaction).not.toHaveBeenCalled();
@@ -77,7 +77,7 @@ describe('teachTurn', () => {
 
   it('lets the student the teacher names reply, not someone else', async () => {
     const ai = fakeAi();
-    const out = await teachTurn(start(), { say: 'Go ahead Maya, ask your question.', board: '' }, ai, () => 0, 1000, 0);
+    const out = await teachTurn(start(), { say: 'Go ahead Maya, ask your question.', board: '' }, ai, () => 0.9, 1000, 0);
     expect(out.state.transcript.at(-1)).toEqual({ who: 'Maya', text: 'It stores a value?' });
     expect((ai.answer as ReturnType<typeof vi.fn>).mock.calls[0][1].persona.id).toBe('maya');
   });
@@ -97,6 +97,26 @@ describe('teachTurn', () => {
     expect(namedStudent(s, 'Sam and Tom')!.persona.id).toBe('sam');
     expect(namedStudent(s, 'The same atom is benign')).toBeNull();
     expect(namedStudent(s, 'What about you, Ben?')!.persona.id).toBe('ben');
+  });
+
+  it('sometimes lets a classmate react to an answer, never the student who answered', async () => {
+    const ai = fakeAi();
+    const out = await teachTurn(start(), { say: 'Who can tell me what a variable is?', board: '' }, ai, () => 0, 1000, 0);
+    const reactor = (ai.reaction as ReturnType<typeof vi.fn>).mock.calls[0][1];
+    expect(ai.reaction).toHaveBeenCalledTimes(1);
+    expect(reactor.persona.id).not.toBe('aisha');
+    expect(out.state.transcript.at(-2)).toEqual({ who: 'Aisha', text: 'It stores a value?' });
+    expect(out.state.transcript.at(-1)!.text).toContain(`${reactor.persona.name} raised a hand`);
+    expect(out.state.students.find(s => s.persona.id === reactor.persona.id)!.pendingLine).toBe('Can I call it pizza?');
+  });
+
+  it('counts what a student remembers from earlier lessons as their notes when grading', async () => {
+    const ai = fakeAi();
+    const s = start();
+    const withMemory = { ...s, students: s.students.map(x => (x.persona.id === 'aisha' ? { ...x, memory: ['From the lesson "Old": 42 is an int'] } : x)) };
+    await runQuiz(withMemory, ai, () => 0, () => {});
+    const rows = (ai.grader as ReturnType<typeof vi.fn>).mock.calls[0][1];
+    expect(rows.find((r: { student_id: string }) => r.student_id === 'aisha').notes).toEqual(['From the lesson "Old": 42 is an int']);
   });
 
   it('leaves the hand down when the student has nothing to say', async () => {

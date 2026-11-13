@@ -4,12 +4,12 @@ import { listModelInfo, pickFreeDefault } from './ai/models';
 import { AiError } from './ai/provider';
 import { studentPool } from './content';
 import { mustRingBell, quizReserve } from './game/budget';
-import { drawClass, lessonOver, mergeTurns, startLesson } from './game/lesson';
+import { drawClass, lessonOver, mergeTurns, rememberLesson, startLesson } from './game/lesson';
 import { computeReport } from './game/report';
 import type { Report as ReportType } from './game/report';
 import { askStudent, hearStudent, pickForClassQuestion, runQuiz, teachTurn } from './game/runLesson';
 import type { Chapter, LessonState, Turn } from './game/types';
-import { addLog, bumpUsed, clearLesson, hasSettings, loadLesson, loadSettings, loadUsed, saveLesson, saveSettings } from './storage';
+import { addLog, bumpUsed, clearLesson, hasSettings, loadLesson, loadMemory, loadSettings, saveMemory, loadUsed, saveLesson, saveSettings } from './storage';
 import type { Settings as SettingsType } from './storage';
 import Classroom from './ui/Classroom';
 import Modules from './ui/Modules';
@@ -72,7 +72,7 @@ export default function App() {
   function play(chapter: Chapter) {
     queue.current = [];
     setError('');
-    commit(startLesson(chapter, drawClass(studentPool, Math.random), Math.random, Date.now()));
+    commit(startLesson(chapter, drawClass(studentPool, Math.random), Math.random, Date.now(), loadMemory()));
     setScreen('classroom');
   }
 
@@ -126,6 +126,7 @@ export default function App() {
     try {
       const out = await runQuiz(s, ai, Math.random, (done, total) => setProgress({ done, total }));
       setReport({ report: computeReport(s, out.answers, out.grades), chapter: s.chapter });
+      saveMemory(rememberLesson(loadMemory(), s));
       clearLesson();
       lessonRef.current = null;
       queue.current = [];

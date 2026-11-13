@@ -55,6 +55,10 @@ export function computeReport(state: LessonState, answers: Record<string, Answer
   for (const s of state.students) for (const b of s.beliefs) held.set(b.text, (held.get(b.text) ?? 0) + 1);
   for (const [text, k] of held) tips.push(`${k} student${k > 1 ? 's still believe' : ' still believes'}: "${text}". Say clearly why it is wrong.`);
 
+  // The note-taker marks hearsay as a distorted note that starts with "<name> said:".
+  const hearsay = state.students.filter(s => s.notes.some(n => n.distorted && /\bsaid:/i.test(n.text))).length;
+  if (hearsay) tips.push(`${hearsay} student${hearsay > 1 ? 's' : ''} wrote down what a classmate said without knowing if it was right. Confirm or correct answers out loud.`);
+
   const hands = state.students.filter(s => s.handUp).map(s => s.persona.name);
   if (hands.length) tips.push(`${hands.join(', ')} still had a hand up at the bell.`);
 

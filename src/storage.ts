@@ -1,4 +1,5 @@
 import type { LogEntry } from './ai/provider';
+import type { ClassMemory } from './game/lesson';
 import type { Chapter, LessonState } from './game/types';
 
 export interface Settings {
@@ -43,7 +44,7 @@ const DEFAULTS: Settings = {
   thinkingOff: true, rememberKey: true, dailyLimit: 0, debugLog: false, voiceOn: true,
 };
 
-const K = { settings: 'ts.settings', key: 'ts.key', used: 'ts.used', lesson: 'ts.lesson2', levels: 'ts.levels' };
+const K = { settings: 'ts.settings', key: 'ts.key', used: 'ts.used', lesson: 'ts.lesson3', memory: 'ts.memory', levels: 'ts.levels' };
 
 /** True once the player has saved settings at least once. */
 export const hasSettings = (): boolean => localStorage.getItem(K.settings) !== null;
@@ -102,6 +103,19 @@ export function saveLesson(state: LessonState, now: number): void {
 export function loadLesson(now: number): LessonState | null {
   const saved = read<{ state: LessonState; elapsed: number }>(localStorage, K.lesson);
   return saved ? { ...saved.state, startedAt: now - saved.elapsed } : null;
+}
+
+/** What students remember from past lessons. */
+export function loadMemory(): ClassMemory {
+  return read<ClassMemory>(localStorage, K.memory) ?? {};
+}
+
+export function saveMemory(memory: ClassMemory): void {
+  localStorage.setItem(K.memory, JSON.stringify(memory));
+}
+
+export function clearMemory(): void {
+  localStorage.removeItem(K.memory);
 }
 
 export function clearLesson(): void {

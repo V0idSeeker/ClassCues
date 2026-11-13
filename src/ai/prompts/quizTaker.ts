@@ -11,7 +11,7 @@ export function quizTakerPrompt(student: Student, questions: QuizQuestion[]): Ch
         who(student),
         CONTENT_RULE,
         'You are taking a quiz. Answer every question, using its id as question_id.',
-        'You may ONLY use facts from your_notebook and your_prior_beliefs.',
+        'You may ONLY use facts from your_notebook, your_prior_beliefs and what_you_remember_from_earlier_lessons.',
         'If they do not cover a question, do what a real student would: guess, answer partly, or write "I don\'t remember".',
         'For a question with choices, answer with the exact text of one choice.',
         QUOTED_RULE,

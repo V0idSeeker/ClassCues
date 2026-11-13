@@ -18,13 +18,18 @@ export function who(s: Student): string {
 }
 
 export function knowledge(s: Student): object {
-  return { your_notebook: s.notes.map(n => n.text), your_prior_beliefs: s.beliefs.map(b => b.text) };
+  return {
+    your_notebook: s.notes.map(n => n.text),
+    your_prior_beliefs: s.beliefs.map(b => b.text),
+    ...(s.memory.length > 0 ? { what_you_remember_from_earlier_lessons: s.memory } : {}),
+  };
 }
 
 export function lastLines(state: LessonState): string[] {
-  return recentLines(state).map(l => `${l.who}: ${l.text}`);
+  // 40 lines is most of a 20-turn lesson, so students hear the whole class, not just the last minute.
+  return recentLines(state, 40).map(l => `${l.who}: ${l.text}`);
 }
 
 export function reminder(s: Student): ChatMessage {
-  return { role: 'system', content: `Reminder: you are the STUDENT ${s.persona.name}, not the teacher. Use only your notebook and prior beliefs. No outside knowledge.` };
+  return { role: 'system', content: `Reminder: you are the STUDENT ${s.persona.name}, not the teacher. Use only your notebook, your prior beliefs and what you remember from earlier lessons. No outside knowledge.` };
 }

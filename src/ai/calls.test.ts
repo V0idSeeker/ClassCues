@@ -33,6 +33,16 @@ describe('prompts keep judge knowledge away from students', () => {
     expect(text).toContain('only if the teacher confirmed it');
   });
 
+  it('students hear most of the lesson and use what they remember from earlier lessons', () => {
+    const long = { ...state, transcript: Array.from({ length: 45 }, (_, i) => ({ who: 'teacher', text: `line ${i}` })) };
+    const text = all(reactionPrompt(long, aisha));
+    expect(text).toContain('line 5"');
+    expect(text).not.toContain('line 4"');
+    const remembering = { ...aisha, memory: ['From the lesson "Old": 42 is an int'] };
+    expect(all(quizTakerPrompt(remembering, builtInChapter.quiz))).toContain('42 is an int');
+    expect(all(quizTakerPrompt(aisha, builtInChapter.quiz))).not.toContain('what_you_remember_from_earlier_lessons":');
+  });
+
   it('student calls get only notebook and beliefs', () => {
     for (const text of [all(reactionPrompt(state, aisha)), all(answerPrompt(state, aisha, 'What is a variable?')), all(quizTakerPrompt(tom, builtInChapter.quiz))]) {
       expect(text).not.toContain(KEY_PHRASE);

@@ -51,6 +51,8 @@ export interface Student {
   handUp: boolean;
   /** What the student wants to say while their hand is up. */
   pendingLine: string | null;
+  /** What the student still remembers from earlier lessons, as short lines. */
+  memory: string[];
 }
 
 /** who is 'teacher', 'board', or a student's name. */
