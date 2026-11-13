@@ -1,0 +1,6 @@
+[
+  { "say": "Okay so, variables. They are like things you use in code to keep stuff.", "board": "" },
+  { "say": "You write something like score = 10 and then score has 10 in it.", "board": "score = 10" },
+  { "say": "You can also do score = score + 1 and it goes up, it just works like that.", "board": "score = 10\nscore = score + 1" },
+  { "say": "Anyway there are also types and things but that is not so important. Any questions? No? Good.", "board": "score = 10\nscore = score + 1" }
+]

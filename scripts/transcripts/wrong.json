@@ -1,0 +1,7 @@
+[
+  { "say": "A variable is a math equation. When you write score = 10 you are stating that score equals 10, exactly like in math class.", "board": "Variable = a math equation\nscore = 10 means score equals 10" },
+  { "say": "Because it is an equation, the = sign means both sides are equal. So a line like score = score + 1 is an error, because nothing can equal itself plus one.", "board": "Variable = a math equation\nscore = 10 means score equals 10\nscore = score + 1 is an ERROR" },
+  { "say": "Once a variable has a value it keeps that value forever. You cannot change it later.", "board": "Variable = a math equation\nscore = 10 means score equals 10\nscore = score + 1 is an ERROR\nA variable never changes" },
+  { "say": "Capital letters do not matter in names. Score and score are the same variable.", "board": "Variable = a math equation\nscore = 10 means score equals 10\nscore = score + 1 is an ERROR\nA variable never changes\nScore and score are the SAME variable" },
+  { "say": "Variables can only hold numbers. 42 is a type called text, and \"hello\" is a type called number.", "board": "Variable = a math equation\nscore = 10 means score equals 10\nscore = score + 1 is an ERROR\nA variable never changes\nScore and score are the SAME variable\n42 is text, \"hello\" is a number" }
+]
