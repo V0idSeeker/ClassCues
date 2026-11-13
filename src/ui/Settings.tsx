@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { ping } from '../ai/calls';
-import { autoModel, listModelInfo } from '../ai/models';
+import { autoModels, listModelInfo } from '../ai/models';
 import type { ModelInfo } from '../ai/models';
 import { AiError } from '../ai/provider';
-import { PRESETS, addLog, clearMemory, logText } from '../storage';
+import { PRESETS, addLog, clearMemory, loadGoodModel, logText, saveGoodModel } from '../storage';
 import type { Settings as SettingsType } from '../storage';
 
 interface Props { settings: SettingsType; used: number; onSave(s: SettingsType): void; onPlay(): void }
@@ -16,7 +16,9 @@ export default function Settings({ settings, used, onSave, onPlay }: Props) {
   const preset = Object.values(PRESETS).find(p => p.baseUrl === s.baseUrl);
   const [models, setModels] = useState<ModelInfo[]>([]);
   // With no model chosen, the game picks one fixed model that fits (on OpenRouter and Gemini).
-  const auto = s.studentModel ? '' : autoModel(s.baseUrl, models);
+  const candidates = s.studentModel ? [] : autoModels(s.baseUrl, models);
+  const remembered = loadGoodModel(s.baseUrl);
+  const auto = candidates.includes(remembered) ? remembered : candidates[0] ?? '';
 
   // Ask the provider which models it offers, shortly after the address or key stops changing.
   useEffect(() => {
@@ -28,7 +30,10 @@ export default function Settings({ settings, used, onSave, onPlay }: Props) {
   async function testConnection() {
     setTesting(true);
     try {
-      await ping({ provider: s, studentModel: s.studentModel || auto, graderModel: s.graderModel || s.studentModel || auto, log: s.debugLog ? addLog : undefined });
+      await ping({
+        provider: s, studentModel: s.studentModel, graderModel: s.graderModel || s.studentModel,
+        autoModels: candidates, onModel: model => saveGoodModel(s.baseUrl, model), log: s.debugLog ? addLog : undefined,
+      });
       setTest({ ok: true, text: 'Connection works.' });
     } catch (e) {
       setTest({ ok: false, text: e instanceof AiError ? e.message : `Something went wrong: ${String(e)}` });
@@ -68,7 +73,7 @@ export default function Settings({ settings, used, onSave, onPlay }: Props) {
             ? `${models.length} models found. Click a model box and type to search the list.`
             : 'No model list from this address yet. Check the address and key, or type a model name by hand.'}
         </p>
-        {auto && <p className="dim">With no model chosen, the game uses: <b>{auto}</b></p>}
+        {auto && <p className="dim">With no model chosen, the game uses: <b>{auto}</b>{candidates.length > 1 ? `. If it is overloaded, it falls back to: ${candidates.filter(m => m !== auto).join(', ')}` : ''}</p>}
 
         <label htmlFor="limit">Daily request limit for free models (0 = no limit). Used today: {used}</label>
         <input id="limit" type="number" min={0} value={s.dailyLimit} onChange={e => set({ dailyLimit: Math.max(0, Number(e.target.value) || 0) })} />

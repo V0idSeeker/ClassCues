@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { makeAi } from './ai/calls';
-import { autoModel, listModelInfo } from './ai/models';
-import { isGemini, isOpenRouter } from './ai/provider';
+import { makeAi, ping } from './ai/calls';
+import type { AiDeps } from './ai/calls';
+import { autoModels, listModelInfo } from './ai/models';
+import { isGemini, isOpenRouter, preferModel } from './ai/provider';
 import { AiError } from './ai/provider';
 import { studentPool } from './content';
 import { mustRingBell, quizReserve } from './game/budget';
@@ -10,7 +11,7 @@ import { computeReport } from './game/report';
 import type { Report as ReportType } from './game/report';
 import { askStudent, hearStudent, pickForClassQuestion, runQuiz, teachTurn } from './game/runLesson';
 import type { Chapter, LessonState, Turn } from './game/types';
-import { addLog, bumpUsed, clearLesson, hasSettings, loadLesson, loadMemory, loadSettings, saveMemory, loadUsed, saveLesson, saveSettings } from './storage';
+import { addLog, bumpUsed, clearLesson, hasSettings, loadGoodModel, loadLesson, loadMemory, saveGoodModel, loadSettings, saveMemory, loadUsed, saveLesson, saveSettings } from './storage';
 import type { Settings as SettingsType } from './storage';
 import Classroom from './ui/Classroom';
 import Modules from './ui/Modules';
@@ -37,24 +38,35 @@ export default function App() {
   const running = useRef(false);
   const lastReact = useRef(0);
 
-  // No model chosen: on OpenRouter and Gemini, use one fixed model that fits the game.
-  const [auto, setAuto] = useState('');
+  // No model chosen: on OpenRouter and Gemini the game tries a short list of fitting models, best first.
+  const [autoList, setAutoList] = useState<string[]>([]);
   useEffect(() => {
     let current = true;
-    setAuto('');
+    setAutoList([]);
+    preferModel(settings.baseUrl, loadGoodModel(settings.baseUrl));
     if (settings.studentModel || !(isOpenRouter(settings.baseUrl) || isGemini(settings.baseUrl))) return;
-    void listModelInfo(settings.baseUrl, settings.apiKey).then(list => { if (current) setAuto(autoModel(settings.baseUrl, list)); });
+    void listModelInfo(settings.baseUrl, settings.apiKey).then(list => { if (current) setAutoList(autoModels(settings.baseUrl, list)); });
     return () => { current = false; };
   }, [settings.baseUrl, settings.apiKey, settings.studentModel]);
-  const effective = useMemo(() => ({ ...settings, studentModel: settings.studentModel || auto }), [settings, auto]);
 
-  const ai = useMemo(() => makeAi({
-    provider: effective,
-    studentModel: effective.studentModel,
-    graderModel: effective.graderModel || effective.studentModel,
+  const deps = useMemo<AiDeps>(() => ({
+    provider: settings,
+    studentModel: settings.studentModel,
+    graderModel: settings.graderModel || settings.studentModel,
+    autoModels: autoList,
+    onModel: model => saveGoodModel(settings.baseUrl, model),
     onRequest: () => setUsed(bumpUsed()),
-    log: effective.debugLog ? addLog : undefined,
-  }), [effective]);
+    log: settings.debugLog ? addLog : undefined,
+  }), [settings, autoList]);
+  const ai = useMemo(() => makeAi(deps), [deps]);
+
+  // Find out once which of those models answers, so the first lesson call does not wait on a silent one.
+  const probed = useRef('');
+  useEffect(() => {
+    if (autoList.length < 2 || loadGoodModel(settings.baseUrl) || probed.current === settings.baseUrl) return;
+    probed.current = settings.baseUrl;
+    void ping(deps).catch(() => {});
+  }, [deps]);
 
   function commit(state: LessonState) {
     lessonRef.current = state;
@@ -159,7 +171,7 @@ export default function App() {
       )}
 
       {screen === 'modules' && (
-        <Modules settings={effective} lessonRunning={lesson !== null} onResume={() => setScreen('classroom')} onRequest={() => setUsed(bumpUsed())} onPlay={play} onSettings={() => setScreen('settings')} />
+        <Modules deps={deps} lessonRunning={lesson !== null} onResume={() => setScreen('classroom')} onPlay={play} onSettings={() => setScreen('settings')} />
       )}
 
       {screen === 'classroom' && lesson && (

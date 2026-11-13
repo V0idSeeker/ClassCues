@@ -35,17 +35,30 @@ export async function listModelInfo(baseUrl: string, apiKey: string, fetchImpl: 
  * Flash models are the fast ones with the largest free allowance.
  */
 export function pickGeminiDefault(models: ModelInfo[]): string | null {
-  const special = /lite|image|tts|audio|live|embedding|vision|exp|preview|thinking|robotics|computer/i;
+  return geminiCandidates(models)[0] ?? null;
+}
+
+/** General Gemini flash models, newest first. */
+function geminiCandidates(models: ModelInfo[]): string[] {
+  const special = /lite|image|tts|audio|live|embedding|vision|exp|preview|thinking|robotics|computer|omni/i;
   const fit = models.map(m => m.id).filter(id => /gemini-[\d.]+-flash/i.test(id) && !special.test(id));
   const version = (id: string) => Number(id.match(/gemini-([\d.]+)-flash/i)?.[1] ?? 0);
-  return fit.sort((a, b) => version(b) - version(a) || a.localeCompare(b))[0] ?? null;
+  return fit.sort((a, b) => version(b) - version(a) || a.localeCompare(b));
 }
 
 /** The model the game uses when the player leaves the model box empty. Empty text means "let the provider decide". */
 export function autoModel(baseUrl: string, models: ModelInfo[]): string {
-  if (baseUrl.includes('openrouter.ai')) return pickFreeDefault(models) ?? '';
-  if (baseUrl.includes('generativelanguage.googleapis.com')) return pickGeminiDefault(models) ?? '';
-  return '';
+  return autoModels(baseUrl, models)[0] ?? '';
+}
+
+/**
+ * Up to four models to try, best first, when the player leaves the model box empty.
+ * Newest models are sometimes overloaded; the game then falls back to the next one.
+ */
+export function autoModels(baseUrl: string, models: ModelInfo[]): string[] {
+  if (baseUrl.includes('openrouter.ai')) return freeCandidates(models).slice(0, 4);
+  if (baseUrl.includes('generativelanguage.googleapis.com')) return geminiCandidates(models).slice(0, 4);
+  return [];
 }
 
 /** Size in billions of parameters when the model name states it: "lfm-3-1.7b:free" gives 1.7. */
@@ -61,6 +74,9 @@ const MIN_SIZE = 8;
  * and is not tiny. Always the same one, so students behave the same from call to call.
  */
 export function pickFreeDefault(models: ModelInfo[]): string | null {
-  const fit = models.filter(m => m.free && m.structured && (statedSize(m.id) ?? MIN_SIZE) >= MIN_SIZE).map(m => m.id).sort();
-  return fit[0] ?? null;
+  return freeCandidates(models)[0] ?? null;
+}
+
+function freeCandidates(models: ModelInfo[]): string[] {
+  return models.filter(m => m.free && m.structured && (statedSize(m.id) ?? MIN_SIZE) >= MIN_SIZE).map(m => m.id).sort();
 }

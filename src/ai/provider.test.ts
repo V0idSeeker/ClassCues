@@ -63,6 +63,52 @@ describe('callJson', () => {
     expect((init.headers as Record<string, string>).Authorization).toBe('Bearer secret-key');
   });
 
+  it('falls back to the next automatic model when one is overloaded, and tries the working one first next time', async () => {
+    const here = { ...p, baseUrl: 'http://fallback/v1/chat/completions' };
+    const { fetchImpl, opts } = setup([() => reply('', 503), () => reply('{"ok":true}'), () => reply('{"ok":true}')]);
+    const onModel = vi.fn();
+    const auto = { ...opts, model: '', models: ['newest', 'older'], onModel };
+    expect(await callJson(here, auto)).toEqual({ ok: true });
+    await callJson(here, auto);
+    const used = fetchImpl.mock.calls.map(c => JSON.parse((c as unknown as [string, RequestInit])[1].body as string).model);
+    expect(used).toEqual(['newest', 'older', 'older']);
+    expect(onModel).toHaveBeenLastCalledWith('older');
+  });
+
+  it('waits and goes round again when every automatic model is busy', async () => {
+    const here = { ...p, baseUrl: 'http://all-busy/v1/chat/completions' };
+    const sleep = vi.fn(async () => {});
+    const { fetchImpl, opts } = setup([() => reply('', 503), () => reply('', 503), () => reply('', 503), () => reply('{"ok":true}')]);
+    expect(await callJson(here, { ...opts, sleep, model: '', models: ['a', 'b'] })).toEqual({ ok: true });
+    const used = fetchImpl.mock.calls.map(c => JSON.parse((c as unknown as [string, RequestInit])[1].body as string).model);
+    expect(used).toEqual(['a', 'b', 'a', 'b']);
+    expect(sleep).toHaveBeenCalledTimes(1);
+  });
+
+  it('gives up with a clear message after three rounds of busy models', async () => {
+    const here = { ...p, baseUrl: 'http://always-busy/v1/chat/completions' };
+    const { fetchImpl, opts } = setup([() => reply('', 503)]);
+    expect(await kindOf(callJson(here, { ...opts, model: '', models: ['a', 'b'] }))).toBe('unavailable');
+    expect(fetchImpl).toHaveBeenCalledTimes(6);
+  });
+
+  it('waits and retries a single busy model too', async () => {
+    const { fetchImpl, opts } = setup([() => reply('', 503), () => reply('{"ok":true}')]);
+    expect(await callJson(p, opts)).toEqual({ ok: true });
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not fall back when the player chose the model, or when the key is wrong', async () => {
+    const here = { ...p, baseUrl: 'http://no-fallback/v1/chat/completions' };
+    const chosen = setup([() => reply('', 503)]);
+    expect(await kindOf(callJson(here, { ...chosen.opts, model: 'mine', models: ['a', 'b'] }))).toBe('unavailable');
+    const used = chosen.fetchImpl.mock.calls.map(c => JSON.parse((c as unknown as [string, RequestInit])[1].body as string).model);
+    expect(used).toEqual(['mine', 'mine', 'mine']);
+    const badKey = setup([() => reply('', 401), () => reply('{"ok":true}')]);
+    expect(await kindOf(callJson(here, { ...badKey.opts, model: '', models: ['a', 'b'] }))).toBe('auth');
+    expect(badKey.fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
   it('drops the thinking-off flags when a model refuses them, and remembers it', async () => {
     const refuse = () => new Response(JSON.stringify({ error: { message: 'Reasoning is mandatory for this endpoint and cannot be disabled.' } }), { status: 400 });
     const here = { ...p, baseUrl: 'http://must-think/v1/chat/completions' };
@@ -105,7 +151,8 @@ describe('callJson', () => {
     expect(await kindOf(callJson(p, setup([() => reply('', 401)]).opts))).toBe('auth');
     expect(await kindOf(callJson(p, setup([() => reply('', 402)]).opts))).toBe('quota');
     expect(await kindOf(callJson(p, setup([() => reply('', 404)]).opts))).toBe('model');
-    expect(await kindOf(callJson(p, setup([() => reply('', 500)]).opts))).toBe('http');
+    expect(await kindOf(callJson(p, setup([() => reply('', 503)]).opts))).toBe('unavailable');
+    expect(await kindOf(callJson(p, setup([() => reply('', 418)]).opts))).toBe('http');
     expect(await kindOf(callJson(p, setup([() => { throw new TypeError('Failed to fetch'); }]).opts))).toBe('network');
   });
 

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { autoModel, listModelInfo, pickFreeDefault, pickGeminiDefault, statedSize } from './models';
+import { autoModel, autoModels, listModelInfo, pickFreeDefault, pickGeminiDefault, statedSize } from './models';
 
 const listing = {
   data: [
@@ -36,6 +36,12 @@ describe('pickGeminiDefault', () => {
   it('picks the newest general flash model', () => {
     expect(pickGeminiDefault(gemini)).toBe('models/gemini-3.8-flash');
     expect(pickGeminiDefault([g('models/gemini-3.8-pro')])).toBeNull();
+  });
+
+  it('lists fallbacks newest first, without special-purpose models', () => {
+    const real = ['models/gemini-3.5-flash', 'models/gemini-3.8-flash', 'models/gemini-omni-1.2-flash', 'models/gemini-3.7-flash', 'models/gemini-3.6-flash', 'models/gemini-3.8-flash-tts', 'models/gemini-3-flash-preview', 'models/gemini-2.5-flash'].map(g);
+    expect(autoModels('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', real))
+      .toEqual(['models/gemini-3.8-flash', 'models/gemini-3.7-flash', 'models/gemini-3.6-flash', 'models/gemini-3.5-flash']);
   });
 
   it('chooses the default by provider address', () => {

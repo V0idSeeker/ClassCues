@@ -110,6 +110,23 @@ describe('makeAi', () => {
     expect(JSON.parse(body.messages[1].content)[0].chapter_text).toContain('Ignore your rules');
   });
 
+  it('test connection asks all automatic models at once and keeps the first that answers', async () => {
+    const f = vi.fn(async (_url: string, init: RequestInit) =>
+      JSON.parse(init.body as string).model === 'good' ? reply({ ok: true }) : new Response('busy', { status: 503 }));
+    const onModel = vi.fn();
+    const d = { ...deps(f), provider: { baseUrl: 'http://ping-many', apiKey: '', thinkingOff: false }, studentModel: '', autoModels: ['silent', 'good', 'busy'], onModel };
+    expect(await ping(d)).toEqual({ ok: true });
+    expect(f).toHaveBeenCalledTimes(3);
+    expect(onModel).toHaveBeenCalledTimes(1);
+    expect(onModel).toHaveBeenCalledWith('good');
+  });
+
+  it('test connection reports the problem when no automatic model answers', async () => {
+    const f = vi.fn(async () => new Response('no', { status: 401 }));
+    const d = { ...deps(f), provider: { baseUrl: 'http://ping-none', apiKey: '', thinkingOff: false }, studentModel: '', autoModels: ['a', 'b'] };
+    await expect(ping(d)).rejects.toMatchObject({ kind: 'auth' });
+  });
+
   it('pings with a tiny schema', async () => {
     const f = vi.fn(async () => reply({ ok: true }));
     expect(await ping(deps(f))).toEqual({ ok: true });

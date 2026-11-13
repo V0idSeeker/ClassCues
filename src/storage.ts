@@ -110,6 +110,15 @@ export function loadLesson(now: number): LessonState | null {
   return saved ? { ...saved.state, startedAt: now - saved.elapsed } : null;
 }
 
+/** The automatically chosen model that last answered for this provider address. */
+export function loadGoodModel(baseUrl: string): string {
+  return localStorage.getItem(`ts.good.${baseUrl}`) ?? '';
+}
+
+export function saveGoodModel(baseUrl: string, model: string): void {
+  localStorage.setItem(`ts.good.${baseUrl}`, model);
+}
+
 /** What students remember from past lessons. */
 export function loadMemory(): ClassMemory {
   return read<ClassMemory>(localStorage, K.memory) ?? {};

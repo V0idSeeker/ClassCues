@@ -1,14 +1,14 @@
 import { useRef, useState } from 'react';
 import { generateChapter } from '../ai/calls';
+import type { AiDeps } from '../ai/calls';
 import { builtInChapter } from '../content';
 import type { Chapter, QuizQuestion } from '../game/types';
 import { normalizeChapter, validateChapter } from '../game/validate';
-import { addLog, loadLevels, saveLevels } from '../storage';
-import type { Settings } from '../storage';
+import { loadLevels, saveLevels } from '../storage';
 
 const MAX_CHARS = 30000;
 
-interface Props { settings: Settings; lessonRunning: boolean; onRequest(): void; onPlay(c: Chapter): void; onResume(): void; onSettings(): void }
+interface Props { deps: AiDeps; lessonRunning: boolean; onPlay(c: Chapter): void; onResume(): void; onSettings(): void }
 interface Pdf { file: File; pages: number; from: number; to: number }
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
@@ -49,13 +49,7 @@ export default function Modules(p: Props) {
 
   async function generate() {
     setBusy('The AI is writing the level… this can take a minute.');
-    const level = await generateChapter({
-      provider: p.settings,
-      studentModel: p.settings.studentModel,
-      graderModel: p.settings.graderModel || p.settings.studentModel,
-      onRequest: p.onRequest,
-      log: p.settings.debugLog ? addLog : undefined,
-    }, chapterText.current);
+    const level = await generateChapter(p.deps, chapterText.current);
     setDraft(level);
     setProblems([]);
   }

@@ -7,7 +7,7 @@ import { graderPrompt } from './prompts/grader';
 import { noteTakerPrompt } from './prompts/noteTaker';
 import { quizTakerPrompt } from './prompts/quizTaker';
 import { reactionPrompt } from './prompts/reaction';
-import { callJson } from './provider';
+import { callJson, preferModel } from './provider';
 import type { ChatMessage, LogEntry, ProviderSettings } from './provider';
 import answerSchema from './schemas/answer.json';
 import graderSchema from './schemas/grader.json';
@@ -20,6 +20,10 @@ export interface AiDeps {
   provider: ProviderSettings;
   studentModel: string;
   graderModel: string;
+  /** Models to try, best first, when the player chose no model. */
+  autoModels?: string[];
+  /** Told which automatically chosen model answered. */
+  onModel?: (model: string) => void;
   onRequest?: () => void;
   log?: (e: LogEntry) => void;
   fetchImpl?: typeof fetch;
@@ -47,7 +51,7 @@ const isPing = (v: unknown): v is { ok: boolean } => rec(v) && typeof v.ok === '
 
 function caller(d: AiDeps) {
   return <T>(model: string, schemaName: string, schema: object, messages: ChatMessage[], guard: (v: unknown) => v is T) =>
-    callJson<T>(d.provider, { model, schemaName, schema, messages, guard, onRequest: d.onRequest, log: d.log, fetchImpl: d.fetchImpl, sleep: d.sleep });
+    callJson<T>(d.provider, { model, models: d.autoModels, onModel: d.onModel, schemaName, schema, messages, guard, onRequest: d.onRequest, log: d.log, fetchImpl: d.fetchImpl, sleep: d.sleep });
 }
 
 export function makeAi(d: AiDeps): Ai {
@@ -69,7 +73,26 @@ export async function generateChapter(d: AiDeps, chapterText: string): Promise<C
   return normalizeChapter(raw, `level-${Date.now()}`);
 }
 
-/** One tiny call, used by "Test connection". */
-export function ping(d: AiDeps): Promise<{ ok: boolean }> {
-  return caller(d)(d.studentModel, 'ping', pingSchema, [{ role: 'user', content: 'Reply with the JSON {"ok": true}.' }], isPing);
+const PING: ChatMessage[] = [{ role: 'user', content: 'Reply with the JSON {"ok": true}.' }];
+
+/**
+ * One tiny call, used by "Test connection". With several automatic models to choose from,
+ * it asks them all at once and keeps the first that answers, so a silent model costs no waiting.
+ */
+export async function ping(d: AiDeps): Promise<{ ok: boolean }> {
+  const candidates = d.studentModel ? [] : d.autoModels ?? [];
+  if (candidates.length < 2) return caller(d)(d.studentModel, 'ping', pingSchema, PING, isPing);
+  let won = false;
+  try {
+    return await Promise.any(candidates.map(async model => {
+      const value = await callJson(d.provider, {
+        model, schemaName: 'ping', schema: pingSchema, messages: PING, guard: isPing, timeoutMs: 30000, patient: false,
+        onRequest: d.onRequest, log: d.log, fetchImpl: d.fetchImpl, sleep: d.sleep,
+      });
+      if (!won) { won = true; preferModel(d.provider.baseUrl, model); d.onModel?.(model); }
+      return value;
+    }));
+  } catch (e) {
+    throw e instanceof AggregateError ? e.errors[0] : e;
+  }
 }
