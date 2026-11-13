@@ -1,21 +1,165 @@
-import { useState } from 'react';
-import { loadSettings, loadUsed, saveSettings } from './storage';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { makeAi } from './ai/calls';
+import { AiError } from './ai/provider';
+import { builtInChapter, students } from './content';
+import { mustRingBell, quizReserve } from './game/budget';
+import { lessonOver, mergeTurns, startLesson } from './game/lesson';
+import { computeReport } from './game/report';
+import type { Report as ReportType } from './game/report';
+import { askStudent, hearStudent, pickForClassQuestion, runQuiz, teachTurn } from './game/runLesson';
+import type { Chapter, LessonState, Turn } from './game/types';
+import { addLog, bumpUsed, clearLesson, loadLesson, loadSettings, loadUsed, saveLesson, saveSettings } from './storage';
 import type { Settings as SettingsType } from './storage';
+import Classroom from './ui/Classroom';
+import Report from './ui/Report';
 import Settings from './ui/Settings';
 
-type Screen = 'settings' | 'classroom';
+type Screen = 'settings' | 'classroom' | 'quiz' | 'report';
+
+const explain = (e: unknown) => (e instanceof AiError ? e.message : `Something went wrong: ${String(e)}`);
 
 export default function App() {
   const [settings, setSettings] = useState<SettingsType>(loadSettings);
-  const [screen, setScreen] = useState<Screen>('settings');
-  const [used] = useState(loadUsed);
+  const [screen, setScreen] = useState<Screen>(() => (loadSettings().studentModel ? 'classroom' : 'settings'));
+  const [lesson, setLesson] = useState<LessonState | null>(null);
+  const [report, setReport] = useState<{ report: ReportType; chapter: Chapter } | null>(null);
+  const [used, setUsed] = useState(loadUsed);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [progress, setProgress] = useState({ done: 0, total: 1 });
+
+  // Refs hold the latest values for code that runs after an await.
+  const lessonRef = useRef<LessonState | null>(null);
+  const queue = useRef<Turn[]>([]);
+  const running = useRef(false);
+  const lastReact = useRef(0);
+
+  const ai = useMemo(() => makeAi({
+    provider: settings,
+    studentModel: settings.studentModel,
+    graderModel: settings.graderModel || settings.studentModel,
+    onRequest: () => setUsed(bumpUsed()),
+    log: settings.debugLog ? addLog : undefined,
+  }), [settings]);
+
+  function commit(state: LessonState) {
+    lessonRef.current = state;
+    setLesson(state);
+    saveLesson(state, Date.now());
+  }
+
+  // Start or resume a lesson when the classroom opens.
+  useEffect(() => {
+    if (screen !== 'classroom' || lessonRef.current) return;
+    commit(loadLesson(Date.now()) ?? startLesson(builtInChapter, students, Math.random, Date.now()));
+  }, [screen]);
+
+  // Sends queued turns one call at a time. Turns typed while a call runs are merged into the next call.
+  async function pump() {
+    if (running.current) return;
+    running.current = true;
+    setBusy(true);
+    setError('');
+    try {
+      while (queue.current.length > 0 && lessonRef.current) {
+        const count = queue.current.length;
+        const out = await teachTurn(lessonRef.current, mergeTurns(queue.current), ai, Math.random, Date.now(), lastReact.current);
+        queue.current.splice(0, count);
+        if (out.reactedAt !== null) lastReact.current = out.reactedAt;
+        commit(out.state);
+      }
+    } catch (e) {
+      setError(explain(e));
+    } finally {
+      running.current = false;
+      setBusy(false);
+    }
+  }
+
+  // One-off actions (call on, ask the class) wait their turn behind a running call.
+  async function act(fn: (s: LessonState) => LessonState | Promise<LessonState>) {
+    const s = lessonRef.current;
+    if (!s || running.current) return;
+    running.current = true;
+    setBusy(true);
+    setError('');
+    try {
+      commit(await fn(s));
+    } catch (e) {
+      setError(explain(e));
+    } finally {
+      running.current = false;
+      setBusy(false);
+      void pump();
+    }
+  }
+
+  async function bell() {
+    const s = lessonRef.current;
+    if (!s || running.current) return;
+    running.current = true;
+    setError('');
+    setProgress({ done: 0, total: 1 });
+    setScreen('quiz');
+    try {
+      const out = await runQuiz(s, ai, Math.random, (done, total) => setProgress({ done, total }));
+      setReport({ report: computeReport(s, out.answers, out.grades), chapter: s.chapter });
+      clearLesson();
+      lessonRef.current = null;
+      queue.current = [];
+      setLesson(null);
+      setScreen('report');
+    } catch (e) {
+      setError(explain(e));
+    } finally {
+      running.current = false;
+    }
+  }
+
+  // The bell rings by itself at the turn cap, the time cap, or when a free daily limit is nearly used up.
+  useEffect(() => {
+    if (screen !== 'classroom') return;
+    const timer = setInterval(() => {
+      const s = lessonRef.current;
+      if (!s || running.current || queue.current.length > 0) return;
+      const reserve = quizReserve(s.students.length, s.chapter.quiz);
+      if (lessonOver(s, Date.now()) || mustRingBell(loadUsed(), settings.dailyLimit, reserve)) void bell();
+    }, 1000);
+    return () => clearInterval(timer);
+  });
 
   return (
     <>
       {screen === 'settings' && (
         <Settings settings={settings} used={used} onSave={s => { saveSettings(s); setSettings(s); }} onPlay={() => setScreen('classroom')} />
       )}
-      {screen === 'classroom' && <p className="page">Classroom comes in the next task. Model: {settings.studentModel}</p>}
+
+      {screen === 'classroom' && lesson && (
+        <Classroom
+          state={lesson} used={used} busy={busy} error={error}
+          onTurn={t => { queue.current.push(t); void pump(); }}
+          onHear={id => void act(s => hearStudent(s, id))}
+          onAsk={(id, q) => void act(s => askStudent(s, id, q, ai))}
+          onAskClass={q => void act(s => askStudent(s, pickForClassQuestion(s, Math.random).persona.id, q, ai))}
+          onBell={() => void bell()}
+          onRetry={() => void pump()}
+          onSettings={() => setScreen('settings')}
+        />
+      )}
+
+      {screen === 'quiz' && (
+        <div className="page narrow">
+          <h1>Quiz in progress</h1>
+          <div className="panel">
+            <p role="status">Students are writing… {progress.done} of {progress.total} steps done.</p>
+            <progress value={progress.done} max={progress.total} style={{ width: '100%' }} />
+            {error && <p className="error" role="alert">{error} <button onClick={() => void bell()}>Retry the quiz</button></p>}
+          </div>
+        </div>
+      )}
+
+      {screen === 'report' && report && <Report report={report.report} chapter={report.chapter} onAgain={() => setScreen('classroom')} />}
+
       <p className="dim footer">Class Is In Session · v{__APP_VERSION__}</p>
     </>
   );
