@@ -29,6 +29,9 @@ export interface CallOptions<T> {
 }
 
 const RATE_WAITS_MS = [5000, 15000];
+export const OPENROUTER_DEFAULT_MODEL = 'openrouter/free';
+/** Address+model pairs that refused the thinking-off flags. Remembered so each later call costs one request, not two. */
+const mustThink = new Set<string>();
 
 function parseContent(responseText: string): unknown {
   try {
@@ -43,13 +46,15 @@ function parseContent(responseText: string): unknown {
 export async function callJson<T>(p: ProviderSettings, o: CallOptions<T>): Promise<T> {
   const doFetch = o.fetchImpl ?? fetch;
   const sleep = o.sleep ?? ((ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms)));
-  const body = JSON.stringify({
-    // No model name: OpenRouter then uses the default model of the player's account.
-    ...(o.model ? { model: o.model } : {}),
+  // No model chosen: on OpenRouter use its free-models router; elsewhere send none and let the server decide.
+  const model = o.model || (p.baseUrl.includes('openrouter.ai') ? OPENROUTER_DEFAULT_MODEL : '');
+  const target = `${p.baseUrl}|${model}`;
+  const makeBody = () => JSON.stringify({
+    ...(model ? { model } : {}),
     messages: o.messages,
     response_format: { type: 'json_schema', json_schema: { name: o.schemaName, strict: true, schema: o.schema } },
     // Reasoning models burn the token budget thinking and return empty content otherwise.
-    ...(p.thinkingOff ? { reasoning_effort: 'none', chat_template_kwargs: { enable_thinking: false } } : {}),
+    ...(p.thinkingOff && !mustThink.has(target) ? { reasoning_effort: 'none', chat_template_kwargs: { enable_thinking: false } } : {}),
   });
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (p.apiKey) headers.Authorization = `Bearer ${p.apiKey}`;
@@ -63,7 +68,7 @@ export async function callJson<T>(p: ProviderSettings, o: CallOptions<T>): Promi
     let text: string;
     o.onRequest?.();
     try {
-      res = await doFetch(p.baseUrl, { method: 'POST', headers, body, signal: abort.signal });
+      res = await doFetch(p.baseUrl, { method: 'POST', headers, body: makeBody(), signal: abort.signal });
       text = await res.text();
     } catch {
       if (abort.signal.aborted) throw new AiError('timeout', 'The AI took too long to answer (over 90 seconds).');
@@ -71,8 +76,13 @@ export async function callJson<T>(p: ProviderSettings, o: CallOptions<T>): Promi
     } finally {
       clearTimeout(timer);
     }
-    o.log?.({ at: new Date().toISOString(), schema: o.schemaName, model: o.model, messages: o.messages, status: res.status, response: text });
+    o.log?.({ at: new Date().toISOString(), schema: o.schemaName, model, messages: o.messages, status: res.status, response: text });
 
+    // Some models refuse to have thinking turned off. Send the same request again without those flags.
+    if (res.status === 400 && p.thinkingOff && !mustThink.has(target) && /reasoning|thinking|chat_template_kwargs/i.test(text)) {
+      mustThink.add(target);
+      continue;
+    }
     if (res.status === 429) {
       if (rateRetries < RATE_WAITS_MS.length) {
         await sleep(RATE_WAITS_MS[rateRetries++]);
@@ -81,7 +91,7 @@ export async function callJson<T>(p: ProviderSettings, o: CallOptions<T>): Promi
       throw new AiError('rate', 'The AI provider says: too many requests. Wait a minute, or check your daily limit.');
     }
     if (res.status === 401 || res.status === 403) throw new AiError('auth', 'The AI provider rejected the key. Check the API key in Settings.');
-    if (res.status === 402) throw new AiError('quota', 'The AI provider says the account has no credit or has reached its limit.');
+    if (res.status === 402) throw new AiError('quota', 'This model needs credit and the account has none (or has reached its limit). Pick a model ending in :free, leave the model empty, or add credit at your provider.');
     if (res.status === 404 || (res.status === 400 && /model/i.test(text))) throw new AiError('model', 'The AI provider does not know this model name. Check the model in Settings.');
     if (!res.ok) throw new AiError('http', `The AI provider answered with error ${res.status}.`);
 

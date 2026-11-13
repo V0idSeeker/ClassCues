@@ -830,7 +830,7 @@ Still open:
 1. Second UI language after English.
 2. After version 1: who makes illustrated character art?
 
-Answered by the project owner: OpenRouter gives new accounts free credit, so a new player can start on the recommended path without paying. The exact amount and the free-model limits can change; Settings links to OpenRouter's own page instead of quoting numbers.
+Checked on 2026-11-13 with a new OpenRouter account: it had no credit. Paid models and the `openrouter/auto` router answered "requires more credits". What a new account does get is 50 requests a day on models whose name ends in `:free` (13 of 470 models that day), about one lesson. So the zero-cost path is free models, and with no model chosen the game uses the `openrouter/free` router. Free models were slow in that check: about 40 seconds per call. Some models refuse to have thinking turned off; the game then resends without those flags and remembers it.
 
 ---
 

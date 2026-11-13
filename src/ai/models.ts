@@ -7,7 +7,9 @@ export async function listModels(baseUrl: string, apiKey: string, fetchImpl: typ
     if (!res.ok) return [];
     const data: unknown = (await res.json()).data;
     if (!Array.isArray(data)) return [];
-    return data.map(m => String((m as { id?: unknown })?.id ?? '')).filter(Boolean).sort();
+    const ids = data.map(m => String((m as { id?: unknown })?.id ?? '')).filter(Boolean).sort();
+    // Free models first, so a player without credit sees what they can use.
+    return [...ids.filter(id => id.endsWith(':free')), ...ids.filter(id => !id.endsWith(':free'))];
   } catch {
     return [];
   }

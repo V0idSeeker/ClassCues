@@ -45,6 +45,26 @@ describe('callJson', () => {
     expect('model' in JSON.parse(init.body as string)).toBe(false);
   });
 
+  it('uses the free-models router on OpenRouter when no model is chosen', async () => {
+    const { fetchImpl, opts } = setup([() => reply('{"ok":true}')]);
+    await callJson({ ...p, baseUrl: 'https://openrouter.ai/api/v1/chat/completions' }, { ...opts, model: '' });
+    const init = (fetchImpl.mock.calls[0] as unknown as [string, RequestInit])[1];
+    expect(JSON.parse(init.body as string).model).toBe('openrouter/free');
+  });
+
+  it('drops the thinking-off flags when a model refuses them, and remembers it', async () => {
+    const refuse = () => new Response(JSON.stringify({ error: { message: 'Reasoning is mandatory for this endpoint and cannot be disabled.' } }), { status: 400 });
+    const here = { ...p, baseUrl: 'http://must-think/v1/chat/completions' };
+    const { fetchImpl, opts } = setup([refuse, () => reply('{"ok":true}'), () => reply('{"ok":true}')]);
+    expect(await callJson(here, opts)).toEqual({ ok: true });
+    await callJson(here, opts);
+    const bodies = fetchImpl.mock.calls.map(c => JSON.parse((c as unknown as [string, RequestInit])[1].body as string));
+    expect(bodies).toHaveLength(3);
+    expect(bodies[0].reasoning_effort).toBe('none');
+    expect(bodies[1].reasoning_effort).toBeUndefined();
+    expect(bodies[2].reasoning_effort).toBeUndefined();
+  });
+
   it('accepts JSON wrapped in a code fence', async () => {
     const { opts } = setup([() => reply('```json\n{"ok":false}\n```')]);
     expect(await callJson(p, opts)).toEqual({ ok: false });
