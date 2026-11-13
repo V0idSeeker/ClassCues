@@ -1,6 +1,6 @@
 import type { LessonState, Student } from '../../game/types';
 import type { ChatMessage } from '../provider';
-import { CONTENT_RULE, QUOTED_RULE, facts, knowledge, lastLines, reminder, who } from './shared';
+import { CONTENT_RULE, QUOTED_RULE, facts, knowledge, lastLines, reminder, visibleBoard, who } from './shared';
 
 export function answerPrompt(state: LessonState, student: Student, question: string): ChatMessage[] {
   return [
@@ -25,7 +25,7 @@ export function answerPrompt(state: LessonState, student: Student, question: str
         QUOTED_RULE,
       ].join('\n'),
     },
-    facts(knowledge(student), { board: state.board }, { recent_class_transcript: lastLines(state) }, { teacher_question: question }),
+    facts(knowledge(student), { board: visibleBoard(state) }, { recent_class_transcript: lastLines(state) }, { teacher_question: question }),
     reminder(student),
   ];
 }

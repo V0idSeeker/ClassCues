@@ -55,7 +55,7 @@ const DEFAULTS: Settings = {
   thinkingOff: true, rememberKey: true, dailyLimit: 0, debugLog: false, voiceOn: true,
 };
 
-const K = { settings: 'ts.settings', key: 'ts.key', used: 'ts.used', lesson: 'ts.lesson3', memory: 'ts.memory', scores: 'ts.scores', levels: 'ts.levels' };
+const K = { settings: 'ts.settings', key: 'ts.key', used: 'ts.used', lesson: 'ts.lesson4', memory: 'ts.memory', scores: 'ts.scores', levels: 'ts.levels' };
 
 /** True once the player has saved settings at least once. */
 export const hasSettings = (): boolean => localStorage.getItem(K.settings) !== null;

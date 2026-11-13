@@ -71,6 +71,7 @@ The player sees the room from the teacher's position. Reference mockup: `docs/mo
 **The board:**
 
 - Both views show the same board text.
+- **Several boards, like slides.** "New board" gives a clean board for more space; ◀ and ▶ move between boards (up to 12). Earlier boards keep their text. The class sees only the board on show. Text on a board counts as new for students the first time that board is shown; going back to a board they already saw costs nothing and they do not copy it twice. Changing board does not use a turn.
 - It is directly editable like a text field: click to write, select any words to erase them, or type over them to change part of a phrase.
 - Buttons: "Erase selected words" and "Wipe the board" (with undo).
 - Erasing only changes what students can copy from now on. Notes they already took stay in their notebooks.
@@ -176,6 +177,7 @@ Limits:
 - The lessons screen groups lessons into courses: the built-in one, each course made from PDFs, and single lessons. Each lesson shows its scores.
 - A course's score is the average of the best scores of its lessons taught so far, shown with how many lessons were taught ("Course score 70% · 2 of 5 taught").
 - The report says whether this was the first time, a new best, or what the best is.
+- **Sharing.** Export one lesson, a whole course as one file, or all lessons as one file. Adding a shared file accepts all three forms; every lesson in it is checked like a generated one, and one broken lesson rejects the file. Exported files hold lessons and quizzes, not scores.
 
 ### 0.7 Knowledge gating in v1
 

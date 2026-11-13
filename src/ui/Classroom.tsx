@@ -26,7 +26,13 @@ const still = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-m
 
 export default function Classroom(p: Props) {
   const { state } = p;
-  const [board, setBoard] = useState(state.board);
+  // Several boards, like slides: one is on show, the others keep their text.
+  const [pages, setPages] = useState<string[]>(state.boardPages);
+  const [pageNo, setPageNo] = useState(state.boardPage);
+  const board = pages[pageNo] ?? '';
+  const withBoard = (text: string) => pages.map((x, i) => (i === pageNo ? text : x));
+  const setBoard = (text: string) => setPages(withBoard(text));
+  const turnWith = (say: string, allPages = pages, no = pageNo): Turn => ({ say, board: allPages.join('\n'), pages: allPages, page: no });
   const [wiped, setWiped] = useState<string | null>(null);
   const [text, setText] = useState('');
   const [sel, setSel] = useState(state.students[0].persona.id);
@@ -60,15 +66,22 @@ export default function Classroom(p: Props) {
 
   function say() {
     if (!typed) return;
-    p.onTurn({ say: typed, board });
+    p.onTurn(turnWith(typed));
     setText('');
   }
   function writeOnBoard() {
     if (!typed) return;
     const next = board.trimEnd() ? `${board.trimEnd()}\n${typed}` : typed;
-    setBoard(next);
-    p.onTurn({ say: '', board: next });
+    setPages(withBoard(next));
+    p.onTurn(turnWith('', withBoard(next)));
     setText('');
+  }
+  // Changing board shows the class another one. Text on a board the class has not seen yet is new to them.
+  function showBoard(allPages: string[], no: number) {
+    setPages(allPages);
+    setPageNo(no);
+    setWiped(null);
+    p.onTurn(turnWith('', allPages, no));
   }
   function eraseSelected() {
     const el = boardRef.current;
@@ -107,7 +120,7 @@ export default function Classroom(p: Props) {
     <textarea ref={boardRef} className={className} spellCheck={false} placeholder="Click the board and write…"
       aria-label="The board. Students copy what you write here. Select words to erase or change them."
       value={board} onChange={e => setBoard(e.target.value)}
-      onBlur={() => { if (board !== state.board) p.onTurn({ say: '', board }); }} />
+      onBlur={() => { if (pages.join('\n') !== state.board) p.onTurn(turnWith('')); }} />
   );
 
   return (
@@ -182,6 +195,11 @@ export default function Classroom(p: Props) {
 
           <div className="row">
             <button className="gold" onClick={() => setAtBoard(!atBoard)}>{atBoard ? 'Back to the class' : 'Go to the board'}</button>
+            <button onClick={() => showBoard(pages, pageNo - 1)} disabled={pageNo === 0} aria-label="Previous board">◀</button>
+            <span className="pill">Board {pageNo + 1} of {pages.length}</span>
+            <button onClick={() => showBoard(pages, pageNo + 1)} disabled={pageNo >= pages.length - 1} aria-label="Next board">▶</button>
+            <button onClick={() => showBoard([...pages, ''], pages.length)} disabled={pages.length >= 12}>New board</button>
+            {pages.length > 1 && <button onClick={() => showBoard(pages.filter((_, i) => i !== pageNo), Math.max(0, pageNo - 1))}>Remove this board</button>}
             <button onClick={eraseSelected}>Erase selected words</button>
             <button onClick={() => { setWiped(board); setBoard(''); }} disabled={!board}>Wipe the board</button>
             {wiped !== null && <button onClick={() => { setBoard(wiped); setWiped(null); }}>Undo wipe</button>}

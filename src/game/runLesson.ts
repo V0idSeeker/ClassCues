@@ -22,12 +22,14 @@ export async function teachTurn(
   const say = turn.say.trim();
   const added = boardAdded(state.board, turn.board);
   // Erasing only: nothing new for students to hear or copy.
-  if (!say && !added) return { state: { ...state, board: turn.board }, reactedAt: null };
+  const boardPages = turn.pages && turn.pages.length > 0 ? turn.pages : [turn.board];
+  const boards = { board: turn.board, boardPages, boardPage: Math.min(Math.max(turn.page ?? 0, 0), boardPages.length - 1) };
+  if (!say && !added) return { state: { ...state, ...boards }, reactedAt: null };
 
   const lines: TranscriptLine[] = [];
   if (say) lines.push({ who: 'teacher', text: say });
   if (added) lines.push({ who: 'board', text: added });
-  let next: LessonState = { ...state, transcript: [...state.transcript, ...lines], board: turn.board, turns: state.turns + 1 };
+  let next: LessonState = { ...state, transcript: [...state.transcript, ...lines], ...boards, turns: state.turns + 1 };
 
   next = applyNotes(next, await ai.noteTaker(next, added, say), rng);
 

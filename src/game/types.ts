@@ -65,14 +65,21 @@ export interface LessonState {
   chapter: Chapter;
   students: Student[];
   transcript: TranscriptLine[];
-  /** Board text as of the last turn that was sent to the students. */
+  /** Everything on all boards, as of the last turn that was sent to the students. */
   board: string;
+  /** The boards the teacher has, like slides. Only one is on show at a time. */
+  boardPages: string[];
+  /** Which board is on show (a position in boardPages). */
+  boardPage: number;
   turns: number;
   startedAt: number;
 }
 
-/** One teacher turn: what was said, and the full board text at that moment. */
-export interface Turn { say: string; board: string }
+/**
+ * One teacher turn: what was said, and the text of all boards at that moment.
+ * pages and page say how that text is spread over boards and which one is on show; without them there is one board.
+ */
+export interface Turn { say: string; board: string; pages?: string[]; page?: number }
 
 export interface NoteTakerResult {
   students: { id: string; new_notes: Note[]; beliefs_dropped: string[]; emotion: Emotion }[];

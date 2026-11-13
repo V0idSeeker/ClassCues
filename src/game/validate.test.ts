@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { builtInChapter, students } from '../content';
-import { normalizeChapter, validateChapter } from './validate';
+import { normalizeChapter, packLessons, unpackLessons, validateChapter } from './validate';
 
 const copy = () => JSON.parse(JSON.stringify(builtInChapter));
 
@@ -39,6 +39,29 @@ describe('normalizeChapter', () => {
     expect(c).toMatchObject({ id: 'new-id', course: 'Biology', part: 2 });
     expect('extra' in c).toBe(false);
     expect('course' in normalizeChapter(builtInChapter, 'x')).toBe(false);
+  });
+});
+
+describe('sharing several lessons in one file', () => {
+  const two = [{ ...builtInChapter, course: 'Python', part: 1 }, { ...builtInChapter, title: 'Loops', course: 'Python', part: 2 }];
+  const id = (i: number) => `new-${i}`;
+
+  it('packs lessons and reads them back with new ids, keeping the course', () => {
+    const { lessons, problem } = unpackLessons(JSON.parse(JSON.stringify(packLessons(two))), id);
+    expect(problem).toBeNull();
+    expect(lessons.map(l => [l.id, l.title, l.course, l.part])).toEqual([['new-0', 'Variables', 'Python', 1], ['new-1', 'Loops', 'Python', 2]]);
+  });
+
+  it('also reads a single lesson and a plain list', () => {
+    expect(unpackLessons(builtInChapter, id).lessons).toHaveLength(1);
+    expect(unpackLessons(two, id).lessons).toHaveLength(2);
+  });
+
+  it('rejects the whole file when one lesson is broken, and says which', () => {
+    const broken = { ...builtInChapter, quiz: [] };
+    expect(unpackLessons(packLessons([builtInChapter, broken as never]), id)).toMatchObject({ lessons: [], problem: expect.stringContaining('Lesson 2') });
+    expect(unpackLessons({ lessons: [] }, id).problem).toContain('no lessons');
+    expect(unpackLessons('hello', id).problem).toBeTruthy();
   });
 });
 

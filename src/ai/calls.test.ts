@@ -61,6 +61,14 @@ describe('prompts keep judge knowledge away from students', () => {
     }
   });
 
+  it('students see only the board that is on show', () => {
+    const two = { ...state, board: 'first board\nsecond board', boardPages: ['first board', 'second board'], boardPage: 1 };
+    for (const text of [all(noteTakerPrompt(two, '', 'hi')), all(reactionPrompt(two, aisha)), all(answerPrompt(two, aisha, 'q?'))]) {
+      expect(text).toContain('second board');
+      expect(text).not.toContain('first board');
+    }
+  });
+
   it('student calls get only notebook and beliefs', () => {
     for (const text of [all(reactionPrompt(state, aisha)), all(answerPrompt(state, aisha, 'What is a variable?')), all(quizTakerPrompt(tom, builtInChapter.quiz))]) {
       expect(text).not.toContain(KEY_PHRASE);

@@ -26,6 +26,28 @@ export function normalizeChapter(c: Chapter, id: string): Chapter {
   };
 }
 
+/** Several lessons in one file, for sharing a whole course. */
+export function packLessons(lessons: Chapter[]): { format: 1; lessons: Chapter[] } {
+  return { format: 1, lessons };
+}
+
+/**
+ * Reads a shared file: one lesson, a list of lessons, or a pack made by packLessons.
+ * Every lesson is checked like a generated one, and gets a new id. A problem in any lesson rejects the file.
+ */
+export function unpackLessons(data: unknown, newId: (position: number) => string): { lessons: Chapter[]; problem: string | null } {
+  const list: unknown[] = Array.isArray(data) ? data : isObj(data) && Array.isArray(data.lessons) ? data.lessons : [data];
+  if (list.length === 0) return { lessons: [], problem: 'This file holds no lessons.' };
+  if (list.length > 100) return { lessons: [], problem: 'This file holds more than 100 lessons.' };
+  const lessons: Chapter[] = [];
+  for (const [i, item] of list.entries()) {
+    const found = validateChapter(item);
+    if (found.length > 0) return { lessons: [], problem: list.length > 1 ? `Lesson ${i + 1}: ${found[0]}` : found[0] };
+    lessons.push(normalizeChapter(item as Chapter, newId(i)));
+  }
+  return { lessons, problem: null };
+}
+
 /** Returns a list of problems. An empty list means the chapter is safe to play. */
 export function validateChapter(c: unknown): string[] {
   if (!isObj(c)) return ['Not a chapter.'];

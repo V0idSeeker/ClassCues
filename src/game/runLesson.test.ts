@@ -38,6 +38,19 @@ describe('teachTurn', () => {
     expect(first.state.transcript.at(-1)).toEqual({ who: 'board', text: 'x = 5' });
   });
 
+  it('changing to another board costs no turn, and only text the class has not seen is new', async () => {
+    const ai = fakeAi();
+    const first = await teachTurn(start(), { say: '', board: 'x = 5', pages: ['x = 5'], page: 0 }, ai, () => 0, 1000, 0);
+    const flipped = await teachTurn(first.state, { say: '', board: 'x = 5\n', pages: ['x = 5', ''], page: 1 }, ai, () => 0, 2000, 0);
+    expect(flipped.state).toMatchObject({ turns: 1, boardPages: ['x = 5', ''], boardPage: 1 });
+    expect(ai.noteTaker).toHaveBeenCalledTimes(1);
+    const written = await teachTurn(flipped.state, { say: '', board: 'x = 5\ny = 2', pages: ['x = 5', 'y = 2'], page: 1 }, ai, () => 0, 3000, 0);
+    expect((ai.noteTaker as ReturnType<typeof vi.fn>).mock.calls[1][1]).toBe('y = 2');
+    const back = await teachTurn(written.state, { say: '', board: 'x = 5\ny = 2', pages: ['x = 5', 'y = 2'], page: 0 }, ai, () => 0, 4000, 0);
+    expect(back.state).toMatchObject({ turns: 2, boardPage: 0 });
+    expect(ai.noteTaker).toHaveBeenCalledTimes(2);
+  });
+
   it('costs no turn and no request when nothing new was said or written', async () => {
     const ai = fakeAi();
     const s = { ...start(), board: 'x = 5\ny = 2' };

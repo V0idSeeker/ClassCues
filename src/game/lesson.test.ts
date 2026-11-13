@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { builtInChapter, studentPool, students } from '../content';
 import {
   LESSON_MS, MAX_TURNS, applyNotes, atmosphere, drawClass, memoryFor, rememberLesson, boardAdded, classClock, coverage, hasObjective, lessonOver,
-  mergeTurns, patchStudent, pickReactor, shouldReact, startLesson,
+  mergeTurns, patchStudent, pickReactor, shouldReact, startLesson, visibleBoard,
 } from './lesson';
 import type { NoteTakerResult } from './types';
 
@@ -161,6 +161,16 @@ describe('board and turns', () => {
     expect(boardAdded('a\nb', 'a\nb\nc')).toBe('c');
     expect(boardAdded('a\nb', 'a')).toBe('');
     expect(boardAdded('', ' x = 5 \n')).toBe('x = 5');
+  });
+
+  it('starts with one empty board, and knows which board is on show', () => {
+    expect(start()).toMatchObject({ boardPages: [''], boardPage: 0 });
+    expect(visibleBoard({ ...start(), boardPages: ['first', 'second'], boardPage: 1 })).toBe('second');
+  });
+
+  it('keeps the boards of the newest turn when turns are merged', () => {
+    expect(mergeTurns([{ say: 'one', board: 'a' }, { say: 'two', board: 'a\nb', pages: ['a', 'b'], page: 1 }]))
+      .toEqual({ say: 'one\ntwo', board: 'a\nb', pages: ['a', 'b'], page: 1 });
   });
 
   it('merges queued turns into one', () => {

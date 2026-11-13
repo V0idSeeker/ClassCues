@@ -1,4 +1,6 @@
-import { recentLines } from '../../game/lesson';
+import { recentLines, visibleBoard } from '../../game/lesson';
+
+export { visibleBoard };
 import type { LessonState, Student } from '../../game/types';
 import type { ChatMessage } from '../provider';
 

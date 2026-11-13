@@ -1,4 +1,4 @@
-import { atmosphere } from '../../game/lesson';
+import { atmosphere, visibleBoard } from '../../game/lesson';
 import type { LessonState } from '../../game/types';
 import type { ChatMessage } from '../provider';
 import { QUOTED_RULE, facts, lastLines } from './shared';
@@ -35,7 +35,7 @@ export function noteTakerPrompt(state: LessonState, boardAdded: string, say: str
       { class_atmosphere: (({ bored, confused, teacherTurnsSinceStudentSpoke }) => ({
         share_bored: bored, share_confused: confused, teacher_turns_since_a_student_spoke: teacherTurnsSinceStudentSpoke,
       }))(atmosphere(state)) },
-      { board_full: state.board },
+      { board_full: visibleBoard(state) },
       // Only the last few lines: enough to see which question the teacher is answering. This is the largest request
       // of a lesson and free tiers cap the text sent per minute.
       { recent_class_transcript: lastLines(state, 8) },

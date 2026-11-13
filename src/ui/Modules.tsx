@@ -4,7 +4,7 @@ import type { AiDeps } from '../ai/calls';
 import { builtInChapter } from '../content';
 import { MAX_LESSON_CHARS, courseScore, splitIntoLessons, suggestedLessonCount } from '../game/course';
 import type { Chapter, QuizQuestion } from '../game/types';
-import { normalizeChapter, validateChapter } from '../game/validate';
+import { normalizeChapter, packLessons, unpackLessons, validateChapter } from '../game/validate';
 import { loadLevels, loadScores, saveLevels } from '../storage';
 
 interface Props { deps: AiDeps; lessonRunning: boolean; onPlay(c: Chapter): void; onResume(): void; onSettings(): void }
@@ -15,10 +15,12 @@ const BUILT_IN_COURSE = 'Intro to Python';
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 const clamp = (v: string, min: number, max: number) => Math.min(max, Math.max(min, Number(v) || min));
 
-function download(c: Chapter) {
+/** Saves one lesson, or several lessons as one file, to the player's computer. */
+function download(name: string, lessons: Chapter[]) {
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([JSON.stringify(c, null, 2)], { type: 'application/json' }));
-  a.download = `${c.title.replace(/[\\/:*?"<>|]+/g, '_').trim() || 'level'}.json`;
+  const data = lessons.length === 1 ? lessons[0] : packLessons(lessons);
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+  a.download = `${name.replace(/[\\/:*?"<>|]+/g, '_').trim() || 'lessons'}.json`;
   a.click();
   URL.revokeObjectURL(a.href);
 }
@@ -116,10 +118,11 @@ export default function Modules(p: Props) {
     if (!file) return;
     setError('');
     try {
-      const parsed: unknown = JSON.parse(await file.text());
-      const found = validateChapter(parsed);
-      if (found.length) throw new Error(`This lesson file cannot be used: ${found[0]}`);
-      keep([...levels, normalizeChapter(parsed as Chapter, `level-${Date.now()}`)]);
+      const stamp = Date.now();
+      const { lessons, problem } = unpackLessons(JSON.parse(await file.text()), i => `level-${stamp}-${i}`);
+      if (problem) throw new Error(`This file cannot be used. ${problem}`);
+      keep([...levels, ...lessons]);
+      setNotice(lessons.length === 1 ? `Added the lesson "${lessons[0].title}".` : `Added ${lessons.length} lessons.`);
     } catch (e) {
       setError(e instanceof SyntaxError ? 'This file is not a lesson file.' : message(e));
     }
@@ -258,6 +261,7 @@ export default function Modules(p: Props) {
             <div className="row">
               <h2 className="grow" style={{ margin: 0 }}>{g.name}</h2>
               <span className="pill">{total.average === null ? 'Not taught yet' : `Course score ${total.average}% · ${total.taught} of ${total.lessons} taught`}</span>
+              {g.own && <button onClick={() => download(g.name, g.lessons)}>Export course</button>}
               {g.own && <button onClick={() => keep(levels.filter(l => l.course !== g.name))}>Delete course</button>}
             </div>
             {g.lessons.map(c => {
@@ -269,7 +273,7 @@ export default function Modules(p: Props) {
                     <span className="dim">{s ? `Best ${s.best}% · last ${s.last}% · taught ${s.plays}×` : 'Not taught yet'}</span>
                   </span>
                   {c !== builtInChapter && <button onClick={() => { chapterText.current = ''; setProblems([]); setError(''); setDraft(c); }}>Edit</button>}
-                  {c !== builtInChapter && <button onClick={() => download(c)}>Export</button>}
+                  {c !== builtInChapter && <button onClick={() => download(c.title, [c])}>Export</button>}
                   {c !== builtInChapter && <button onClick={() => keep(levels.filter(x => x.id !== c.id))}>Delete</button>}
                   <button className="go" onClick={() => p.onPlay(c)}>Teach</button>
                 </div>
@@ -320,9 +324,13 @@ export default function Modules(p: Props) {
       </div>
 
       <div className="panel" style={{ marginTop: 12 }}>
-        <h2>Add a lesson someone shared with you</h2>
-        <label htmlFor="level-file">Lesson file (.json)</label>
+        <h2>Share lessons</h2>
+        <label htmlFor="level-file">Add a lesson or course file someone shared with you (.json)</label>
         <input id="level-file" type="file" accept="application/json,.json" onChange={e => void importLevel(e.target.files?.[0])} />
+        <div className="row" style={{ marginTop: 10 }}>
+          <button onClick={() => download('All my lessons', levels)} disabled={levels.length === 0}>Export all my lessons as one file</button>
+        </div>
+        <p className="dim">Each lesson and each course also has its own Export button. Exported files hold the lessons and quizzes, not your scores.</p>
       </div>
     </div>
   );

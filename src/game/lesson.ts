@@ -81,7 +81,12 @@ export function startLesson(chapter: Chapter, personas: Persona[], rng: Rng, now
     text: p.openingLines[Math.floor(rng() * p.openingLines.length)],
   }));
 
-  return { chapter, students, transcript, board: '', turns: 0, startedAt: now };
+  return { chapter, students, transcript, board: '', boardPages: [''], boardPage: 0, turns: 0, startedAt: now };
+}
+
+/** The board the class is looking at right now. */
+export function visibleBoard(state: LessonState): string {
+  return state.boardPages[state.boardPage] ?? state.board;
 }
 
 /** Lines present on the board now that were not there before. */
@@ -185,7 +190,7 @@ export function lessonOver(state: LessonState, now: number): boolean {
 }
 
 export function mergeTurns(turns: Turn[]): Turn {
-  return { say: turns.map(t => t.say.trim()).filter(Boolean).join('\n'), board: turns[turns.length - 1].board };
+  return { ...turns[turns.length - 1], say: turns.map(t => t.say.trim()).filter(Boolean).join('\n') };
 }
 
 export function recentLines(state: LessonState, n = 10): TranscriptLine[] {
