@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent, MouseEvent } from 'react';
-import { MAX_TURNS, atmosphere, classClock, coverage } from '../game/lesson';
+import { MAX_TURNS, atmosphere, boardText, classClock, coverage } from '../game/lesson';
 import type { LessonState, Turn } from '../game/types';
+import { loadArt, saveArt } from '../storage';
 import { speak, stopSpeaking } from '../voice';
+import BoardArt, { addPicture } from './BoardArt';
 import { HAND, SCENE_VIEWBOX, STATE, portraitSvg, sceneSvg } from './scene';
 
 interface Props {
@@ -32,7 +34,15 @@ export default function Classroom(p: Props) {
   const board = pages[pageNo] ?? '';
   const withBoard = (text: string) => pages.map((x, i) => (i === pageNo ? text : x));
   const setBoard = (text: string) => setPages(withBoard(text));
-  const turnWith = (say: string, allPages = pages, no = pageNo): Turn => ({ say, board: allPages.join('\n'), pages: allPages, page: no });
+  // Each board can carry a picture (drawn or pasted) and a description of it. Students read only the description.
+  const [caps, setCaps] = useState<string[]>(state.boardCaptions);
+  const [art, setArt] = useState<(string | null)[]>(() => { const saved = loadArt(); return state.boardPages.map((_, i) => saved[i] ?? null); });
+  const [drawing, setDrawing] = useState(false);
+  const [chalk, setChalk] = useState('#f5f7f2');
+  const keepArt = (next: (string | null)[]) => { setArt(next); saveArt(next); };
+  const allText = (allPages = pages, allCaps = caps) => allPages.map((t, i) => boardText(t, allCaps[i])).join('\n');
+  const turnWith = (say: string, allPages = pages, no = pageNo, allCaps = caps): Turn =>
+    ({ say, board: allText(allPages, allCaps), pages: allPages, page: no, captions: allCaps });
   const [wiped, setWiped] = useState<string | null>(null);
   const [text, setText] = useState('');
   const [sel, setSel] = useState(state.students[0].persona.id);
@@ -77,11 +87,30 @@ export default function Classroom(p: Props) {
     setText('');
   }
   // Changing board shows the class another one. Text on a board the class has not seen yet is new to them.
-  function showBoard(allPages: string[], no: number) {
+  function showBoard(no: number, allPages = pages, allCaps = caps) {
     setPages(allPages);
+    setCaps(allCaps);
     setPageNo(no);
     setWiped(null);
-    p.onTurn(turnWith('', allPages, no));
+    p.onTurn(turnWith('', allPages, no, allCaps));
+  }
+  function addBoard() {
+    keepArt([...art, null]);
+    showBoard(pages.length, [...pages, ''], [...caps, '']);
+  }
+  function removeBoard() {
+    const others = <T,>(list: T[]) => list.filter((_, i) => i !== pageNo);
+    keepArt(others(art));
+    showBoard(Math.max(0, pageNo - 1), others(pages), others(caps));
+  }
+  async function pastePicture(file: File | undefined) {
+    if (!file) return;
+    try {
+      const picture = await addPicture(file, art[pageNo] ?? null);
+      keepArt(art.map((a, i) => (i === pageNo ? picture : a)));
+    } catch {
+      // An unreadable file leaves the board as it was.
+    }
   }
   function eraseSelected() {
     const el = boardRef.current;
@@ -117,10 +146,14 @@ export default function Classroom(p: Props) {
   }
 
   const boardBox = (className: string) => (
-    <textarea ref={boardRef} className={className} spellCheck={false} placeholder="Click the board and write…"
-      aria-label="The board. Students copy what you write here. Select words to erase or change them."
-      value={board} onChange={e => setBoard(e.target.value)}
-      onBlur={() => { if (pages.join('\n') !== state.board) p.onTurn(turnWith('')); }} />
+    <>
+      <BoardArt key={pageNo} art={art[pageNo] ?? null} drawing={drawing} color={chalk}
+        onChange={picture => keepArt(art.map((a, i) => (i === pageNo ? picture : a)))} />
+      <textarea ref={boardRef} className={`${className}${drawing ? ' under' : ''}`} spellCheck={false} placeholder="Click the board and write…"
+        aria-label="The board. Students copy what you write here. Select words to erase or change them."
+        value={board} onChange={e => setBoard(e.target.value)}
+        onBlur={() => { if (allText() !== state.board) p.onTurn(turnWith('')); }} />
+    </>
   );
 
   return (
@@ -173,7 +206,7 @@ export default function Classroom(p: Props) {
         <div className="col">
           {atBoard ? (
             <div className="bigboard">
-              {boardBox('chalk')}
+              <div className="board-wrap">{boardBox('chalk')}</div>
               <div className="strip" aria-label="Students, seen from the board">
                 {state.students.map(s => (
                   <button key={s.persona.id} className={`mini${s.handUp ? ' up' : ''}${s.persona.id === sel ? ' sel' : ''}`} onClick={() => pick(s.persona.id)}
@@ -195,15 +228,33 @@ export default function Classroom(p: Props) {
 
           <div className="row">
             <button className="gold" onClick={() => setAtBoard(!atBoard)}>{atBoard ? 'Back to the class' : 'Go to the board'}</button>
-            <button onClick={() => showBoard(pages, pageNo - 1)} disabled={pageNo === 0} aria-label="Previous board">◀</button>
+            <button onClick={() => showBoard(pageNo - 1)} disabled={pageNo === 0} aria-label="Previous board">◀</button>
             <span className="pill">Board {pageNo + 1} of {pages.length}</span>
-            <button onClick={() => showBoard(pages, pageNo + 1)} disabled={pageNo >= pages.length - 1} aria-label="Next board">▶</button>
-            <button onClick={() => showBoard([...pages, ''], pages.length)} disabled={pages.length >= 12}>New board</button>
-            {pages.length > 1 && <button onClick={() => showBoard(pages.filter((_, i) => i !== pageNo), Math.max(0, pageNo - 1))}>Remove this board</button>}
+            <button onClick={() => showBoard(pageNo + 1)} disabled={pageNo >= pages.length - 1} aria-label="Next board">▶</button>
+            <button onClick={addBoard} disabled={pages.length >= 12}>New board</button>
+            {pages.length > 1 && <button onClick={removeBoard}>Remove this board</button>}
             <button onClick={eraseSelected}>Erase selected words</button>
             <button onClick={() => { setWiped(board); setBoard(''); }} disabled={!board}>Wipe the board</button>
             {wiped !== null && <button onClick={() => { setBoard(wiped); setWiped(null); }}>Undo wipe</button>}
           </div>
+
+          <div className="row">
+            <button className={drawing ? 'gold' : ''} aria-pressed={drawing} onClick={() => setDrawing(!drawing)}>{drawing ? 'Drawing: click to type again' : 'Draw on the board'}</button>
+            {drawing && [['#f5f7f2', 'White chalk'], ['#ffe08a', 'Yellow chalk'], ['#ff9aa8', 'Pink chalk'], ['#9fd4f5', 'Blue chalk']].map(([c, name]) => (
+              <button key={c} className={`swatch${chalk === c ? ' on' : ''}`} style={{ background: c }} aria-label={name} aria-pressed={chalk === c} onClick={() => setChalk(c)} />
+            ))}
+            <label className="filebutton">Add a picture
+              <input type="file" accept="image/*" onChange={e => { void pastePicture(e.target.files?.[0]); e.target.value = ''; }} />
+            </label>
+            {art[pageNo] && <button onClick={() => keepArt(art.map((a, i) => (i === pageNo ? null : a)))}>Clear the picture</button>}
+          </div>
+          {(art[pageNo] || caps[pageNo]) && (
+            <label htmlFor="caption" style={{ marginTop: 0 }}>What the picture shows. Students cannot see pictures: they read this description instead.
+              <input id="caption" value={caps[pageNo] ?? ''} placeholder="For example: a box labelled score with the number 10 inside"
+                onChange={e => setCaps(caps.map((c, i) => (i === pageNo ? e.target.value : c)))}
+                onBlur={() => { if (allText() !== state.board) p.onTurn(turnWith('')); }} />
+            </label>
+          )}
 
           <div className="panel say">
             <textarea aria-label="What you say to the class" placeholder="Type what you say to the class… End with a question mark and a student will answer." value={text}

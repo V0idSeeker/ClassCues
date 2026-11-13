@@ -81,12 +81,20 @@ export function startLesson(chapter: Chapter, personas: Persona[], rng: Rng, now
     text: p.openingLines[Math.floor(rng() * p.openingLines.length)],
   }));
 
-  return { chapter, students, transcript, board: '', boardPages: [''], boardPage: 0, turns: 0, startedAt: now };
+  return { chapter, students, transcript, board: '', boardPages: [''], boardPage: 0, boardCaptions: [''], turns: 0, startedAt: now };
 }
 
 /** The board the class is looking at right now. */
 export function visibleBoard(state: LessonState): string {
-  return state.boardPages[state.boardPage] ?? state.board;
+  return boardText(state.boardPages[state.boardPage] ?? state.board, state.boardCaptions[state.boardPage]);
+}
+
+export const PICTURE_PREFIX = 'Picture on the board: ';
+
+/** What students can read from one board: its text, plus the description of its picture if the teacher wrote one. */
+export function boardText(text: string, caption: string | undefined): string {
+  const described = caption?.trim();
+  return described ? `${text}${text.trim() ? '\n' : ''}${PICTURE_PREFIX}${described}` : text;
 }
 
 /** Lines present on the board now that were not there before. */

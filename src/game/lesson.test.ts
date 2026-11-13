@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { builtInChapter, studentPool, students } from '../content';
 import {
-  LESSON_MS, MAX_TURNS, applyNotes, atmosphere, drawClass, memoryFor, rememberLesson, boardAdded, classClock, coverage, hasObjective, lessonOver,
+  LESSON_MS, MAX_TURNS, applyNotes, atmosphere, boardText, drawClass, memoryFor, rememberLesson, boardAdded, classClock, coverage, hasObjective, lessonOver,
   mergeTurns, patchStudent, pickReactor, shouldReact, startLesson, visibleBoard,
 } from './lesson';
 import type { NoteTakerResult } from './types';
@@ -166,6 +166,15 @@ describe('board and turns', () => {
   it('starts with one empty board, and knows which board is on show', () => {
     expect(start()).toMatchObject({ boardPages: [''], boardPage: 0 });
     expect(visibleBoard({ ...start(), boardPages: ['first', 'second'], boardPage: 1 })).toBe('second');
+  });
+
+  it('lets students read the description of a board picture, never the picture', () => {
+    expect(boardText('score = 10', 'a box labelled score with 10 inside')).toBe('score = 10\nPicture on the board: a box labelled score with 10 inside');
+    expect(boardText('', ' a tree ')).toBe('Picture on the board: a tree');
+    expect(boardText('score = 10', '  ')).toBe('score = 10');
+    expect(boardText('score = 10', undefined)).toBe('score = 10');
+    const s = { ...start(), boardPages: ['one', 'two'], boardPage: 1, boardCaptions: ['', 'a jar'] };
+    expect(visibleBoard(s)).toBe('two\nPicture on the board: a jar');
   });
 
   it('keeps the boards of the newest turn when turns are merged', () => {

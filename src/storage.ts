@@ -55,7 +55,7 @@ const DEFAULTS: Settings = {
   thinkingOff: true, rememberKey: true, dailyLimit: 0, debugLog: false, voiceOn: true,
 };
 
-const K = { settings: 'ts.settings', key: 'ts.key', used: 'ts.used', lesson: 'ts.lesson4', memory: 'ts.memory', scores: 'ts.scores', levels: 'ts.levels' };
+const K = { settings: 'ts.settings', key: 'ts.key', used: 'ts.used', lesson: 'ts.lesson5', art: 'ts.art', memory: 'ts.memory', scores: 'ts.scores', levels: 'ts.levels' };
 
 /** True once the player has saved settings at least once. */
 export const hasSettings = (): boolean => localStorage.getItem(K.settings) !== null;
@@ -149,6 +149,21 @@ export function clearMemory(): void {
 
 export function clearLesson(): void {
   localStorage.removeItem(K.lesson);
+  localStorage.removeItem(K.art);
+}
+
+/** The pictures drawn on the boards of the running lesson, one per board (null: none). */
+export function loadArt(): (string | null)[] {
+  return read<(string | null)[]>(localStorage, K.art) ?? [];
+}
+
+/** Pictures are large. If the browser's storage is full they are simply not kept across a reload; the lesson goes on. */
+export function saveArt(art: (string | null)[]): void {
+  try {
+    localStorage.setItem(K.art, JSON.stringify(art));
+  } catch {
+    localStorage.removeItem(K.art);
+  }
 }
 
 const log: LogEntry[] = [];

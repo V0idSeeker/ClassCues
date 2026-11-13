@@ -71,6 +71,7 @@ The player sees the room from the teacher's position. Reference mockup: `docs/mo
 **The board:**
 
 - Both views show the same board text.
+- **Pictures on a board.** The teacher can draw on a board with chalk in four colours, and add image files. The picture sits under the text and is saved with its board. Students cannot see pictures (the AI calls are text only): each board has a "what the picture shows" box, and students read that description as board text. A picture with no description is invisible to them.
 - **Several boards, like slides.** "New board" gives a clean board for more space; ◀ and ▶ move between boards (up to 12). Earlier boards keep their text. The class sees only the board on show. Text on a board counts as new for students the first time that board is shown; going back to a board they already saw costs nothing and they do not copy it twice. Changing board does not use a turn.
 - It is directly editable like a text field: click to write, select any words to erase them, or type over them to change part of a phrase.
 - Buttons: "Erase selected words" and "Wipe the board" (with undo).

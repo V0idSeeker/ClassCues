@@ -89,6 +89,7 @@ export default function App() {
   function play(chapter: Chapter) {
     queue.current = [];
     setError('');
+    clearLesson();
     commit(startLesson(chapter, drawClass(studentPool, Math.random), Math.random, Date.now(), loadMemory()));
     setScreen('classroom');
   }

@@ -71,6 +71,8 @@ export interface LessonState {
   boardPages: string[];
   /** Which board is on show (a position in boardPages). */
   boardPage: number;
+  /** For each board: what its picture shows, in the teacher's words. Students cannot see pictures, only this text. */
+  boardCaptions: string[];
   turns: number;
   startedAt: number;
 }
@@ -79,7 +81,7 @@ export interface LessonState {
  * One teacher turn: what was said, and the text of all boards at that moment.
  * pages and page say how that text is spread over boards and which one is on show; without them there is one board.
  */
-export interface Turn { say: string; board: string; pages?: string[]; page?: number }
+export interface Turn { say: string; board: string; pages?: string[]; page?: number; captions?: string[] }
 
 export interface NoteTakerResult {
   students: { id: string; new_notes: Note[]; beliefs_dropped: string[]; emotion: Emotion }[];

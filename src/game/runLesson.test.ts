@@ -51,6 +51,15 @@ describe('teachTurn', () => {
     expect(ai.noteTaker).toHaveBeenCalledTimes(2);
   });
 
+  it('treats a new picture description as something new on the board', async () => {
+    const ai = fakeAi();
+    const first = await teachTurn(start(), { say: '', board: 'x = 5', pages: ['x = 5'], page: 0, captions: [''] }, ai, () => 0, 1000, 0);
+    const described = await teachTurn(first.state, { say: '', board: 'x = 5\nPicture on the board: a box named x holding 5', pages: ['x = 5'], page: 0, captions: ['a box named x holding 5'] }, ai, () => 0, 2000, 0);
+    expect((ai.noteTaker as ReturnType<typeof vi.fn>).mock.calls[1][1]).toBe('Picture on the board: a box named x holding 5');
+    expect(described.state).toMatchObject({ turns: 2, boardPages: ['x = 5'], boardCaptions: ['a box named x holding 5'] });
+    expect((await teachTurn(start(), { say: 'hi', board: '' }, ai, () => 0, 1000, 0)).state.boardCaptions).toEqual(['']);
+  });
+
   it('costs no turn and no request when nothing new was said or written', async () => {
     const ai = fakeAi();
     const s = { ...start(), board: 'x = 5\ny = 2' };

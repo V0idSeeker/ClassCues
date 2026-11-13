@@ -23,7 +23,12 @@ export async function teachTurn(
   const added = boardAdded(state.board, turn.board);
   // Erasing only: nothing new for students to hear or copy.
   const boardPages = turn.pages && turn.pages.length > 0 ? turn.pages : [turn.board];
-  const boards = { board: turn.board, boardPages, boardPage: Math.min(Math.max(turn.page ?? 0, 0), boardPages.length - 1) };
+  const boards = {
+    board: turn.board,
+    boardPages,
+    boardPage: Math.min(Math.max(turn.page ?? 0, 0), boardPages.length - 1),
+    boardCaptions: boardPages.map((_, i) => turn.captions?.[i] ?? ''),
+  };
   if (!say && !added) return { state: { ...state, ...boards }, reactedAt: null };
 
   const lines: TranscriptLine[] = [];
