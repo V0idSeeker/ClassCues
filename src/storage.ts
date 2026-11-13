@@ -27,6 +27,11 @@ export const PRESETS: Record<string, { label: string; baseUrl: string; setup: st
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
     setup: 'Create a free key at aistudio.google.com ("Get API key") and paste it below. Leave the model empty to use a fast Flash model, or pick one from the list. The free tier allows many requests a day but only a few per minute: if you see "too many requests", wait a minute.',
   },
+  groq: {
+    label: 'Groq',
+    baseUrl: 'https://api.groq.com/openai/v1/chat/completions',
+    setup: 'Create a free key at console.groq.com ("API Keys") and paste it below. Groq is very fast. Leave the model empty and the game picks one, or choose from the list. The free tier limits how much text you can send per minute: if you see "too many requests", wait a minute.',
+  },
   ollama: {
     label: 'Ollama (local)',
     baseUrl: 'http://127.0.0.1:11434/v1/chat/completions',

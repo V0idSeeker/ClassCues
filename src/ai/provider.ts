@@ -42,6 +42,9 @@ export const OPENROUTER_DEFAULT_MODEL = 'openrouter/free';
 export const GEMINI_DEFAULT_MODEL = 'gemini-3.8-flash';
 export const isOpenRouter = (baseUrl: string) => baseUrl.includes('openrouter.ai');
 export const isGemini = (baseUrl: string) => baseUrl.includes('generativelanguage.googleapis.com');
+export const isGroq = (baseUrl: string) => baseUrl.includes('api.groq.com');
+/** Used only when Groq's model list cannot be read. */
+export const GROQ_DEFAULT_MODEL = 'llama-3.3-70b-versatile';
 
 /**
  * How to ask a model to think as little as possible. Providers differ:
@@ -49,10 +52,14 @@ export const isGemini = (baseUrl: string) => baseUrl.includes('generativelanguag
  */
 function lessThinking(baseUrl: string): object {
   if (isGemini(baseUrl)) return { reasoning_effort: 'low' };
+  // Groq's models differ in which thinking options they accept, so none is sent.
+  if (isGroq(baseUrl)) return {};
   return { reasoning_effort: 'none', chat_template_kwargs: { enable_thinking: false } };
 }
 /** Address+model pairs that refused the thinking-off flags. Remembered so each later call costs one request, not two. */
 const mustThink = new Set<string>();
+/** Address+model pairs that refused the strict schema format. They get plain JSON mode with the schema written in the prompt. */
+const plainJson = new Set<string>();
 
 function parseContent(responseText: string): unknown {
   try {
@@ -80,7 +87,7 @@ export async function callJson<T>(p: ProviderSettings, o: CallOptions<T>): Promi
 
   // No model chosen: try the given candidates, else the provider's default, else send none and let the server decide.
   const given = o.models && o.models.length > 0 ? o.models
-    : [isOpenRouter(p.baseUrl) ? OPENROUTER_DEFAULT_MODEL : isGemini(p.baseUrl) ? GEMINI_DEFAULT_MODEL : ''];
+    : [isOpenRouter(p.baseUrl) ? OPENROUTER_DEFAULT_MODEL : isGemini(p.baseUrl) ? GEMINI_DEFAULT_MODEL : isGroq(p.baseUrl) ? GROQ_DEFAULT_MODEL : ''];
   const first = working.get(p.baseUrl);
   const list = first && given.includes(first) ? [first, ...given.filter(m => m !== first)] : given;
   const timeoutMs = list.length > 1 ? Math.min(o.timeoutMs ?? FULL_TIMEOUT_MS, FALLBACK_TIMEOUT_MS) : o.timeoutMs ?? FULL_TIMEOUT_MS;
@@ -114,8 +121,15 @@ async function callModel<T>(p: ProviderSettings, o: CallOptions<T>, model: strin
   const target = `${p.baseUrl}|${model}`;
   const makeBody = () => JSON.stringify({
     ...(model ? { model } : {}),
-    messages: o.messages,
-    response_format: { type: 'json_schema', json_schema: { name: o.schemaName, strict: true, schema: o.schema } },
+    ...(plainJson.has(target)
+      ? {
+          messages: [...o.messages, { role: 'system', content: `Reply with one JSON object only, no other text. It must match this JSON schema exactly:\n${JSON.stringify(o.schema)}` }],
+          response_format: { type: 'json_object' },
+        }
+      : {
+          messages: o.messages,
+          response_format: { type: 'json_schema', json_schema: { name: o.schemaName, strict: true, schema: o.schema } },
+        }),
     // Reasoning models burn the token budget thinking and return empty content otherwise.
     ...(p.thinkingOff && !mustThink.has(target) ? lessThinking(p.baseUrl) : {}),
   });
@@ -144,6 +158,11 @@ async function callModel<T>(p: ProviderSettings, o: CallOptions<T>, model: strin
     // Some models refuse to have thinking turned off. Send the same request again without those flags.
     if (res.status === 400 && p.thinkingOff && !mustThink.has(target) && /reasoning|thinking|chat_template_kwargs/i.test(text)) {
       mustThink.add(target);
+      continue;
+    }
+    // Some models do not support the strict schema format. Ask again in plain JSON mode with the schema in the prompt.
+    if (res.status === 400 && !plainJson.has(target) && /response_format|json_schema|json schema|structured output/i.test(text)) {
+      plainJson.add(target);
       continue;
     }
     if ((res.status === 429 || res.status >= 500) && patient && busyRetries < BUSY_WAITS_MS.length) {

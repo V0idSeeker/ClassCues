@@ -23,7 +23,7 @@ This section is what gets built first.
 |---|---|
 | Platform | Static web app: Vite + TypeScript + React. No game engine. Runs from a link on a laptop without a GPU. |
 | Hosting | Vercel, on the game's own address, so no other site shares its browser storage. |
-| AI source | Player's own key. Recommended: OpenRouter with a little credit and a cheap model (best experience, about 1-5 cents per lesson, estimated). Zero-cost options: Google Gemini free tier (through its OpenAI-compatible address), OpenRouter free models, or a local model (Ollama, LM Studio, llama.cpp). Any OpenAI-compatible URL works. The browser calls the provider directly; there is no game server. |
+| AI source | Player's own key. Recommended: OpenRouter with a little credit and a cheap model (best experience, about 1-5 cents per lesson, estimated). Zero-cost options: Google Gemini free tier and Groq free tier (both through their OpenAI-compatible addresses), OpenRouter free models, or a local model (Ollama, LM Studio, llama.cpp). Any OpenAI-compatible URL works. The browser calls the provider directly; there is no game server. |
 | Class size | 10 students per lesson, drawn from a built-in pool (§0.4). |
 | First built-in module | Intro to Python, chapter "Variables". |
 | Custom levels | Player imports chapter PDFs; the game generates a level from each (§0.6). |

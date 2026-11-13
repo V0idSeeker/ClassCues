@@ -58,7 +58,16 @@ export function autoModel(baseUrl: string, models: ModelInfo[]): string {
 export function autoModels(baseUrl: string, models: ModelInfo[]): string[] {
   if (baseUrl.includes('openrouter.ai')) return freeCandidates(models).slice(0, 4);
   if (baseUrl.includes('generativelanguage.googleapis.com')) return geminiCandidates(models).slice(0, 4);
+  if (baseUrl.includes('api.groq.com')) return groqCandidates(models).slice(0, 4);
   return [];
+}
+
+/** Groq's chat models, largest first: bigger models follow the game's rules better and Groq is fast either way. */
+function groqCandidates(models: ModelInfo[]): string[] {
+  const notChat = /whisper|tts|speech|guard|embed|vision|compound|orpheus|playai|allam/i;
+  return models.map(m => m.id)
+    .filter(id => !notChat.test(id) && (statedSize(id) ?? 0) >= MIN_SIZE)
+    .sort((a, b) => (statedSize(b) ?? 0) - (statedSize(a) ?? 0) || a.localeCompare(b));
 }
 
 /** Size in billions of parameters when the model name states it: "lfm-3-1.7b:free" gives 1.7. */

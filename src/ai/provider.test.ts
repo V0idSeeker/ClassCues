@@ -109,6 +109,28 @@ describe('callJson', () => {
     expect(badKey.fetchImpl).toHaveBeenCalledTimes(1);
   });
 
+  it('switches to plain JSON with the schema in the prompt when a model has no strict schema format', async () => {
+    const refuse = () => new Response(JSON.stringify({ error: { message: 'This model does not support response_format json_schema' } }), { status: 400 });
+    const here = { ...p, baseUrl: 'http://plain-json/v1/chat/completions' };
+    const { fetchImpl, opts } = setup([refuse, () => reply('{"ok":true}'), () => reply('{"ok":false}')]);
+    expect(await callJson(here, opts)).toEqual({ ok: true });
+    expect(await callJson(here, opts)).toEqual({ ok: false });
+    const bodies = fetchImpl.mock.calls.map(c => JSON.parse((c as unknown as [string, RequestInit])[1].body as string));
+    expect(bodies[0].response_format.type).toBe('json_schema');
+    expect(bodies[1].response_format).toEqual({ type: 'json_object' });
+    expect(bodies[1].messages.at(-1).content).toContain('"type":"object"');
+    expect(bodies[2].response_format).toEqual({ type: 'json_object' });
+  });
+
+  it('talks to Groq with a default model and no thinking options', async () => {
+    const { fetchImpl, opts } = setup([() => reply('{"ok":true}')]);
+    await callJson({ ...p, baseUrl: 'https://api.groq.com/openai/v1/chat/completions' }, { ...opts, model: '' });
+    const body = JSON.parse((fetchImpl.mock.calls[0] as unknown as [string, RequestInit])[1].body as string);
+    expect(body.model).toBe('llama-3.3-70b-versatile');
+    expect('reasoning_effort' in body).toBe(false);
+    expect('chat_template_kwargs' in body).toBe(false);
+  });
+
   it('drops the thinking-off flags when a model refuses them, and remembers it', async () => {
     const refuse = () => new Response(JSON.stringify({ error: { message: 'Reasoning is mandatory for this endpoint and cannot be disabled.' } }), { status: 400 });
     const here = { ...p, baseUrl: 'http://must-think/v1/chat/completions' };

@@ -63,7 +63,7 @@ export default function Settings({ settings, used, onSave, onPlay }: Props) {
           <button type="button" onClick={() => set({ apiKey: '' })}>Remove key</button>
         </div>
 
-        <label htmlFor="model">Model for students (empty: a suitable model is picked for you on OpenRouter and Gemini)</label>
+        <label htmlFor="model">Model for students (empty: a suitable model is picked for you on OpenRouter, Gemini and Groq)</label>
         <input id="model" list="models" placeholder="Automatic" value={s.studentModel} onChange={e => set({ studentModel: e.target.value.trim() })} />
         <label htmlFor="grader">Model for grading and for making levels from PDFs (empty: same as students; a stronger model does both better)</label>
         <input id="grader" list="models" placeholder="Same as students" value={s.graderModel} onChange={e => set({ graderModel: e.target.value.trim() })} />

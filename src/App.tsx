@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { makeAi, ping } from './ai/calls';
 import type { AiDeps } from './ai/calls';
 import { autoModels, listModelInfo } from './ai/models';
-import { isGemini, isOpenRouter, preferModel } from './ai/provider';
+import { preferModel } from './ai/provider';
 import { AiError } from './ai/provider';
 import { studentPool } from './content';
 import { mustRingBell, quizReserve } from './game/budget';
@@ -38,13 +38,13 @@ export default function App() {
   const running = useRef(false);
   const lastReact = useRef(0);
 
-  // No model chosen: on OpenRouter and Gemini the game tries a short list of fitting models, best first.
+  // No model chosen: on OpenRouter, Gemini and Groq the game tries a short list of fitting models, best first.
   const [autoList, setAutoList] = useState<string[]>([]);
   useEffect(() => {
     let current = true;
     setAutoList([]);
     preferModel(settings.baseUrl, loadGoodModel(settings.baseUrl));
-    if (settings.studentModel || !(isOpenRouter(settings.baseUrl) || isGemini(settings.baseUrl))) return;
+    if (settings.studentModel) return;
     void listModelInfo(settings.baseUrl, settings.apiKey).then(list => { if (current) setAutoList(autoModels(settings.baseUrl, list)); });
     return () => { current = false; };
   }, [settings.baseUrl, settings.apiKey, settings.studentModel]);

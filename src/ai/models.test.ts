@@ -44,6 +44,12 @@ describe('pickGeminiDefault', () => {
       .toEqual(['models/gemini-3.8-flash', 'models/gemini-3.7-flash', 'models/gemini-3.6-flash', 'models/gemini-3.5-flash']);
   });
 
+  it('lists Groq chat models largest first, without speech, safety or tiny models', () => {
+    const groq = ['llama-3.1-8b-instant', 'llama-3.3-70b-versatile', 'whisper-large-v3', 'openai/gpt-oss-120b', 'meta-llama/llama-guard-4-12b', 'qwen/qwen3-32b', 'tiny-1b', 'openai/gpt-oss-20b'].map(g);
+    expect(autoModels('https://api.groq.com/openai/v1/chat/completions', groq))
+      .toEqual(['openai/gpt-oss-120b', 'llama-3.3-70b-versatile', 'qwen/qwen3-32b', 'openai/gpt-oss-20b']);
+  });
+
   it('chooses the default by provider address', () => {
     expect(autoModel('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', gemini)).toBe('models/gemini-3.8-flash');
     expect(autoModel('https://openrouter.ai/api/v1/chat/completions', [{ id: 'a/b:free', free: true, structured: true }])).toBe('a/b:free');
