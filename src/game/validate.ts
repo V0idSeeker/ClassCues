@@ -1,5 +1,28 @@
-const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
+import type { Chapter } from './types';
+
+const isObj =(v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 const isText = (v: unknown, max: number): v is string => typeof v === 'string' && v.trim().length > 0 && v.length <= max;
+
+/** Keeps only the known fields of a validated chapter and gives it an id. Call after validateChapter passed. */
+export function normalizeChapter(c: Chapter, id: string): Chapter {
+  return {
+    format: 1,
+    id,
+    title: c.title.trim(),
+    objectives: c.objectives.map(o => ({ id: o.id, text: o.text })),
+    reference: c.reference,
+    common_misconceptions: [...c.common_misconceptions],
+    quiz: c.quiz.map(q => ({
+      id: q.id,
+      type: q.type,
+      objective: q.objective,
+      prompt: q.prompt,
+      ...(q.type === 'mcq' ? { choices: q.choices } : {}),
+      answer_key: q.answer_key,
+      ...(q.rubric ? { rubric: q.rubric } : {}),
+    })),
+  };
+}
 
 /** Returns a list of problems. An empty list means the chapter is safe to play. */
 export function validateChapter(c: unknown): string[] {

@@ -1,0 +1,36 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["title", "objectives", "reference", "common_misconceptions", "quiz"],
+  "properties": {
+    "title": { "type": "string" },
+    "objectives": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "text"],
+        "properties": { "id": { "type": "string" }, "text": { "type": "string" } }
+      }
+    },
+    "reference": { "type": "string" },
+    "common_misconceptions": { "type": "array", "items": { "type": "string" } },
+    "quiz": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "type", "objective", "prompt", "choices", "answer_key", "rubric"],
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "type": "string", "enum": ["mcq", "short"] },
+          "objective": { "type": "string" },
+          "prompt": { "type": "string" },
+          "choices": { "type": "array", "items": { "type": "string" } },
+          "answer_key": { "type": "string" },
+          "rubric": { "type": "string" }
+        }
+      }
+    }
+  }
+}

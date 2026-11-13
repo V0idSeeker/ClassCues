@@ -1,5 +1,5 @@
 import type { LogEntry } from './ai/provider';
-import type { LessonState } from './game/types';
+import type { Chapter, LessonState } from './game/types';
 
 export interface Settings {
   baseUrl: string;
@@ -17,7 +17,7 @@ export const PRESETS: Record<string, { label: string; baseUrl: string; setup: st
   openrouter: {
     label: 'OpenRouter',
     baseUrl: 'https://openrouter.ai/api/v1/chat/completions',
-    setup: 'Create a key at openrouter.ai, paste it below, and copy a model name from openrouter.ai/models. Set a spend limit on the key.',
+    setup: 'Create a key at openrouter.ai and paste it below. Pick a model from the list, or leave the model empty to use the default model of your OpenRouter account. Set a spend limit on the key.',
   },
   ollama: {
     label: 'Ollama (local)',
@@ -41,7 +41,19 @@ const DEFAULTS: Settings = {
   thinkingOff: true, rememberKey: true, dailyLimit: 0, debugLog: false,
 };
 
-const K = { settings: 'ts.settings', key: 'ts.key', used: 'ts.used', lesson: 'ts.lesson' };
+const K = { settings: 'ts.settings', key: 'ts.key', used: 'ts.used', lesson: 'ts.lesson', levels: 'ts.levels' };
+
+/** True once the player has saved settings at least once. */
+export const hasSettings = (): boolean => localStorage.getItem(K.settings) !== null;
+
+// ponytail: levels live in localStorage (a level is a few KB, so hundreds fit). Move to IndexedDB if players hit the 5 MB limit.
+export function loadLevels(): Chapter[] {
+  return read<Chapter[]>(localStorage, K.levels) ?? [];
+}
+
+export function saveLevels(levels: Chapter[]): void {
+  localStorage.setItem(K.levels, JSON.stringify(levels));
+}
 
 function read<T>(store: Storage, key: string): T | null {
   try {

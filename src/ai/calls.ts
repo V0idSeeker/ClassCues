@@ -1,5 +1,8 @@
-import type { Ai, AnswerResult, GraderResult, NoteTakerResult, QuizTakerResult, ReactionResult } from '../game/types';
+import type { Ai, AnswerResult, Chapter, GraderResult, NoteTakerResult, QuizTakerResult, ReactionResult } from '../game/types';
+import { normalizeChapter, validateChapter } from '../game/validate';
 import { answerPrompt } from './prompts/answer';
+import { chapterGeneratorPrompt } from './prompts/chapterGenerator';
+import chapterSchema from './schemas/chapterGenerator.json';
 import { graderPrompt } from './prompts/grader';
 import { noteTakerPrompt } from './prompts/noteTaker';
 import { quizTakerPrompt } from './prompts/quizTaker';
@@ -56,6 +59,14 @@ export function makeAi(d: AiDeps): Ai {
     quizTaker: (student, questions) => call(d.studentModel, 'quiz_taker', quizTakerSchema, quizTakerPrompt(student, questions), isQuizTaker),
     grader: (question, rows) => call(d.graderModel, 'grader', graderSchema, graderPrompt(question, rows), isGrader),
   };
+}
+
+const isChapter = (v: unknown): v is Chapter => validateChapter(v).length === 0;
+
+/** Turns chapter text into a playable level. An invalid result is retried once by callJson. */
+export async function generateChapter(d: AiDeps, chapterText: string): Promise<Chapter> {
+  const raw = await caller(d)(d.graderModel, 'chapter_generator', chapterSchema, chapterGeneratorPrompt(chapterText), isChapter);
+  return normalizeChapter(raw, `level-${Date.now()}`);
 }
 
 /** One tiny call, used by "Test connection". */

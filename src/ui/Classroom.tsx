@@ -60,6 +60,11 @@ export default function Classroom(p: Props) {
     const up = order.find(s => s.handUp);
     if (up) setSel(up.persona.id);
   }
+  // Clicking a desk selects the student; if their hand is up, they speak.
+  function pickDesk(id: string, handUp: boolean) {
+    setSel(id);
+    if (handUp && !p.busy) p.onHear(id);
+  }
   function callOn() {
     if (student.handUp) p.onHear(sel);
     else if (typed) { p.onAsk(sel, typed); setText(''); }
@@ -114,15 +119,15 @@ export default function Classroom(p: Props) {
           <div className="desks">
             {state.students.map(s => (
               <div key={s.persona.id} role="button" tabIndex={0} className={`desk${s.persona.id === sel ? ' sel' : ''}`}
-                onClick={() => setSel(s.persona.id)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setSel(s.persona.id); }}>
+                onClick={() => pickDesk(s.persona.id, s.handUp)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') pickDesk(s.persona.id, s.handUp); }}>
                 <b>{s.persona.name}</b>
-                <span className="dim">{s.handUp ? '✋ hand up' : FEELING[s.emotion]}</span>
+                <span className="dim">{s.handUp ? '✋ hand up · click to hear' : FEELING[s.emotion]}</span>
               </div>
             ))}
           </div>
 
           <div className="panel say">
-            <textarea aria-label="What you say to the class" placeholder="Type what you say to the class…" value={text}
+            <textarea aria-label="What you say to the class" placeholder="Type what you say to the class… End with a question mark and a student will answer." value={text}
               onChange={e => setText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); say(); } }} />
             <div className="row" style={{ marginTop: 8 }}>
               <button className="go" onClick={say} disabled={!typed}>Say it</button>
@@ -135,7 +140,9 @@ export default function Classroom(p: Props) {
           <div className="panel">
             <h2>Class so far</h2>
             <div className="log" ref={logRef}>
-              {state.transcript.map((l, i) => <div key={i}><b>{l.who === 'teacher' ? 'You' : l.who === 'board' ? 'On the board' : l.who}:</b> {l.text}</div>)}
+              {state.transcript.map((l, i) => l.who === 'note'
+                ? <div key={i} className="dim">{l.text}</div>
+                : <div key={i}><b>{l.who === 'teacher' ? 'You' : l.who === 'board' ? 'On the board' : l.who}:</b> {l.text}</div>)}
             </div>
           </div>
         </div>

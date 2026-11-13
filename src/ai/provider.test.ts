@@ -38,6 +38,13 @@ describe('callJson', () => {
     expect((init.headers as Record<string, string>).Authorization).toBeUndefined();
   });
 
+  it('sends no model name when none is chosen, so the provider uses its default', async () => {
+    const { fetchImpl, opts } = setup([() => reply('{"ok":true}')]);
+    await callJson(p, { ...opts, model: '' });
+    const init = (fetchImpl.mock.calls[0] as unknown as [string, RequestInit])[1];
+    expect('model' in JSON.parse(init.body as string)).toBe(false);
+  });
+
   it('accepts JSON wrapped in a code fence', async () => {
     const { opts } = setup([() => reply('```json\n{"ok":false}\n```')]);
     expect(await callJson(p, opts)).toEqual({ ok: false });

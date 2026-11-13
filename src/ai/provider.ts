@@ -44,7 +44,8 @@ export async function callJson<T>(p: ProviderSettings, o: CallOptions<T>): Promi
   const doFetch = o.fetchImpl ?? fetch;
   const sleep = o.sleep ?? ((ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms)));
   const body = JSON.stringify({
-    model: o.model,
+    // No model name: OpenRouter then uses the default model of the player's account.
+    ...(o.model ? { model: o.model } : {}),
     messages: o.messages,
     response_format: { type: 'json_schema', json_schema: { name: o.schemaName, strict: true, schema: o.schema } },
     // Reasoning models burn the token budget thinking and return empty content otherwise.

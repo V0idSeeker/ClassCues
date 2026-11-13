@@ -101,10 +101,10 @@ describe('board and turns', () => {
 });
 
 describe('reactions', () => {
-  it('reacts every third turn and not within six seconds of the last one', () => {
-    expect(shouldReact(3, 0, 6000)).toBe(true);
-    expect(shouldReact(2, 0, 6000)).toBe(false);
-    expect(shouldReact(3, 0, 5999)).toBe(false);
+  it('reacts every second turn and not within six seconds of the last one', () => {
+    expect(shouldReact(2, 0, 6000)).toBe(true);
+    expect(shouldReact(1, 0, 6000)).toBe(false);
+    expect(shouldReact(2, 0, 5999)).toBe(false);
   });
 
   it('never picks a student whose hand is already up', () => {

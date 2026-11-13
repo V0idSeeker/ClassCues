@@ -47,9 +47,9 @@ describe('teachTurn', () => {
     expect(ai.noteTaker).not.toHaveBeenCalled();
   });
 
-  it('lets one student raise a hand on every third turn', async () => {
+  it('lets one student raise a hand on every second turn', async () => {
     const ai = fakeAi();
-    const out = await teachTurn({ ...start(), turns: 2 }, { say: 'More.', board: '' }, ai, () => 0, 10000, 0);
+    const out = await teachTurn({ ...start(), turns: 1 }, { say: 'More.', board: '' }, ai, () => 0, 10000, 0);
     const up = out.state.students.filter(s => s.handUp);
     expect(up).toHaveLength(1);
     expect(up[0].pendingLine).toBe('Can I call it pizza?');
@@ -57,9 +57,27 @@ describe('teachTurn', () => {
     expect(out.reactedAt).toBe(10000);
   });
 
+  it('tells the player when a hand goes up', async () => {
+    const out = await teachTurn({ ...start(), turns: 1 }, { say: 'More.', board: '' }, fakeAi(), () => 0, 10000, 0);
+    expect(out.state.transcript.at(-1)).toMatchObject({ who: 'note' });
+    expect(out.state.transcript.at(-1)!.text).toContain('raised a hand');
+  });
+
+  it('has a student answer aloud when the teacher asks the class a question', async () => {
+    const ai = fakeAi();
+    const out = await teachTurn(start(), { say: 'Who can tell me what a variable is?', board: '' }, ai, () => 0, 1000, 0);
+    expect(out.state.transcript.slice(-2)).toEqual([
+      { who: 'teacher', text: 'Who can tell me what a variable is?' },
+      { who: 'Aisha', text: 'It stores a value?' },
+    ]);
+    expect(ai.answer).toHaveBeenCalledTimes(1);
+    expect(ai.reaction).not.toHaveBeenCalled();
+    expect(out.state.turns).toBe(1);
+  });
+
   it('leaves the hand down when the student has nothing to say', async () => {
     const ai = fakeAi({ reaction: async () => ({ wants_to_speak: false, message: '', emotion: 'BORED' }) });
-    const out = await teachTurn({ ...start(), turns: 2 }, { say: 'More.', board: '' }, ai, () => 0, 10000, 0);
+    const out = await teachTurn({ ...start(), turns: 1 }, { say: 'More.', board: '' }, ai, () => 0, 10000, 0);
     expect(out.state.students.some(s => s.handUp)).toBe(false);
   });
 });

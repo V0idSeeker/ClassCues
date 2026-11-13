@@ -3,7 +3,7 @@ import type { Belief, Chapter, Emotion, LessonState, NoteTakerResult, Persona, S
 
 export const MAX_TURNS = 20;
 export const LESSON_MS = 15 * 60 * 1000;
-export const REACT_EVERY_TURNS = 3;
+export const REACT_EVERY_TURNS = 2;
 export const REACT_GAP_MS = 6000;
 export const EMOTIONS: Emotion[] = ['CURIOUS', 'CONFUSED', 'BORED', 'HAPPY', 'NEUTRAL'];
 

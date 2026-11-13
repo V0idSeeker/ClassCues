@@ -1,26 +1,27 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { makeAi } from './ai/calls';
 import { AiError } from './ai/provider';
-import { builtInChapter, students } from './content';
+import { students } from './content';
 import { mustRingBell, quizReserve } from './game/budget';
 import { lessonOver, mergeTurns, startLesson } from './game/lesson';
 import { computeReport } from './game/report';
 import type { Report as ReportType } from './game/report';
 import { askStudent, hearStudent, pickForClassQuestion, runQuiz, teachTurn } from './game/runLesson';
 import type { Chapter, LessonState, Turn } from './game/types';
-import { addLog, bumpUsed, clearLesson, loadLesson, loadSettings, loadUsed, saveLesson, saveSettings } from './storage';
+import { addLog, bumpUsed, clearLesson, hasSettings, loadLesson, loadSettings, loadUsed, saveLesson, saveSettings } from './storage';
 import type { Settings as SettingsType } from './storage';
 import Classroom from './ui/Classroom';
+import Modules from './ui/Modules';
 import Report from './ui/Report';
 import Settings from './ui/Settings';
 
-type Screen = 'settings' | 'classroom' | 'quiz' | 'report';
+type Screen = 'settings' | 'modules' | 'classroom' | 'quiz' | 'report';
 
 const explain = (e: unknown) => (e instanceof AiError ? e.message : `Something went wrong: ${String(e)}`);
 
 export default function App() {
   const [settings, setSettings] = useState<SettingsType>(loadSettings);
-  const [screen, setScreen] = useState<Screen>(() => (loadSettings().studentModel ? 'classroom' : 'settings'));
+  const [screen, setScreen] = useState<Screen>(() => (hasSettings() ? 'modules' : 'settings'));
   const [lesson, setLesson] = useState<LessonState | null>(null);
   const [report, setReport] = useState<{ report: ReportType; chapter: Chapter } | null>(null);
   const [used, setUsed] = useState(loadUsed);
@@ -48,11 +49,20 @@ export default function App() {
     saveLesson(state, Date.now());
   }
 
-  // Start or resume a lesson when the classroom opens.
+  // A lesson that was running when the page closed continues where it stopped.
   useEffect(() => {
-    if (screen !== 'classroom' || lessonRef.current) return;
-    commit(loadLesson(Date.now()) ?? startLesson(builtInChapter, students, Math.random, Date.now()));
-  }, [screen]);
+    const saved = hasSettings() ? loadLesson(Date.now()) : null;
+    if (!saved) return;
+    commit(saved);
+    setScreen('classroom');
+  }, []);
+
+  function play(chapter: Chapter) {
+    queue.current = [];
+    setError('');
+    commit(startLesson(chapter, students, Math.random, Date.now()));
+    setScreen('classroom');
+  }
 
   // Sends queued turns one call at a time. Turns typed while a call runs are merged into the next call.
   async function pump() {
@@ -131,7 +141,11 @@ export default function App() {
   return (
     <>
       {screen === 'settings' && (
-        <Settings settings={settings} used={used} onSave={s => { saveSettings(s); setSettings(s); }} onPlay={() => setScreen('classroom')} />
+        <Settings settings={settings} used={used} onSave={s => { saveSettings(s); setSettings(s); }} onPlay={() => setScreen(lessonRef.current ? 'classroom' : 'modules')} />
+      )}
+
+      {screen === 'modules' && (
+        <Modules settings={settings} onRequest={() => setUsed(bumpUsed())} onPlay={play} onSettings={() => setScreen('settings')} />
       )}
 
       {screen === 'classroom' && lesson && (
@@ -158,7 +172,7 @@ export default function App() {
         </div>
       )}
 
-      {screen === 'report' && report && <Report report={report.report} chapter={report.chapter} onAgain={() => setScreen('classroom')} />}
+      {screen === 'report' && report && <Report report={report.report} chapter={report.chapter} onAgain={() => setScreen('modules')} />}
 
       <p className="dim footer">Class Is In Session · v{__APP_VERSION__}</p>
     </>

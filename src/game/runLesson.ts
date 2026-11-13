@@ -31,6 +31,18 @@ export async function teachTurn(
 
   next = applyNotes(next, await ai.noteTaker(next, added, say), rng);
 
+  // The teacher asked the class something: one student answers aloud right away.
+  if (say.includes('?')) {
+    const asked = pickForClassQuestion(next, rng);
+    const a = await ai.answer(next, asked, say);
+    next = {
+      ...patchStudent(next, asked.persona.id, { emotion: feeling(a.emotion, asked.emotion), handUp: false, pendingLine: null }),
+      transcript: [...next.transcript, { who: asked.persona.name, text: a.answer.trim() }],
+    };
+    // An answer is not a raised hand, so it does not delay the next one.
+    return { state: next, reactedAt: null };
+  }
+
   if (!shouldReact(next.turns, lastReactionAt, now)) return { state: next, reactedAt: null };
   const student = pickReactor(next, rng);
   if (!student) return { state: next, reactedAt: null };
@@ -42,6 +54,8 @@ export async function teachTurn(
     handUp: speaks,
     pendingLine: speaks ? message : null,
   });
+  // 'note' lines tell the player what happened; they are not speech.
+  if (speaks) next = { ...next, transcript: [...next.transcript, { who: 'note', text: `${student.persona.name} raised a hand. Click their desk to hear them.` }] };
   return { state: next, reactedAt: now };
 }
 

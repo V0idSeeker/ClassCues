@@ -40,7 +40,7 @@ The reasons, and what was rejected, are in §0.13.
 ### 0.2 Screens
 
 1. **Settings**:
-   - Provider URL, API key, model for students, model for generating and grading.
+   - Provider URL, API key, model for students, model for generating and grading. Model boxes offer the list of models the provider reports. An empty model means the provider's default (on OpenRouter: the default model of the player's account).
    - Presets: OpenRouter, Ollama, LM Studio, llama.cpp. Each preset shows its short setup steps and fills in the model context size.
    - "Test connection", which names the problem it finds: blocked by the browser or by the model server's settings, wrong key, or unknown model.
    - "Remember key on this device" (off: the key is kept for this session only), "Remove key", and a line advising the player to set a spend limit on their key.
@@ -118,11 +118,11 @@ Six call types. Each has its own JSON schema file and prompt file (schemas in §
 | Call | When | Requests per lesson |
 |---|---|---|
 | Note-taker, all 10 students in one call | every teacher turn | up to 20 |
-| Student reaction, one student chosen by code | every 3rd turn or so, at least 6 s apart | about 6 |
-| Student answer, one student | "Call on this student" or "Ask the class" | about 4 |
+| Student reaction, one student chosen by code | every 2nd turn, at least 6 s apart | about 10 |
+| Student answer, one student | "Call on this student", "Ask the class", or any teacher sentence with a question mark (a student answers aloud right away) | about 4 |
 | Quiz taker | end of lesson, one per student | 10 |
 | Grader | end of lesson, one call per written question covering all 10 students | about 3 |
-| **Total per lesson** | | **about 43** |
+| **Total per lesson** | | **about 47** |
 
 The sixth call type, the chapter generator, runs once per imported PDF and is not part of a lesson.
 
@@ -144,7 +144,7 @@ Rules:
 3. One chapter-generator call turns the text into a chapter: title, four to six objectives, a short reference text, common misconceptions, and a six-question quiz with answer keys and rubrics.
 4. Code validates the result: every question points to an existing objective, every multiple-choice answer key is one of the choices, and text lengths are within caps. If invalid, retry once, then show an error.
 5. The player reviews and edits on the Level review screen, then saves.
-6. Levels are stored in IndexedDB and can be exported and imported as JSON. An exported level contains text derived from the PDF (objectives, reference, quiz), not the PDF itself.
+6. Levels are stored in the browser (localStorage for now; move to IndexedDB if players hit its size limit) and can be exported and imported as JSON. An exported level contains text derived from the PDF (objectives, reference, quiz), not the PDF itself.
 7. An imported level file is untrusted: it goes through the same validation as a generated one before it can be played.
 
 Limits:
