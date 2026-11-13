@@ -2,6 +2,7 @@ import type { Ai, AnswerResult, Chapter, GraderResult, NoteTakerResult, QuizTake
 import { normalizeChapter, validateChapter } from '../game/validate';
 import { answerPrompt } from './prompts/answer';
 import { chapterGeneratorPrompt } from './prompts/chapterGenerator';
+import type { CourseContext } from './prompts/chapterGenerator';
 import chapterSchema from './schemas/chapterGenerator.json';
 import { graderPrompt } from './prompts/grader';
 import { noteTakerPrompt } from './prompts/noteTaker';
@@ -70,8 +71,8 @@ export function makeAi(d: AiDeps): Ai {
 const isChapter = (v: unknown): v is Chapter => validateChapter(v).length === 0;
 
 /** Turns chapter text into a playable level. An invalid result is retried once by callJson. */
-export async function generateChapter(d: AiDeps, chapterText: string): Promise<Chapter> {
-  const raw = await caller(d)(d.graderModel, 'chapter_generator', chapterSchema, chapterGeneratorPrompt(chapterText), isChapter);
+export async function generateChapter(d: AiDeps, chapterText: string, context?: CourseContext): Promise<Chapter> {
+  const raw = await caller(d)(d.graderModel, 'chapter_generator', chapterSchema, chapterGeneratorPrompt(chapterText, context), isChapter);
   return normalizeChapter(raw, `level-${Date.now()}`);
 }
 

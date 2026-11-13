@@ -2,16 +2,18 @@ import { useRef, useState } from 'react';
 import { generateChapter } from '../ai/calls';
 import type { AiDeps } from '../ai/calls';
 import { builtInChapter } from '../content';
+import { MAX_LESSON_CHARS, courseScore, splitIntoLessons, suggestedLessonCount } from '../game/course';
 import type { Chapter, QuizQuestion } from '../game/types';
 import { normalizeChapter, validateChapter } from '../game/validate';
-import { loadLevels, saveLevels } from '../storage';
-
-const MAX_CHARS = 30000;
+import { loadLevels, loadScores, saveLevels } from '../storage';
 
 interface Props { deps: AiDeps; lessonRunning: boolean; onPlay(c: Chapter): void; onResume(): void; onSettings(): void }
-interface Pdf { file: File; pages: number; from: number; to: number }
+/** The PDFs the player picked: every page's text in order, and which pages to use. */
+interface Source { names: string[]; pages: string[]; from: number; to: number; title: string; count: number }
 
+const BUILT_IN_COURSE = 'Intro to Python';
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
+const clamp = (v: string, min: number, max: number) => Math.min(max, Math.max(min, Number(v) || min));
 
 function download(c: Chapter) {
   const a = document.createElement('a');
@@ -23,49 +25,86 @@ function download(c: Chapter) {
 
 export default function Modules(p: Props) {
   const [levels, setLevels] = useState<Chapter[]>(loadLevels);
-  const [pdf, setPdf] = useState<Pdf | null>(null);
+  const [scores] = useState(loadScores);
+  const [source, setSource] = useState<Source | null>(null);
   const [draft, setDraft] = useState<Chapter | null>(null);
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const [problems, setProblems] = useState<string[]>([]);
   const chapterText = useRef('');
 
   const keep = (next: Chapter[]) => { setLevels(next); saveLevels(next); };
 
-  async function choosePdf(file: File | undefined) {
-    if (!file) return;
+  async function choosePdfs(files: FileList | null) {
+    if (!files || files.length === 0) return;
     setError('');
-    setBusy('Opening the PDF…');
+    setNotice('');
     try {
-      const { pdfPages } = await import('../pdf');
-      const pages = await pdfPages(file);
-      setPdf({ file, pages, from: 1, to: pages });
+      const { pdfPageTexts } = await import('../pdf');
+      const pages: string[] = [];
+      const names: string[] = [];
+      for (const [i, file] of [...files].entries()) {
+        setBusy(`Reading file ${i + 1} of ${files.length}: ${file.name}`);
+        pages.push(...await pdfPageTexts(file));
+        names.push(file.name);
+      }
+      setSource({ names, pages, from: 1, to: pages.length, title: names[0].replace(/\.pdf$/i, ''), count: suggestedLessonCount(pages) });
     } catch {
-      setError('Could not open this file as a PDF.');
+      setError('Could not open one of these files as a PDF.');
     } finally {
       setBusy('');
     }
   }
 
-  async function generate() {
-    setBusy('The AI is writing the level… this can take a minute.');
-    const level = await generateChapter(p.deps, chapterText.current);
-    setDraft(level);
+  /** One lesson: the AI writes it and the player reviews it before saving. */
+  async function writeOne() {
+    setBusy('The AI is writing the lesson… this can take a minute.');
+    setDraft(await generateChapter(p.deps, chapterText.current));
     setProblems([]);
   }
 
-  async function createLevel(readPdf: boolean) {
+  async function create() {
+    if (!source) return;
+    setError('');
+    setNotice('');
+    const made: Chapter[] = [];
+    let parts: string[] = [];
+    try {
+      const pages = source.pages.slice(source.from - 1, source.to);
+      if (pages.join('').replace(/\s/g, '').length < 200) throw new Error('These pages have no readable text. The PDF may be scanned images, which are not supported.');
+      parts = splitIntoLessons(pages, source.count);
+      const tooLong = parts.findIndex(part => part.length > MAX_LESSON_CHARS);
+      if (tooLong >= 0) throw new Error(`Lesson ${tooLong + 1} would hold ${parts[tooLong].length.toLocaleString()} characters; the limit is ${MAX_LESSON_CHARS.toLocaleString()}. Ask for more lessons, or use fewer pages.`);
+
+      if (parts.length === 1) {
+        chapterText.current = parts[0];
+        await writeOne();
+        return;
+      }
+      const course = source.title.trim() || 'My course';
+      for (const [i, text] of parts.entries()) {
+        setBusy(`The AI is writing lesson ${i + 1} of ${parts.length}…`);
+        const lesson = await generateChapter(p.deps, text, {
+          course, part: i + 1, of: parts.length,
+          earlier: made.map(m => ({ title: m.title, objectives: m.objectives.map(o => o.text) })),
+        });
+        made.push({ ...lesson, course, part: i + 1 });
+        keep([...levels, ...made]);
+      }
+      setSource(null);
+      setNotice(`Course "${course}" created with ${made.length} lessons. Open each with Edit to check its quiz before you teach it.`);
+    } catch (e) {
+      setError(made.length > 0 ? `Lesson ${made.length + 1} of ${parts.length} failed: ${message(e)} The first ${made.length} were saved.` : message(e));
+    } finally {
+      setBusy('');
+    }
+  }
+
+  async function regenerate() {
     setError('');
     try {
-      if (readPdf && pdf) {
-        setBusy('Reading the pages…');
-        const { pdfText } = await import('../pdf');
-        const text = await pdfText(pdf.file, pdf.from, pdf.to);
-        if (text.replace(/\s/g, '').length < 200) throw new Error('These pages have no readable text. The PDF may be scanned images, which are not supported.');
-        if (text.length > MAX_CHARS) throw new Error(`These pages hold ${text.length.toLocaleString()} characters; the limit is ${MAX_CHARS.toLocaleString()}. Choose fewer pages.`);
-        chapterText.current = text;
-      }
-      await generate();
+      await writeOne();
     } catch (e) {
       setError(message(e));
     } finally {
@@ -79,10 +118,10 @@ export default function Modules(p: Props) {
     try {
       const parsed: unknown = JSON.parse(await file.text());
       const found = validateChapter(parsed);
-      if (found.length) throw new Error(`This level file cannot be used: ${found[0]}`);
+      if (found.length) throw new Error(`This lesson file cannot be used: ${found[0]}`);
       keep([...levels, normalizeChapter(parsed as Chapter, `level-${Date.now()}`)]);
     } catch (e) {
-      setError(e instanceof SyntaxError ? 'This file is not a level file.' : message(e));
+      setError(e instanceof SyntaxError ? 'This file is not a lesson file.' : message(e));
     }
   }
 
@@ -94,7 +133,7 @@ export default function Modules(p: Props) {
     const clean = normalizeChapter(draft, draft.id);
     keep(levels.some(l => l.id === clean.id) ? levels.map(l => (l.id === clean.id ? clean : l)) : [...levels, clean]);
     setDraft(null);
-    setPdf(null);
+    setSource(null);
   }
 
   const editQuestion = (i: number, patch: Partial<QuizQuestion>) =>
@@ -105,7 +144,7 @@ export default function Modules(p: Props) {
     const isSaved = levels.some(l => l.id === draft.id);
     return (
       <div className="page narrow">
-        <h1>{isSaved ? 'Edit the level' : 'Review the new level'}</h1>
+        <h1>{isSaved ? 'Edit the lesson' : 'Review the new lesson'}</h1>
         <p className="dim">Everything here can be changed. Make the quiz as demanding as you like: you will have to teach well enough for students to pass it. Students never see the answers.</p>
         <div className="panel">
           <label htmlFor="d-title">Title</label>
@@ -182,57 +221,97 @@ export default function Modules(p: Props) {
           {error && <p className="error" role="alert">{error}</p>}
           {busy && <p className="dim" role="status">{busy}</p>}
           <div className="row" style={{ marginTop: 10 }}>
-            {chapterText.current && <button onClick={() => void createLevel(false)} disabled={!!busy}>Regenerate from the PDF</button>}
+            {!isSaved && chapterText.current && <button onClick={() => void regenerate()} disabled={!!busy}>Regenerate from the PDF</button>}
             <button onClick={() => { setDraft(null); setProblems([]); }} disabled={!!busy}>{isSaved ? 'Cancel' : 'Discard'}</button>
             <span className="grow" />
-            <button className="go" onClick={saveDraft} disabled={!!busy}>Save level</button>
+            <button className="go" onClick={saveDraft} disabled={!!busy}>Save lesson</button>
           </div>
         </div>
       </div>
     );
   }
 
+  // Lessons grouped into courses: the built-in one, each imported course in lesson order, then single lessons.
+  const courseNames = [...new Set(levels.filter(l => l.course).map(l => l.course as string))];
+  const groups: { name: string; lessons: Chapter[]; own: boolean }[] = [
+    { name: BUILT_IN_COURSE, lessons: [builtInChapter], own: false },
+    ...courseNames.map(name => ({ name, lessons: levels.filter(l => l.course === name).sort((a, b) => (a.part ?? 0) - (b.part ?? 0)), own: true })),
+  ];
+  const singles = levels.filter(l => !l.course);
+  if (singles.length > 0) groups.push({ name: 'Single lessons', lessons: singles, own: false });
+  const selectedPages = source ? source.to - source.from + 1 : 0;
+
   return (
     <div className="page narrow">
       <div className="row">
-        <h1 className="grow">Choose a level</h1>
+        <h1 className="grow">Choose a lesson</h1>
         {p.lessonRunning && <button className="go" onClick={p.onResume}>Back to the running lesson</button>}
         <button onClick={p.onSettings}>Settings</button>
       </div>
+      {p.lessonRunning && <p className="dim">A lesson is running. Teaching another one ends it without a quiz.</p>}
+      {notice && <p className="ok" role="status">{notice}</p>}
 
-      <div className="panel" style={{ marginTop: 12 }}>
-        <h2>Levels</h2>
-        {p.lessonRunning && <p className="dim">A lesson is running. Teaching another level ends it without a quiz.</p>}
-        {[builtInChapter, ...levels].map((c, i) => (
-          <div className="row" key={c.id} style={{ marginBottom: 8 }}>
-            <span className="grow"><b>{c.title}</b> <span className="dim">{i === 0 ? 'built-in · Intro to Python' : `${c.objectives.length} goals · ${c.quiz.length} questions`}</span></span>
-            {i > 0 && <button onClick={() => { chapterText.current = ''; setProblems([]); setError(''); setDraft(c); }}>Edit</button>}
-            {i > 0 && <button onClick={() => download(c)}>Export</button>}
-            {i > 0 && <button onClick={() => keep(levels.filter(x => x.id !== c.id))}>Delete</button>}
-            <button className="go" onClick={() => p.onPlay(c)}>Teach</button>
+      {groups.map(g => {
+        const total = courseScore(scores, g.lessons.map(l => l.id));
+        return (
+          <div className="panel" style={{ marginTop: 12 }} key={g.name}>
+            <div className="row">
+              <h2 className="grow" style={{ margin: 0 }}>{g.name}</h2>
+              <span className="pill">{total.average === null ? 'Not taught yet' : `Course score ${total.average}% · ${total.taught} of ${total.lessons} taught`}</span>
+              {g.own && <button onClick={() => keep(levels.filter(l => l.course !== g.name))}>Delete course</button>}
+            </div>
+            {g.lessons.map(c => {
+              const s = scores[c.id];
+              return (
+                <div className="row" key={c.id} style={{ marginTop: 8 }}>
+                  <span className="grow">
+                    <b>{c.part ? `${c.part}. ` : ''}{c.title}</b>{' '}
+                    <span className="dim">{s ? `Best ${s.best}% · last ${s.last}% · taught ${s.plays}×` : 'Not taught yet'}</span>
+                  </span>
+                  {c !== builtInChapter && <button onClick={() => { chapterText.current = ''; setProblems([]); setError(''); setDraft(c); }}>Edit</button>}
+                  {c !== builtInChapter && <button onClick={() => download(c)}>Export</button>}
+                  {c !== builtInChapter && <button onClick={() => keep(levels.filter(x => x.id !== c.id))}>Delete</button>}
+                  <button className="go" onClick={() => p.onPlay(c)}>Teach</button>
+                </div>
+              );
+            })}
           </div>
-        ))}
-      </div>
+        );
+      })}
 
       <div className="panel" style={{ marginTop: 12 }}>
-        <h2>Make a level from a PDF chapter</h2>
-        <p className="dim">The PDF stays on your computer. Its text is sent to your AI provider to write the level. One PDF (or page range) makes one level.</p>
-        <label htmlFor="pdf-file">PDF file</label>
-        <input id="pdf-file" type="file" accept="application/pdf,.pdf" onChange={e => void choosePdf(e.target.files?.[0])} />
-        {pdf && (
+        <h2>Make lessons from PDFs</h2>
+        <p className="dim">Pick one PDF or several. The game cuts them into as many lessons as you ask for and writes a quiz for each. The PDFs stay on your computer; their text is sent to your AI provider.</p>
+        <label htmlFor="pdf-file">PDF files</label>
+        <input id="pdf-file" type="file" multiple accept="application/pdf,.pdf" onChange={e => void choosePdfs(e.target.files)} />
+        {source && (
           <>
+            <p className="dim">{source.names.join(', ')}: {source.pages.length} pages, {source.pages.join('').length.toLocaleString()} characters.</p>
             <div className="row">
               <label htmlFor="pdf-from" style={{ flex: 1 }}>From page
-                <input id="pdf-from" type="number" min={1} max={pdf.pages} value={pdf.from}
-                  onChange={e => setPdf({ ...pdf, from: Math.min(pdf.pages, Math.max(1, Number(e.target.value) || 1)) })} />
+                <input id="pdf-from" type="number" min={1} max={source.pages.length} value={source.from}
+                  onChange={e => setSource({ ...source, from: clamp(e.target.value, 1, source.pages.length) })} />
               </label>
-              <label htmlFor="pdf-to" style={{ flex: 1 }}>To page (of {pdf.pages})
-                <input id="pdf-to" type="number" min={1} max={pdf.pages} value={pdf.to}
-                  onChange={e => setPdf({ ...pdf, to: Math.min(pdf.pages, Math.max(1, Number(e.target.value) || 1)) })} />
+              <label htmlFor="pdf-to" style={{ flex: 1 }}>To page (of {source.pages.length})
+                <input id="pdf-to" type="number" min={1} max={source.pages.length} value={source.to}
+                  onChange={e => setSource({ ...source, to: clamp(e.target.value, 1, source.pages.length) })} />
+              </label>
+              <label htmlFor="pdf-count" style={{ flex: 1 }}>Number of lessons
+                <input id="pdf-count" type="number" min={1} max={Math.max(1, selectedPages)} value={source.count}
+                  onChange={e => setSource({ ...source, count: clamp(e.target.value, 1, Math.max(1, selectedPages)) })} />
               </label>
             </div>
+            <p className="dim">Suggested number of lessons for these pages: {suggestedLessonCount(source.pages.slice(source.from - 1, source.to))}. One lesson is about 15 minutes of teaching.</p>
+            {source.count > 1 && (
+              <>
+                <label htmlFor="pdf-title">Course name</label>
+                <input id="pdf-title" value={source.title} onChange={e => setSource({ ...source, title: e.target.value })} />
+              </>
+            )}
             <div className="row" style={{ marginTop: 10 }}>
-              <button className="go" onClick={() => void createLevel(true)} disabled={!!busy || pdf.from > pdf.to}>Create level</button>
+              <button className="go" onClick={() => void create()} disabled={!!busy || source.from > source.to}>
+                {source.count > 1 ? `Create course with ${Math.min(source.count, selectedPages)} lessons` : 'Create lesson'}
+              </button>
             </div>
           </>
         )}
@@ -241,8 +320,8 @@ export default function Modules(p: Props) {
       </div>
 
       <div className="panel" style={{ marginTop: 12 }}>
-        <h2>Add a level someone shared with you</h2>
-        <label htmlFor="level-file">Level file (.json)</label>
+        <h2>Add a lesson someone shared with you</h2>
+        <label htmlFor="level-file">Lesson file (.json)</label>
         <input id="level-file" type="file" accept="application/json,.json" onChange={e => void importLevel(e.target.files?.[0])} />
       </div>
     </div>

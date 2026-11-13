@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { builtInChapter, students } from '../content';
-import { validateChapter } from './validate';
+import { normalizeChapter, validateChapter } from './validate';
 
 const copy = () => JSON.parse(JSON.stringify(builtInChapter));
 
@@ -30,6 +30,15 @@ describe('validateChapter', () => {
   it('rejects something that is not a chapter', () => {
     expect(validateChapter('hello').length).toBeGreaterThan(0);
     expect(validateChapter({ title: 'x' }).length).toBeGreaterThan(0);
+  });
+});
+
+describe('normalizeChapter', () => {
+  it('keeps the course a lesson belongs to and drops unknown fields', () => {
+    const c = normalizeChapter({ ...builtInChapter, course: ' Biology ', part: 2, extra: 'x' } as never, 'new-id');
+    expect(c).toMatchObject({ id: 'new-id', course: 'Biology', part: 2 });
+    expect('extra' in c).toBe(false);
+    expect('course' in normalizeChapter(builtInChapter, 'x')).toBe(false);
   });
 });
 

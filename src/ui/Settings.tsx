@@ -87,7 +87,7 @@ export default function Settings({ settings, used, onSave, onPlay }: Props) {
           <button type="button" onClick={() => navigator.clipboard.writeText(logText())}>Copy debug log</button>
           <button type="button" onClick={() => { clearMemory(); setTest({ ok: true, text: 'Students have forgotten all earlier lessons.' }); }}>Make students forget earlier lessons</button>
           <span className="grow" />
-          <button type="button" className="go" onClick={() => { onSave(s); onPlay(); }}>Save and choose a level</button>
+          <button type="button" className="go" onClick={() => { onSave(s); onPlay(); }}>Save and choose a lesson</button>
         </div>
         {test && <p className={test.ok ? 'ok' : 'error'} role="status">{test.text}</p>}
       </div>

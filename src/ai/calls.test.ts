@@ -165,6 +165,17 @@ describe('makeAi', () => {
     await expect(ping(d)).rejects.toMatchObject({ kind: 'auth' });
   });
 
+  it('tells the generator where a lesson sits in a course', async () => {
+    const { format: _f, id: _i, ...generated } = builtInChapter;
+    const full = { ...generated, quiz: generated.quiz.map(q => ({ ...q, choices: q.choices ?? [], rubric: q.rubric ?? '' })) };
+    const f = vi.fn(async () => reply(full));
+    await generateChapter(deps(f), 'part two text', { course: 'Biology', part: 2, of: 3, earlier: [{ title: 'Cells', objectives: ['Know what a cell is'] }] });
+    const facts = JSON.parse(sent(f).messages[1].content);
+    expect(facts[0].course).toEqual({ name: 'Biology', this_is_lesson: 2, of_lessons: 3, earlier_lessons: [{ title: 'Cells', objectives: ['Know what a cell is'] }] });
+    expect(facts[1].chapter_text).toBe('part two text');
+    expect(sent(f).messages[0].content).toContain('Do not repeat goals that earlier_lessons already cover');
+  });
+
   it('pings with a tiny schema', async () => {
     const f = vi.fn(async () => reply({ ok: true }));
     expect(await ping(deps(f))).toEqual({ ok: true });

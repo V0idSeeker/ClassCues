@@ -12,6 +12,8 @@ export function normalizeChapter(c: Chapter, id: string): Chapter {
     objectives: c.objectives.map(o => ({ id: o.id, text: o.text })),
     reference: c.reference,
     common_misconceptions: [...c.common_misconceptions],
+    ...(typeof c.course === 'string' && c.course.trim() ? { course: c.course.trim().slice(0, 200) } : {}),
+    ...(typeof c.part === 'number' && c.part > 0 ? { part: Math.floor(c.part) } : {}),
     quiz: c.quiz.map(q => ({
       id: q.id,
       type: q.type,

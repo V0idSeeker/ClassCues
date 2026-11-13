@@ -120,7 +120,7 @@ export default function Classroom(p: Props) {
         <span className="pill">AI requests today {p.used}</span>
         <label className="check" style={{ margin: 0 }}><input type="checkbox" checked={p.voiceOn} onChange={e => { if (!e.target.checked) stopSpeaking(); p.onVoice(e.target.checked); }} />Voices</label>
         <label className="check" style={{ margin: 0 }}><input type="checkbox" checked={realistic} onChange={e => setRealistic(e.target.checked)} />Realistic mode</label>
-        <button onClick={p.onLevels}>Levels and PDF import</button>
+        <button onClick={p.onLevels}>Lessons and PDF import</button>
         <button onClick={p.onSettings}>Settings</button>
         <button className="go" onClick={p.onBell} disabled={p.busy}>Ring the bell: quiz time</button>
       </div>

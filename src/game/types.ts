@@ -25,6 +25,9 @@ export interface Chapter {
   reference: string;
   common_misconceptions: string[];
   quiz: QuizQuestion[];
+  /** The course this lesson belongs to, and its position in it. Lessons made one at a time have neither. */
+  course?: string;
+  part?: number;
 }
 
 export interface Persona {

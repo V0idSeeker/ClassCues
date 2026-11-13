@@ -1,4 +1,5 @@
 import type { LogEntry } from './ai/provider';
+import type { Scores } from './game/course';
 import type { ClassMemory } from './game/lesson';
 import type { Chapter, LessonState } from './game/types';
 
@@ -54,7 +55,7 @@ const DEFAULTS: Settings = {
   thinkingOff: true, rememberKey: true, dailyLimit: 0, debugLog: false, voiceOn: true,
 };
 
-const K = { settings: 'ts.settings', key: 'ts.key', used: 'ts.used', lesson: 'ts.lesson3', memory: 'ts.memory', levels: 'ts.levels' };
+const K = { settings: 'ts.settings', key: 'ts.key', used: 'ts.used', lesson: 'ts.lesson3', memory: 'ts.memory', scores: 'ts.scores', levels: 'ts.levels' };
 
 /** True once the player has saved settings at least once. */
 export const hasSettings = (): boolean => localStorage.getItem(K.settings) !== null;
@@ -122,6 +123,15 @@ export function loadGoodModel(baseUrl: string): string {
 
 export function saveGoodModel(baseUrl: string, model: string): void {
   localStorage.setItem(`ts.good.${baseUrl}`, model);
+}
+
+/** Best and last class average for every lesson taught. */
+export function loadScores(): Scores {
+  return read<Scores>(localStorage, K.scores) ?? {};
+}
+
+export function saveScores(scores: Scores): void {
+  localStorage.setItem(K.scores, JSON.stringify(scores));
 }
 
 /** What students remember from past lessons. */

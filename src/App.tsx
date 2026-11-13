@@ -6,12 +6,13 @@ import { preferModel } from './ai/provider';
 import { AiError } from './ai/provider';
 import { studentPool } from './content';
 import { mustRingBell, quizReserve } from './game/budget';
+import { recordScore } from './game/course';
 import { drawClass, lessonOver, mergeTurns, rememberLesson, startLesson } from './game/lesson';
 import { computeReport } from './game/report';
 import type { Report as ReportType } from './game/report';
 import { askStudent, hearStudent, pickForClassQuestion, runQuiz, teachTurn } from './game/runLesson';
 import type { Chapter, LessonState, Turn } from './game/types';
-import { addLog, bumpUsed, clearLesson, hasSettings, loadGoodModel, loadLesson, loadMemory, saveGoodModel, loadSettings, saveMemory, loadUsed, saveLesson, saveSettings } from './storage';
+import { addLog, bumpUsed, clearLesson, hasSettings, loadGoodModel, loadLesson, loadMemory, loadScores, saveScores, saveGoodModel, loadSettings, saveMemory, loadUsed, saveLesson, saveSettings } from './storage';
 import type { Settings as SettingsType } from './storage';
 import Classroom from './ui/Classroom';
 import Modules from './ui/Modules';
@@ -26,7 +27,7 @@ export default function App() {
   const [settings, setSettings] = useState<SettingsType>(loadSettings);
   const [screen, setScreen] = useState<Screen>(() => (hasSettings() ? 'modules' : 'settings'));
   const [lesson, setLesson] = useState<LessonState | null>(null);
-  const [report, setReport] = useState<{ report: ReportType; chapter: Chapter } | null>(null);
+  const [report, setReport] = useState<{ report: ReportType; chapter: Chapter; best: number; bestBefore: number | null } | null>(null);
   const [used, setUsed] = useState(loadUsed);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -141,7 +142,11 @@ export default function App() {
     setScreen('quiz');
     try {
       const out = await runQuiz(s, ai, Math.random, (done, total) => setProgress({ done, total }));
-      setReport({ report: computeReport(s, out.answers, out.grades), chapter: s.chapter });
+      const result = computeReport(s, out.answers, out.grades);
+      const before = loadScores();
+      const scores = recordScore(before, s.chapter.id, result.classAverage, new Date().toISOString());
+      saveScores(scores);
+      setReport({ report: result, chapter: s.chapter, best: scores[s.chapter.id].best, bestBefore: before[s.chapter.id]?.best ?? null });
       saveMemory(rememberLesson(loadMemory(), s));
       clearLesson();
       lessonRef.current = null;
@@ -203,7 +208,7 @@ export default function App() {
         </div>
       )}
 
-      {screen === 'report' && report && <Report report={report.report} chapter={report.chapter} onAgain={() => setScreen('modules')} />}
+      {screen === 'report' && report && <Report report={report.report} chapter={report.chapter} best={report.best} bestBefore={report.bestBefore} onAgain={() => setScreen('modules')} />}
 
       <p className="dim footer">Class Is In Session · v{__APP_VERSION__}</p>
     </>

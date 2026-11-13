@@ -150,7 +150,10 @@ Rules:
 
 ### 0.6 PDF import
 
-1. The player drops a PDF on the Modules screen. One PDF is one chapter and one level. Several PDFs form a module, in the order the player sets.
+1. The player picks one PDF or several on the lessons screen and says how many lessons to make from them (the game suggests a number, about one lesson per 9,000 characters). A page range can narrow it down.
+   - One lesson: the AI writes it and the player reviews it before saving.
+   - Several lessons: the pages of all files, in order, are cut into that many parts of about equal length, never splitting a page. The AI writes one lesson per part and is told the course name, the part number and what earlier lessons already cover, so lessons do not repeat each other. The lessons are saved as one named course, in order; the player checks each with Edit.
+   - The cut is by amount of text, not by topic. Cutting at chapter headings is a later improvement.
 2. The browser extracts the text with `pdfjs-dist`. The PDF file itself stays on the player's machine. Its text is sent to the AI provider the player chose, which may keep a record of it.
 3. One chapter-generator call turns the text into a chapter: title, four to six objectives, a short reference text, common misconceptions, and a six-question quiz with answer keys and rubrics.
 4. Code validates the result: every question points to an existing objective, every multiple-choice answer key is one of the choices, and text lengths are within caps. If invalid, retry once, then show an error.
@@ -166,6 +169,13 @@ Limits:
 - A scanned PDF with no text layer gives a clear error; there is no OCR.
 - No embeddings or retrieval: one chapter fits in the model's context.
 - Quiz quality depends on the model, which is why the review screen exists and why the generator can use a stronger model than the students.
+
+### 0.6b Scores
+
+- Every finished lesson records its class average. The game keeps, per lesson: best score, last score and how many times it was taught.
+- The lessons screen groups lessons into courses: the built-in one, each course made from PDFs, and single lessons. Each lesson shows its scores.
+- A course's score is the average of the best scores of its lessons taught so far, shown with how many lessons were taught ("Course score 70% · 2 of 5 taught").
+- The report says whether this was the first time, a new best, or what the best is.
 
 ### 0.7 Knowledge gating in v1
 
