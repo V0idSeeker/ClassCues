@@ -91,7 +91,8 @@ export default function Modules(p: Props) {
     const found = validateChapter(draft);
     setProblems(found);
     if (found.length) return;
-    keep([...levels, draft]);
+    const clean = normalizeChapter(draft, draft.id);
+    keep(levels.some(l => l.id === clean.id) ? levels.map(l => (l.id === clean.id ? clean : l)) : [...levels, clean]);
     setDraft(null);
     setPdf(null);
   }
@@ -100,10 +101,12 @@ export default function Modules(p: Props) {
     draft && setDraft({ ...draft, quiz: draft.quiz.map((q, k) => (k === i ? { ...q, ...patch } : q)) });
 
   if (draft) {
+    const setQuiz = (quiz: QuizQuestion[]) => setDraft({ ...draft, quiz });
+    const isSaved = levels.some(l => l.id === draft.id);
     return (
       <div className="page narrow">
-        <h1>Review the new level</h1>
-        <p className="dim">The AI wrote this from your PDF. Check it, fix what is wrong, then save. Students never see the answers.</p>
+        <h1>{isSaved ? 'Edit the level' : 'Review the new level'}</h1>
+        <p className="dim">Everything here can be changed. Make the quiz as demanding as you like: you will have to teach well enough for students to pass it. Students never see the answers.</p>
         <div className="panel">
           <label htmlFor="d-title">Title</label>
           <input id="d-title" value={draft.title} onChange={e => setDraft({ ...draft, title: e.target.value })} />
@@ -114,34 +117,73 @@ export default function Modules(p: Props) {
               onChange={e => setDraft({ ...draft, objectives: draft.objectives.map((x, k) => (k === i ? { ...x, text: e.target.value } : x)) })} />
           ))}
 
+          <label htmlFor="d-beliefs">Wrong beliefs some students start with (one per line)</label>
+          <textarea id="d-beliefs" rows={Math.max(3, draft.common_misconceptions.length)} value={draft.common_misconceptions.join('\n')}
+            onChange={e => setDraft({ ...draft, common_misconceptions: e.target.value.split('\n') })}
+            onBlur={() => setDraft({ ...draft, common_misconceptions: draft.common_misconceptions.map(m => m.trim()).filter(Boolean) })} />
+
           <h2 style={{ marginTop: 14 }}>Quiz</h2>
           {draft.quiz.map((q, i) => (
             <div key={q.id} className="panel" style={{ marginBottom: 8 }}>
-              <label htmlFor={`q-${q.id}`}>Question {i + 1} ({q.type === 'mcq' ? 'multiple choice' : 'written'})</label>
-              <input id={`q-${q.id}`} value={q.prompt} onChange={e => editQuestion(i, { prompt: e.target.value })} />
-              <label htmlFor={`a-${q.id}`}>Right answer</label>
+              <div className="row">
+                <label htmlFor={`t-${q.id}`} style={{ flex: 1, marginTop: 0 }}>Question {i + 1}: kind
+                  <select id={`t-${q.id}`} value={q.type}
+                    onChange={e => editQuestion(i, e.target.value === 'mcq'
+                      ? { type: 'mcq', choices: [q.answer_key || 'Right answer', 'Wrong answer 1', 'Wrong answer 2', 'Wrong answer 3'], answer_key: q.answer_key || 'Right answer', rubric: undefined }
+                      : { type: 'short', choices: undefined, rubric: q.rubric ?? '1 point for a correct explanation. Max 1.' })}>
+                    <option value="mcq">Multiple choice</option>
+                    <option value="short">Written answer</option>
+                  </select>
+                </label>
+                <label htmlFor={`o-${q.id}`} style={{ flex: 2, marginTop: 0 }}>Tests this goal
+                  <select id={`o-${q.id}`} value={q.objective} onChange={e => editQuestion(i, { objective: e.target.value })}>
+                    {draft.objectives.map(o => <option key={o.id} value={o.id}>{o.text}</option>)}
+                  </select>
+                </label>
+              </div>
+              <label htmlFor={`q-${q.id}`}>Question</label>
+              <textarea id={`q-${q.id}`} rows={2} value={q.prompt} onChange={e => editQuestion(i, { prompt: e.target.value })} />
               {q.type === 'mcq' && q.choices ? (
-                <select id={`a-${q.id}`} value={q.answer_key} onChange={e => editQuestion(i, { answer_key: e.target.value })}>
-                  {q.choices.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
+                <>
+                  {q.choices.map((c, k) => (
+                    <label key={k} htmlFor={`c-${q.id}-${k}`}>Choice {k + 1}{c === q.answer_key ? ' (the right answer)' : ''}
+                      <input id={`c-${q.id}-${k}`} value={c}
+                        onChange={e => editQuestion(i, {
+                          choices: q.choices!.map((x, j) => (j === k ? e.target.value : x)),
+                          ...(c === q.answer_key ? { answer_key: e.target.value } : {}),
+                        })} />
+                    </label>
+                  ))}
+                  <label htmlFor={`a-${q.id}`}>Right answer</label>
+                  <select id={`a-${q.id}`} value={q.answer_key} onChange={e => editQuestion(i, { answer_key: e.target.value })}>
+                    {q.choices.map((c, k) => <option key={k} value={c}>{c}</option>)}
+                  </select>
+                </>
               ) : (
-                <input id={`a-${q.id}`} value={q.answer_key} onChange={e => editQuestion(i, { answer_key: e.target.value })} />
+                <>
+                  <label htmlFor={`a-${q.id}`}>Model answer</label>
+                  <textarea id={`a-${q.id}`} rows={2} value={q.answer_key} onChange={e => editQuestion(i, { answer_key: e.target.value })} />
+                  <label htmlFor={`r-${q.id}`}>How points are given (end with "Max N.")</label>
+                  <input id={`r-${q.id}`} value={q.rubric ?? ''} onChange={e => editQuestion(i, { rubric: e.target.value })} />
+                </>
               )}
               <div className="row" style={{ marginTop: 8 }}>
-                <button onClick={() => setDraft({ ...draft, quiz: draft.quiz.filter((_, k) => k !== i) })} disabled={draft.quiz.length <= 1}>Remove this question</button>
+                <button onClick={() => setQuiz(draft.quiz.filter((_, k) => k !== i))} disabled={draft.quiz.length <= 1}>Remove this question</button>
               </div>
             </div>
           ))}
-
-          <h2 style={{ marginTop: 14 }}>Wrong beliefs some students will start with</h2>
-          <ul>{draft.common_misconceptions.map(m => <li key={m}>{m}</li>)}</ul>
+          <div className="row">
+            <button disabled={draft.quiz.length >= 10} onClick={() => setQuiz([...draft.quiz, {
+              id: `q${Date.now()}`, type: 'short', objective: draft.objectives[0]?.id ?? '', prompt: '', answer_key: '', rubric: '1 point for a correct explanation. Max 1.',
+            }])}>Add a question</button>
+          </div>
 
           {problems.map(x => <p key={x} className="error" role="alert">{x}</p>)}
           {error && <p className="error" role="alert">{error}</p>}
           {busy && <p className="dim" role="status">{busy}</p>}
-          <div className="row">
-            <button onClick={() => void createLevel(false)} disabled={!!busy}>Regenerate</button>
-            <button onClick={() => { setDraft(null); setProblems([]); }} disabled={!!busy}>Discard</button>
+          <div className="row" style={{ marginTop: 10 }}>
+            {chapterText.current && <button onClick={() => void createLevel(false)} disabled={!!busy}>Regenerate from the PDF</button>}
+            <button onClick={() => { setDraft(null); setProblems([]); }} disabled={!!busy}>{isSaved ? 'Cancel' : 'Discard'}</button>
             <span className="grow" />
             <button className="go" onClick={saveDraft} disabled={!!busy}>Save level</button>
           </div>
@@ -164,6 +206,7 @@ export default function Modules(p: Props) {
         {[builtInChapter, ...levels].map((c, i) => (
           <div className="row" key={c.id} style={{ marginBottom: 8 }}>
             <span className="grow"><b>{c.title}</b> <span className="dim">{i === 0 ? 'built-in · Intro to Python' : `${c.objectives.length} goals · ${c.quiz.length} questions`}</span></span>
+            {i > 0 && <button onClick={() => { chapterText.current = ''; setProblems([]); setError(''); setDraft(c); }}>Edit</button>}
             {i > 0 && <button onClick={() => download(c)}>Export</button>}
             {i > 0 && <button onClick={() => keep(levels.filter(x => x.id !== c.id))}>Delete</button>}
             <button className="go" onClick={() => p.onPlay(c)}>Teach</button>

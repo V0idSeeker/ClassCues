@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent, MouseEvent } from 'react';
-import { MAX_TURNS, classClock, coverage } from '../game/lesson';
+import { MAX_TURNS, atmosphere, classClock, coverage } from '../game/lesson';
 import type { LessonState, Turn } from '../game/types';
 import { speak, stopSpeaking } from '../voice';
 import { HAND, SCENE_VIEWBOX, STATE, portraitSvg, sceneSvg } from './scene';
@@ -95,7 +95,7 @@ export default function Classroom(p: Props) {
   }
   function callOn() {
     if (student.handUp) p.onHear(sel);
-    else if (typed) { p.onAsk(sel, typed); setText(''); }
+    else { p.onAsk(sel, typed || `${student.persona.name}, what are you thinking? Do you have a question?`); setText(''); }
   }
   function hearAgain() {
     const last = [...state.transcript].reverse().find(l => l.who === student.persona.name);
@@ -116,6 +116,7 @@ export default function Classroom(p: Props) {
         <h1 className="grow">{state.chapter.title}</h1>
         <span className="pill">Clock {classClock(state, now)} / 45:00</span>
         <span className="pill">Turn {state.turns} / {MAX_TURNS}</span>
+        <span className="pill" title="How the class feels as a whole. It spreads: bored or lost classmates pull others along.">Class mood: {atmosphere(state).mood}</span>
         <span className="pill">AI requests today {p.used}</span>
         <label className="check" style={{ margin: 0 }}><input type="checkbox" checked={p.voiceOn} onChange={e => { if (!e.target.checked) stopSpeaking(); p.onVoice(e.target.checked); }} />Voices</label>
         <label className="check" style={{ margin: 0 }}><input type="checkbox" checked={realistic} onChange={e => setRealistic(e.target.checked)} />Realistic mode</label>
@@ -139,8 +140,8 @@ export default function Classroom(p: Props) {
             <div className="row">
               <button onClick={nextHand} disabled={!state.students.some(s => s.handUp)}>Next raised hand</button>
               <button onClick={hearAgain}>🔊 Hear it</button>
-              <button onClick={callOn} disabled={p.busy || (!student.handUp && !typed)} title={student.handUp ? '' : 'Type a question first'}>Call on {student.persona.name}</button>
-              <button onClick={() => { if (typed) { p.onAskClass(typed); setText(''); } }} disabled={p.busy || !typed} title="Type a question first">Ask the class</button>
+              <button onClick={callOn} disabled={p.busy} title={student.handUp ? 'Hear what they want to say' : 'Asks them what you typed. With nothing typed, invites them to speak.'}>Call on {student.persona.name}</button>
+              <button onClick={() => { p.onAskClass(typed || 'Does anyone have a question about this?'); setText(''); }} disabled={p.busy} title="Asks the class what you typed. With nothing typed, asks if anyone has a question.">Ask the class</button>
             </div>
           </div>
           <div className="paper">

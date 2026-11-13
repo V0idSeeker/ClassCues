@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { builtInChapter, studentPool, students } from '../content';
 import {
-  LESSON_MS, MAX_TURNS, applyNotes, drawClass, memoryFor, rememberLesson, boardAdded, classClock, coverage, hasObjective, lessonOver,
+  LESSON_MS, MAX_TURNS, applyNotes, atmosphere, drawClass, memoryFor, rememberLesson, boardAdded, classClock, coverage, hasObjective, lessonOver,
   mergeTurns, patchStudent, pickReactor, shouldReact, startLesson,
 } from './lesson';
 import type { NoteTakerResult } from './types';
@@ -116,6 +116,33 @@ describe('memory across lessons', () => {
     let memory = {};
     for (const id of ['a', 'b', 'c', 'd', 'b']) memory = rememberLesson(memory, { ...taught(), chapter: { ...builtInChapter, id, title: id } });
     expect((memory as Record<string, { chapterId: string }[]>).aisha.map(m => m.chapterId)).toEqual(['c', 'd', 'b']);
+  });
+});
+
+describe('class atmosphere', () => {
+  it('reads the mood of the class from how students feel', () => {
+    let s = start();
+    expect(atmosphere(s).mood).toBe('calm');
+    for (const id of ['aisha', 'maya', 'leo', 'yuki']) s = patchStudent(s, id, { emotion: 'BORED' });
+    expect(atmosphere(s)).toMatchObject({ bored: 0.4, mood: 'restless' });
+    for (const id of ['tom', 'sam', 'nora', 'omar']) s = patchStudent(s, id, { emotion: 'CONFUSED' });
+    expect(atmosphere(s).mood).toBe('lost');
+    let happy = start();
+    for (const st of happy.students.slice(0, 5)) happy = patchStudent(happy, st.persona.id, { emotion: 'CURIOUS' });
+    expect(atmosphere(happy).mood).toBe('engaged');
+  });
+
+  it('counts teacher turns since a student last spoke', () => {
+    const s = start();
+    const talk = (lines: [string, string][]) => ({ ...s, transcript: lines.map(([who, text]) => ({ who, text })) });
+    expect(atmosphere(talk([['Leo', 'hi'], ['teacher', 'a'], ['board', 'x'], ['teacher', 'b'], ['note', 'n'], ['teacher', 'c']])).teacherTurnsSinceStudentSpoke).toBe(3);
+    expect(atmosphere(talk([['teacher', 'a'], ['Leo', 'why?']])).teacherTurnsSinceStudentSpoke).toBe(0);
+  });
+
+  it('makes a bored student write down less', () => {
+    const r = notesFor('aisha', 'a variable stores a value');
+    expect(find(applyNotes(start(), r, () => 0.7), 'aisha').notes).toHaveLength(1);
+    expect(find(applyNotes(patchStudent(start(), 'aisha', { emotion: 'BORED' }), r, () => 0.7), 'aisha').notes).toHaveLength(0);
   });
 });
 

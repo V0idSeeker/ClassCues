@@ -1,3 +1,4 @@
+import { atmosphere } from '../../game/lesson';
 import type { LessonState } from '../../game/types';
 import type { ChatMessage } from '../provider';
 import { QUOTED_RULE, facts, lastLines } from './shared';
@@ -15,7 +16,11 @@ export function noteTakerPrompt(state: LessonState, boardAdded: string, say: str
         '- A student may bend a note toward one of their wrong_beliefs. Then set distorted to true.',
         '- If the teacher clearly corrected one of a student\'s wrong_beliefs, put its id in beliefs_dropped.',
         '- objective is the id of the objective the note is about, or null.',
-        '- emotion is how that student feels right now.',
+        '- emotion is how that student feels right now. Start from feels_now: moods carry over, they do not reset each turn.',
+        '- Moods spread. When class_atmosphere shows many classmates bored or confused, a student drifts the same way.',
+        '- A clear example, a joke, a question to the class or being spoken to lifts the mood towards CURIOUS or HAPPY.',
+        '- When teacher_turns_since_a_student_spoke is 3 or more, the teacher is lecturing without interaction: students with low attention become BORED.',
+        '- Something a student cannot follow makes them CONFUSED.',
         '- Return every student exactly once, with the same id.',
         '- recent_class_transcript shows what was said just before, by the teacher and by students. Use it only to understand what the teacher means now, for example which question the teacher is answering.',
         '- Something a classmate said becomes a normal note only if the teacher confirmed it in teacher_dialogue. If the teacher corrected it, note the correction.',
@@ -26,7 +31,10 @@ export function noteTakerPrompt(state: LessonState, boardAdded: string, say: str
     },
     facts(
       { objectives: state.chapter.objectives },
-      { students: state.students.map(s => ({ id: s.persona.id, attention: s.persona.traits.attention, learning_style: s.persona.learning_style, wrong_beliefs: s.beliefs })) },
+      { students: state.students.map(s => ({ id: s.persona.id, attention: s.persona.traits.attention, learning_style: s.persona.learning_style, feels_now: s.emotion, wrong_beliefs: s.beliefs })) },
+      { class_atmosphere: (({ bored, confused, teacherTurnsSinceStudentSpoke }) => ({
+        share_bored: bored, share_confused: confused, teacher_turns_since_a_student_spoke: teacherTurnsSinceStudentSpoke,
+      }))(atmosphere(state)) },
       { board_full: state.board },
       // Only the last few lines: enough to see which question the teacher is answering. This is the largest request
       // of a lesson and free tiers cap the text sent per minute.

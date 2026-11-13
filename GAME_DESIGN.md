@@ -77,7 +77,7 @@ The player sees the room from the teacher's position. Reference mockup: `docs/mo
 
 **Around the stage**, all on one screen without scrolling:
 
-- **Left, student card**: portrait of the selected student, their state labels, their line if they have one, and buttons: next raised hand, hear it, call on this student, ask the class.
+- **Left, student card**: portrait of the selected student, their state labels, their line if they have one, and buttons: next raised hand, hear it, call on this student, ask the class. The last two always work: with a question typed they ask it; with nothing typed they invite the student (or the class) to ask a question.
 - **Left, under the card, notebook**: that student's notes as ruled paper. Wrong beliefs that have not been corrected are marked. The card and the notebook always show the same student: clicking a student or pressing "Next raised hand" selects them for both.
 - **Right, lesson goals**: each objective with the number of students who have it in their notes (for example "Names are case-sensitive: 0/10" means the player has not taught it yet).
 - **Under the stage, teacher input**: text box with "Say it" and "Write it on the board".
@@ -100,6 +100,8 @@ The player sees the room from the teacher's position. Reference mockup: `docs/mo
 - **One shared conversation.** Every student call gets the last 40 lines of class talk (most of a 20-turn lesson): what the teacher said, what was written on the board, and what classmates asked and answered.
 - **Notes are the lasting memory.** A student keeps only what lands in their notebook. The note-taker sees the recent talk as context, so "Yes, exactly" after a classmate's question produces a real note.
 - **Classmates' words.** Something a classmate said becomes a normal note only if the teacher confirmed it. If the teacher corrected it, students note the correction. If the teacher moved on without confirming or correcting, up to three low-attention students may write it down as hearsay ("<name> said: ..."), which does not count toward the lesson goals. The report warns about it.
+- **Class atmosphere.** Each student's mood carries over from turn to turn, and moods spread: when many classmates are bored or confused, others drift the same way. Examples, jokes, questions and being spoken to lift the mood. Three or more teacher turns in a row with no student speaking make low-attention students bored. A bored student writes down fewer notes (about 60% of normal). The top bar shows the class mood: engaged, calm, restless or lost.
+- **Questions that make the teacher think.** When a student speaks up, they ask why something works, what would happen in a new case, where a rule stops working, or point at a contradiction. Never about breaks, tests or seating. Each student asks in their own voice.
 - **Students react to each other.** After a student answers aloud, there is a 50% chance that one classmate gets to react: agree, disagree or add something. They raise a hand; the teacher decides whether to hear them.
 - **Speaking to one student.** When the teacher's sentence contains a student's name, that student replies and nobody else. If their hand was up, they say the line they were waiting with.
 - **Memory across lessons.** After a quiz, each student keeps up to 8 of their notes from that lesson, right or wrong, for their next 3 lessons. They can use them when speaking and in quizzes. Teaching the same level again starts fresh, so a replay still measures that day's teaching. Settings has "Make students forget earlier lessons".
@@ -152,7 +154,8 @@ Rules:
 2. The browser extracts the text with `pdfjs-dist`. The PDF file itself stays on the player's machine. Its text is sent to the AI provider the player chose, which may keep a record of it.
 3. One chapter-generator call turns the text into a chapter: title, four to six objectives, a short reference text, common misconceptions, and a six-question quiz with answer keys and rubrics.
 4. Code validates the result: every question points to an existing objective, every multiple-choice answer key is one of the choices, and text lengths are within caps. If invalid, retry once, then show an error.
-5. The player reviews and edits on the Level review screen, then saves.
+5. The player reviews and edits on the Level review screen, then saves. Everything is editable: title, goals, wrong beliefs, and for each question its kind, goal, wording, choices, right answer and scoring; questions can be added and removed. Saved levels can be edited again later.
+   The generator is told to test understanding, not recall: each question asks one thing, cannot be answered by copying a sentence, asks why / what if / apply / what is wrong, uses believable wrong choices built from the misconceptions, and stays answerable by reasoning from the chapter alone.
 6. Levels are stored in the browser (localStorage for now; move to IndexedDB if players hit its size limit) and can be exported and imported as JSON. An exported level contains text derived from the PDF (objectives, reference, quiz), not the PDF itself.
 7. An imported level file is untrusted: it goes through the same validation as a generated one before it can be played.
 

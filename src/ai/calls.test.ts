@@ -46,6 +46,21 @@ describe('prompts keep judge knowledge away from students', () => {
     expect(all(quizTakerPrompt(aisha, builtInChapter.quiz))).not.toContain('what_you_remember_from_earlier_lessons":');
   });
 
+  it('note-taker is told how each student and the class feel, so moods carry over and spread', () => {
+    const text = all(noteTakerPrompt(state, '', 'hello'));
+    expect(text).toContain('"feels_now":"HAPPY"');
+    expect(text).toContain('share_bored');
+    expect(text).toContain('teacher_turns_since_a_student_spoke');
+    expect(text).toContain('Moods spread');
+  });
+
+  it('students are told to ask questions that make the teacher reason, in the lesson only', () => {
+    for (const text of [all(reactionPrompt(state, aisha)), all(answerPrompt(state, aisha, 'Any question?'))]) {
+      expect(text).toContain('what would happen in a new case');
+      expect(text).toContain('Never ask about breaks, tests, seating');
+    }
+  });
+
   it('student calls get only notebook and beliefs', () => {
     for (const text of [all(reactionPrompt(state, aisha)), all(answerPrompt(state, aisha, 'What is a variable?')), all(quizTakerPrompt(tom, builtInChapter.quiz))]) {
       expect(text).not.toContain(KEY_PHRASE);

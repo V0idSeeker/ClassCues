@@ -99,7 +99,8 @@ export function applyNotes(state: LessonState, result: NoteTakerResult, rng: Rng
     const r = byId.get(st.persona.id);
     if (!r) return st;
     // Attention 1 keeps every note, attention 0 keeps 40% of them.
-    const keep = 0.4 + 0.6 * st.persona.traits.attention;
+    // A bored student writes down less.
+    const keep = (0.4 + 0.6 * st.persona.traits.attention) * (st.emotion === 'BORED' ? BORED_NOTE_FACTOR : 1);
     const notes = [...st.notes];
     for (const n of r.new_notes) {
       const text = n.text.trim();
@@ -116,6 +117,35 @@ export function applyNotes(state: LessonState, result: NoteTakerResult, rng: Rng
     };
   });
   return { ...state, students };
+}
+
+export const BORED_NOTE_FACTOR = 0.6;
+
+export interface Atmosphere {
+  /** Share of the class that is bored, 0 to 1. */
+  bored: number;
+  /** Share of the class that is confused, 0 to 1. */
+  confused: number;
+  /** Teacher turns in a row since a student last spoke. A long run means a lecture with no interaction. */
+  teacherTurnsSinceStudentSpoke: number;
+  mood: 'engaged' | 'calm' | 'restless' | 'lost';
+}
+
+/** How the class feels as a whole. Fed back to the students, so moods spread. */
+export function atmosphere(state: LessonState): Atmosphere {
+  const n = state.students.length || 1;
+  const share = (...kinds: Emotion[]) => state.students.filter(s => kinds.includes(s.emotion)).length / n;
+  const names = new Set(state.students.map(s => s.persona.name));
+  let quiet = 0;
+  for (let i = state.transcript.length - 1; i >= 0; i--) {
+    const who = state.transcript[i].who;
+    if (names.has(who)) break;
+    if (who === 'teacher') quiet++;
+  }
+  const bored = share('BORED');
+  const confused = share('CONFUSED');
+  const mood = confused >= 0.4 ? 'lost' : bored >= 0.4 ? 'restless' : share('HAPPY', 'CURIOUS') >= 0.5 ? 'engaged' : 'calm';
+  return { bored, confused, teacherTurnsSinceStudentSpoke: quiet, mood };
 }
 
 export function patchStudent(state: LessonState, id: string, patch: Partial<Student>): LessonState {
