@@ -31,6 +31,27 @@ export function splitIntoLessons(pages: string[], count: number): string[] {
   return parts.map(p => p.join('\n').trim());
 }
 
+/**
+ * Cuts the pages where lessons begin (page numbers start at 1), as proposed by the AI.
+ * Bad page numbers are dropped and page 1 always starts a lesson. A part that is still too long is cut again by length.
+ */
+export function cutAtPages(pages: string[], firstPages: number[]): string[] {
+  const starts = [...new Set([1, ...firstPages.map(n => Math.round(n)).filter(n => n >= 1 && n <= pages.length)])].sort((a, b) => a - b);
+  const parts: string[] = [];
+  starts.forEach((start, i) => {
+    const slice = pages.slice(start - 1, (starts[i + 1] ?? pages.length + 1) - 1);
+    const text = slice.join('\n').trim();
+    if (text.length > MAX_LESSON_CHARS) parts.push(...splitIntoLessons(slice, Math.ceil(text.length / GOOD_LESSON_CHARS)));
+    else if (text) parts.push(text);
+  });
+  return parts;
+}
+
+/** What the AI reads to find where chapters begin: each page's number, length and first words. */
+export function pageStarts(pages: string[]): { page: number; characters: number; begins: string }[] {
+  return pages.map((text, i) => ({ page: i + 1, characters: text.length, begins: text.slice(0, 160) }));
+}
+
 export interface Score { best: number; last: number; plays: number; at: string }
 export type Scores = Record<string, Score>;
 

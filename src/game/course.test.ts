@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { courseScore, recordScore, splitIntoLessons, suggestedLessonCount } from './course';
+import { courseScore, cutAtPages, pageStarts, recordScore, splitIntoLessons, suggestedLessonCount } from './course';
 
 const page = (n: number, size: number) => `p${n} ` + 'x'.repeat(size);
 
@@ -32,6 +32,30 @@ describe('splitIntoLessons', () => {
   it('keeps all the text', () => {
     const pages = [1, 2, 3, 4, 5, 6, 7].map(n => page(n, n * 300));
     expect(splitIntoLessons(pages, 3).join('\n').match(/p\d/g)).toEqual(['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7']);
+  });
+});
+
+describe('cutAtPages', () => {
+  const pages = [1, 2, 3, 4, 5, 6].map(n => page(n, 500));
+
+  it('cuts where the AI says lessons begin', () => {
+    expect(cutAtPages(pages, [1, 3, 6]).map(p => p.match(/p\d/g))).toEqual([['p1', 'p2'], ['p3', 'p4', 'p5'], ['p6']]);
+  });
+
+  it('repairs a bad plan: page 1 always starts a lesson, unknown and repeated pages are dropped, order is fixed', () => {
+    expect(cutAtPages(pages, [4, 2, 2, 99, 0, -3, 2.2]).map(p => p.match(/p\d/g))).toEqual([['p1'], ['p2', 'p3'], ['p4', 'p5', 'p6']]);
+    expect(cutAtPages(pages, [])).toHaveLength(1);
+  });
+
+  it('cuts a chapter that is too long again, by length, and keeps all the text', () => {
+    const long = [page(1, 500), page(2, 20000), page(3, 20000), page(4, 500)];
+    const parts = cutAtPages(long, [1, 2, 4]);
+    expect(parts.length).toBeGreaterThan(3);
+    expect(parts.join('\n').match(/p\d/g)).toEqual(['p1', 'p2', 'p3', 'p4']);
+  });
+
+  it('shows the AI only the start of each page', () => {
+    expect(pageStarts([page(1, 5000), 'short'])).toEqual([{ page: 1, characters: 5003, begins: ('p1 ' + 'x'.repeat(200)).slice(0, 160) }, { page: 2, characters: 5, begins: 'short' }]);
   });
 });
 

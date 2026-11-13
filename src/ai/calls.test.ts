@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { builtInChapter, students } from '../content';
 import { applyNotes, startLesson } from '../game/lesson';
-import { generateChapter, makeAi, ping } from './calls';
+import { generateChapter, makeAi, outlineCourse, ping } from './calls';
 import { answerPrompt } from './prompts/answer';
 import { graderPrompt } from './prompts/grader';
 import { noteTakerPrompt } from './prompts/noteTaker';
@@ -184,6 +184,19 @@ describe('makeAi', () => {
     expect(facts[0].course).toEqual({ name: 'Biology', this_is_lesson: 2, of_lessons: 3, earlier_lessons: [{ title: 'Cells', objectives: ['Know what a cell is'] }] });
     expect(facts[1].chapter_text).toBe('part two text');
     expect(sent(f).messages[0].content).toContain('Do not repeat goals that earlier_lessons already cover');
+  });
+
+  it('asks where chapters begin, showing only page starts as quoted data', async () => {
+    const f = vi.fn(async () => reply({ lessons: [{ title: 'Cells', first_page: 1 }, { title: 'Plants', first_page: 3 }] }));
+    const pages = ['Chapter 1 Cells ' + 'a'.repeat(500), 'more cells', 'Chapter 2 Plants', 'more plants'];
+    expect(await outlineCourse(deps(f), pages)).toEqual([1, 3]);
+    const body = sent(f);
+    expect(body.model).toBe('strong');
+    expect(body.response_format.json_schema.name).toBe('course_outline');
+    const starts = JSON.parse(body.messages[1].content)[0].page_starts;
+    expect(starts).toHaveLength(4);
+    expect(starts[0].begins).toHaveLength(160);
+    expect(starts[2]).toEqual({ page: 3, characters: 16, begins: 'Chapter 2 Plants' });
   });
 
   it('pings with a tiny schema', async () => {

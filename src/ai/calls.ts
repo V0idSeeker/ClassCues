@@ -6,6 +6,7 @@ import type { CourseContext } from './prompts/chapterGenerator';
 import chapterSchema from './schemas/chapterGenerator.json';
 import { graderPrompt } from './prompts/grader';
 import { noteTakerPrompt } from './prompts/noteTaker';
+import { outlinePrompt } from './prompts/outline';
 import { quizTakerPrompt } from './prompts/quizTaker';
 import { reactionPrompt } from './prompts/reaction';
 import { callJson, preferModel } from './provider';
@@ -13,6 +14,7 @@ import type { ChatMessage, LogEntry, ProviderSettings } from './provider';
 import answerSchema from './schemas/answer.json';
 import graderSchema from './schemas/grader.json';
 import noteTakerSchema from './schemas/noteTaker.json';
+import outlineSchema from './schemas/outline.json';
 import pingSchema from './schemas/ping.json';
 import quizTakerSchema from './schemas/quizTaker.json';
 import reactionSchema from './schemas/reaction.json';
@@ -66,6 +68,15 @@ export function makeAi(d: AiDeps): Ai {
     quizTaker: (student, questions) => call(d.studentModel, 'quiz_taker', quizTakerSchema, quizTakerPrompt(student, questions), isQuizTaker),
     grader: (question, rows) => call(d.graderModel, 'grader', graderSchema, graderPrompt(question, rows), isGrader),
   };
+}
+
+const isOutline = (v: unknown): v is { lessons: { title: string; first_page: number }[] } =>
+  rec(v) && Array.isArray(v.lessons) && v.lessons.length > 0 && v.lessons.every(l => rec(l) && typeof l.first_page === 'number');
+
+/** Asks the AI where the lessons of a course should begin. Returns the first page of each lesson (pages start at 1). */
+export async function outlineCourse(d: AiDeps, pages: string[]): Promise<number[]> {
+  const plan = await caller(d)(d.graderModel, 'course_outline', outlineSchema, outlinePrompt(pages), isOutline);
+  return plan.lessons.map(l => l.first_page);
 }
 
 const isChapter = (v: unknown): v is Chapter => validateChapter(v).length === 0;

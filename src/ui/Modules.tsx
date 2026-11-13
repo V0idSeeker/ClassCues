@@ -1,15 +1,15 @@
 import { useRef, useState } from 'react';
-import { generateChapter } from '../ai/calls';
+import { generateChapter, outlineCourse } from '../ai/calls';
 import type { AiDeps } from '../ai/calls';
 import { builtInCourses } from '../content';
-import { MAX_LESSON_CHARS, courseScore, splitIntoLessons, suggestedLessonCount } from '../game/course';
+import { MAX_LESSON_CHARS, courseScore, cutAtPages, splitIntoLessons, suggestedLessonCount } from '../game/course';
 import type { Chapter, QuizQuestion } from '../game/types';
 import { normalizeChapter, packLessons, unpackLessons, validateChapter } from '../game/validate';
 import { loadLevels, loadScores, saveLevels } from '../storage';
 
 interface Props { deps: AiDeps; lessonRunning: boolean; onPlay(c: Chapter): void; onResume(): void; onSettings(): void }
 /** The PDFs the player picked: every page's text in order, and which pages to use. */
-interface Source { names: string[]; pages: string[]; from: number; to: number; title: string; count: number }
+interface Source { names: string[]; pages: string[]; from: number; to: number; title: string; count: number; how: 'chapters' | 'equal' }
 
 const builtInIds = new Set(builtInCourses.flatMap(c => c.lessons.map(l => l.id)));
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
@@ -51,7 +51,7 @@ export default function Modules(p: Props) {
         pages.push(...await pdfPageTexts(file));
         names.push(file.name);
       }
-      setSource({ names, pages, from: 1, to: pages.length, title: names[0].replace(/\.pdf$/i, ''), count: suggestedLessonCount(pages) });
+      setSource({ names, pages, from: 1, to: pages.length, title: names[0].replace(/\.pdf$/i, ''), count: suggestedLessonCount(pages), how: pages.length > 1 ? 'chapters' : 'equal' });
     } catch {
       setError('Could not open one of these files as a PDF.');
     } finally {
@@ -72,10 +72,22 @@ export default function Modules(p: Props) {
     setNotice('');
     const made: Chapter[] = [];
     let parts: string[] = [];
+    let cutByLength = false;
     try {
       const pages = source.pages.slice(source.from - 1, source.to);
       if (pages.join('').replace(/\s/g, '').length < 200) throw new Error('These pages have no readable text. The PDF may be scanned images, which are not supported.');
-      parts = splitIntoLessons(pages, source.count);
+      if (source.how === 'chapters' && pages.length > 1) {
+        setBusy('The AI is looking for where the chapters begin…');
+        try {
+          parts = cutAtPages(pages, await outlineCourse(p.deps, pages));
+        } catch {
+          // Without an outline the material is still usable: cut it by length instead.
+          parts = splitIntoLessons(pages, suggestedLessonCount(pages));
+          cutByLength = true;
+        }
+      } else {
+        parts = splitIntoLessons(pages, source.count);
+      }
       const tooLong = parts.findIndex(part => part.length > MAX_LESSON_CHARS);
       if (tooLong >= 0) throw new Error(`Lesson ${tooLong + 1} would hold ${parts[tooLong].length.toLocaleString()} characters; the limit is ${MAX_LESSON_CHARS.toLocaleString()}. Ask for more lessons, or use fewer pages.`);
 
@@ -95,7 +107,7 @@ export default function Modules(p: Props) {
         keep([...levels, ...made]);
       }
       setSource(null);
-      setNotice(`Course "${course}" created with ${made.length} lessons. Open each with Edit to check its quiz before you teach it.`);
+      setNotice(`Course "${course}" created with ${made.length} lessons. Open each with Edit to check its quiz before you teach it.${cutByLength ? ' The AI could not find where the chapters begin, so the pages were cut into parts of equal length.' : ''}`);
     } catch (e) {
       setError(made.length > 0 ? `Lesson ${made.length + 1} of ${parts.length} failed: ${message(e)} The first ${made.length} were saved.` : message(e));
     } finally {
@@ -291,6 +303,11 @@ export default function Modules(p: Props) {
         {source && (
           <>
             <p className="dim">{source.names.join(', ')}: {source.pages.length} pages, {source.pages.join('').length.toLocaleString()} characters.</p>
+            <label htmlFor="pdf-how">How to cut the pages into lessons</label>
+            <select id="pdf-how" value={source.how} onChange={e => setSource({ ...source, how: e.target.value === 'equal' ? 'equal' : 'chapters' })}>
+              <option value="chapters">At chapters: the AI finds where each chapter begins</option>
+              <option value="equal">Into a number of parts of equal length</option>
+            </select>
             <div className="row">
               <label htmlFor="pdf-from" style={{ flex: 1 }}>From page
                 <input id="pdf-from" type="number" min={1} max={source.pages.length} value={source.from}
@@ -300,13 +317,18 @@ export default function Modules(p: Props) {
                 <input id="pdf-to" type="number" min={1} max={source.pages.length} value={source.to}
                   onChange={e => setSource({ ...source, to: clamp(e.target.value, 1, source.pages.length) })} />
               </label>
-              <label htmlFor="pdf-count" style={{ flex: 1 }}>Number of lessons
+              {source.how === 'equal' && <label htmlFor="pdf-count" style={{ flex: 1 }}>Number of lessons
                 <input id="pdf-count" type="number" min={1} max={Math.max(1, selectedPages)} value={source.count}
                   onChange={e => setSource({ ...source, count: clamp(e.target.value, 1, Math.max(1, selectedPages)) })} />
-              </label>
+              </label>}
             </div>
-            <p className="dim">Suggested number of lessons for these pages: {suggestedLessonCount(source.pages.slice(source.from - 1, source.to))}. One lesson is about 15 minutes of teaching.</p>
-            {source.count > 1 && (
+            <p className="dim">
+              {source.how === 'chapters'
+                ? 'The AI reads the first words of every page to find the chapters. One extra AI request.'
+                : `Suggested number of lessons for these pages: ${suggestedLessonCount(source.pages.slice(source.from - 1, source.to))}.`}
+              {' '}One lesson is about 15 minutes of teaching.
+            </p>
+            {(source.how === 'chapters' ? selectedPages > 1 : source.count > 1) && (
               <>
                 <label htmlFor="pdf-title">Course name</label>
                 <input id="pdf-title" value={source.title} onChange={e => setSource({ ...source, title: e.target.value })} />
@@ -314,7 +336,8 @@ export default function Modules(p: Props) {
             )}
             <div className="row" style={{ marginTop: 10 }}>
               <button className="go" onClick={() => void create()} disabled={!!busy || source.from > source.to}>
-                {source.count > 1 ? `Create course with ${Math.min(source.count, selectedPages)} lessons` : 'Create lesson'}
+                {source.how === 'chapters' && selectedPages > 1 ? 'Create course'
+                  : source.how === 'equal' && source.count > 1 ? `Create course with ${Math.min(source.count, selectedPages)} lessons` : 'Create lesson'}
               </button>
             </div>
           </>
