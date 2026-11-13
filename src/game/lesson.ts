@@ -1,5 +1,5 @@
 import type { Rng } from './rng';
-import type { Belief, Chapter, Emotion, LessonState, NoteTakerResult, Persona, Student, TranscriptLine, Turn } from './types';
+import type { Archetype, Belief, Chapter, Emotion, LessonState, NoteTakerResult, Persona, Student, TranscriptLine, Turn } from './types';
 
 export const MAX_TURNS = 20;
 export const LESSON_MS = 15 * 60 * 1000;
@@ -12,6 +12,23 @@ function draw<T>(pool: T[], n: number, rng: Rng): T[] {
   const out: T[] = [];
   for (let i = 0; i < n && pool.length > 0; i++) out.push(pool.splice(Math.floor(rng() * pool.length), 1)[0]);
   return out;
+}
+
+const CORE: Archetype[] = ['eager', 'quiet', 'clown', 'skeptic', 'carrier', 'struggling'];
+
+/** A class for one lesson: one student of each core archetype, the rest at random, in random seats. */
+export function drawClass(pool: Persona[], rng: Rng, size = 10): Persona[] {
+  const rest = [...pool];
+  const picked: Persona[] = [];
+  for (const kind of CORE) {
+    const matches = rest.filter(p => p.archetype === kind);
+    if (matches.length === 0 || picked.length >= size) continue;
+    const p = matches[Math.floor(rng() * matches.length)];
+    picked.push(p);
+    rest.splice(rest.indexOf(p), 1);
+  }
+  picked.push(...draw(rest, size - picked.length, rng));
+  return draw(picked, picked.length, rng);
 }
 
 export function startLesson(chapter: Chapter, personas: Persona[], rng: Rng, now: number): LessonState {

@@ -1,52 +1,752 @@
 [
-  { "id": "aisha", "name": "Aisha", "archetype": "eager",
-    "traits": { "attention": 0.9, "curiosity": 0.9, "confidence": 0.8 },
+  {
+    "id": "aisha",
+    "name": "Aisha",
+    "archetype": "eager",
+    "traits": {
+      "attention": 0.9,
+      "curiosity": 0.9,
+      "confidence": 0.8
+    },
     "learning_style": "likes precise definitions",
     "personality": "Eager, sits in the front row, asks many clarifying questions, polite.",
-    "openingLines": ["Good morning! What are we learning today?", "I read ahead a little, is that okay?", "Can I sit in the front again?"] },
-  { "id": "maya", "name": "Maya", "archetype": "quiet",
-    "traits": { "attention": 0.85, "curiosity": 0.5, "confidence": 0.1 },
+    "openingLines": [
+      "Good morning! What are we learning today?",
+      "I read ahead a little, is that okay?",
+      "Can I sit in the front again?"
+    ],
+    "look": {
+      "hair": "hijab",
+      "hairColor": "#2f8f8a",
+      "skin": "#c98d62",
+      "shirt": "#7c62c9",
+      "glasses": false
+    },
+    "voice": 0
+  },
+  {
+    "id": "maya",
+    "name": "Maya",
+    "archetype": "quiet",
+    "traits": {
+      "attention": 0.85,
+      "curiosity": 0.5,
+      "confidence": 0.1
+    },
     "learning_style": "needs real-life examples",
     "personality": "Shy and careful. Rarely speaks unless the teacher invites her. Gets confused silently.",
-    "openingLines": ["Hi.", "Um, good morning.", "Is this seat okay?"] },
-  { "id": "leo", "name": "Leo", "archetype": "clown",
-    "traits": { "attention": 0.3, "curiosity": 0.7, "confidence": 0.9 },
+    "openingLines": [
+      "Hi.",
+      "Um, good morning.",
+      "Is this seat okay?"
+    ],
+    "look": {
+      "hair": "long",
+      "hairColor": "#2b2330",
+      "skin": "#e8b98f",
+      "shirt": "#e77fa3",
+      "glasses": false
+    },
+    "voice": 1
+  },
+  {
+    "id": "leo",
+    "name": "Leo",
+    "archetype": "clown",
+    "traits": {
+      "attention": 0.3,
+      "curiosity": 0.7,
+      "confidence": 0.9
+    },
     "learning_style": "remembers jokes and silly examples",
     "personality": "Class clown. Funny, easily distracted, asks off-topic questions, means no harm.",
-    "openingLines": ["Do we have a quiz today? Please say no.", "Can we do the lesson outside?", "I forgot my brain at home."] },
-  { "id": "yuki", "name": "Yuki", "archetype": "skeptic",
-    "traits": { "attention": 0.8, "curiosity": 0.8, "confidence": 0.7 },
+    "openingLines": [
+      "Do we have a quiz today? Please say no.",
+      "Can we do the lesson outside?",
+      "I forgot my brain at home."
+    ],
+    "look": {
+      "hair": "spiky",
+      "hairColor": "#d9722b",
+      "skin": "#f6d3b3",
+      "shirt": "#f08a3c",
+      "glasses": false
+    },
+    "voice": 2
+  },
+  {
+    "id": "yuki",
+    "name": "Yuki",
+    "archetype": "skeptic",
+    "traits": {
+      "attention": 0.8,
+      "curiosity": 0.8,
+      "confidence": 0.7
+    },
     "learning_style": "wants to know why, not just what",
     "personality": "Skeptic. Challenges explanations with 'but why?' and notices when something does not add up.",
-    "openingLines": ["Why do we need to learn this?", "Is this going to be useful or just for the test?", "Morning."] },
-  { "id": "tom", "name": "Tom", "archetype": "carrier",
-    "traits": { "attention": 0.7, "curiosity": 0.6, "confidence": 0.8 },
+    "openingLines": [
+      "Why do we need to learn this?",
+      "Is this going to be useful or just for the test?",
+      "Morning."
+    ],
+    "look": {
+      "hair": "bob",
+      "hairColor": "#1f1b26",
+      "skin": "#f1cfa5",
+      "shirt": "#d9534f",
+      "glasses": false
+    },
+    "voice": 3
+  },
+  {
+    "id": "tom",
+    "name": "Tom",
+    "archetype": "carrier",
+    "traits": {
+      "attention": 0.7,
+      "curiosity": 0.6,
+      "confidence": 0.8
+    },
     "learning_style": "compares everything to what he already knows",
     "personality": "Confident and a bit stubborn. Sure of what he already believes and says so.",
-    "openingLines": ["I already know some of this from math.", "My cousin taught me coding, sort of.", "Is this the easy chapter?"] },
-  { "id": "sam", "name": "Sam", "archetype": "struggling",
-    "traits": { "attention": 0.6, "curiosity": 0.3, "confidence": 0.3 },
+    "openingLines": [
+      "I already know some of this from math.",
+      "My cousin taught me coding, sort of.",
+      "Is this the easy chapter?"
+    ],
+    "look": {
+      "hair": "short",
+      "hairColor": "#6b4424",
+      "skin": "#f3cfae",
+      "shirt": "#3f7fd1",
+      "glasses": true
+    },
+    "voice": 4
+  },
+  {
+    "id": "sam",
+    "name": "Sam",
+    "archetype": "struggling",
+    "traits": {
+      "attention": 0.6,
+      "curiosity": 0.3,
+      "confidence": 0.3
+    },
     "learning_style": "needs simple words and one idea at a time",
     "personality": "Struggles and knows it. Tries hard, gets lost quickly, grateful for simple explanations.",
-    "openingLines": ["Is today hard?", "I did not get last time.", "Can you go slow today?"] },
-  { "id": "nora", "name": "Nora", "archetype": "other",
-    "traits": { "attention": 0.8, "curiosity": 0.5, "confidence": 0.6 },
+    "openingLines": [
+      "Is today hard?",
+      "I did not get last time.",
+      "Can you go slow today?"
+    ],
+    "look": {
+      "hair": "curly",
+      "hairColor": "#2e2019",
+      "skin": "#8a5a3c",
+      "shirt": "#4fa66a",
+      "glasses": false
+    },
+    "voice": 5
+  },
+  {
+    "id": "nora",
+    "name": "Nora",
+    "archetype": "other",
+    "traits": {
+      "attention": 0.8,
+      "curiosity": 0.5,
+      "confidence": 0.6
+    },
     "learning_style": "learns well from clear steps",
     "personality": "Steady and cheerful. Follows along, answers when asked.",
-    "openingLines": ["Good morning!", "Ready when you are.", "I like the first lesson of a topic."] },
-  { "id": "omar", "name": "Omar", "archetype": "other",
-    "traits": { "attention": 0.75, "curiosity": 0.3, "confidence": 0.5 },
+    "openingLines": [
+      "Good morning!",
+      "Ready when you are.",
+      "I like the first lesson of a topic."
+    ],
+    "look": {
+      "hair": "pigtails",
+      "hairColor": "#e3b341",
+      "skin": "#f6d3b3",
+      "shirt": "#f2c230",
+      "glasses": false
+    },
+    "voice": 6
+  },
+  {
+    "id": "omar",
+    "name": "Omar",
+    "archetype": "other",
+    "traits": {
+      "attention": 0.75,
+      "curiosity": 0.3,
+      "confidence": 0.5
+    },
     "learning_style": "copies what is written on the board word for word",
     "personality": "Calm and tidy. Trusts the board more than spoken words.",
-    "openingLines": ["Will you write it on the board?", "Morning.", "I have a new notebook."] },
-  { "id": "lina", "name": "Lina", "archetype": "other",
-    "traits": { "attention": 0.8, "curiosity": 0.7, "confidence": 0.6 },
+    "openingLines": [
+      "Will you write it on the board?",
+      "Morning.",
+      "I have a new notebook."
+    ],
+    "look": {
+      "hair": "short",
+      "hairColor": "#1f1b26",
+      "skin": "#b97f52",
+      "shirt": "#2fa39a",
+      "glasses": false
+    },
+    "voice": 7
+  },
+  {
+    "id": "lina",
+    "name": "Lina",
+    "archetype": "other",
+    "traits": {
+      "attention": 0.8,
+      "curiosity": 0.7,
+      "confidence": 0.6
+    },
     "learning_style": "likes analogies and examples",
     "personality": "Warm and imaginative. Turns ideas into little stories.",
-    "openingLines": ["Can we have an example with food today?", "Hi! I like this class.", "Is it like a puzzle?"] },
-  { "id": "ben", "name": "Ben", "archetype": "other",
-    "traits": { "attention": 0.4, "curiosity": 0.3, "confidence": 0.5 },
+    "openingLines": [
+      "Can we have an example with food today?",
+      "Hi! I like this class.",
+      "Is it like a puzzle?"
+    ],
+    "look": {
+      "hair": "bun",
+      "hairColor": "#8a4b2a",
+      "skin": "#dba77c",
+      "shirt": "#b58be0",
+      "glasses": true
+    },
+    "voice": 8
+  },
+  {
+    "id": "ben",
+    "name": "Ben",
+    "archetype": "other",
+    "traits": {
+      "attention": 0.4,
+      "curiosity": 0.3,
+      "confidence": 0.5
+    },
     "learning_style": "pays attention when it sounds like a game",
     "personality": "Drifts off, looks out of the window, comes back when something is fun.",
-    "openingLines": ["What time does this end?", "Huh? Oh, hi.", "Is it lunch soon?"] }
+    "openingLines": [
+      "What time does this end?",
+      "Huh? Oh, hi.",
+      "Is it lunch soon?"
+    ],
+    "look": {
+      "hair": "cap",
+      "hairColor": "#7a5230",
+      "skin": "#f0c8a0",
+      "shirt": "#7f8aa3",
+      "glasses": false
+    },
+    "voice": 9
+  },
+  {
+    "id": "zara",
+    "name": "Zara",
+    "archetype": "eager",
+    "traits": {
+      "attention": 0.9,
+      "curiosity": 0.8,
+      "confidence": 0.9
+    },
+    "learning_style": "wants the exact rule, then an example",
+    "personality": "Quick and keen. Finishes early and asks what comes next.",
+    "openingLines": [
+      "Can we start? I am ready.",
+      "I did the extra exercises.",
+      "What is the hardest part today?"
+    ],
+    "look": {
+      "hair": "bun",
+      "hairColor": "#1f1b26",
+      "skin": "#a86f45",
+      "shirt": "#e0567a",
+      "glasses": false
+    },
+    "voice": 10
+  },
+  {
+    "id": "kofi",
+    "name": "Kofi",
+    "archetype": "eager",
+    "traits": {
+      "attention": 0.85,
+      "curiosity": 0.9,
+      "confidence": 0.7
+    },
+    "learning_style": "asks how things connect to each other",
+    "personality": "Friendly and curious. Wants to know how everything fits together.",
+    "openingLines": [
+      "Good morning! Is this linked to last week?",
+      "I have a question already.",
+      "I like new topics."
+    ],
+    "look": {
+      "hair": "short",
+      "hairColor": "#1f1b26",
+      "skin": "#6b4226",
+      "shirt": "#f2c230",
+      "glasses": false
+    },
+    "voice": 11
+  },
+  {
+    "id": "ines",
+    "name": "Ines",
+    "archetype": "quiet",
+    "traits": {
+      "attention": 0.9,
+      "curiosity": 0.4,
+      "confidence": 0.15
+    },
+    "learning_style": "writes everything down neatly",
+    "personality": "Very quiet and careful. Understands a lot but will not speak unless asked by name.",
+    "openingLines": [
+      "Morning.",
+      "Hello.",
+      "I brought my notes."
+    ],
+    "look": {
+      "hair": "long",
+      "hairColor": "#6b4424",
+      "skin": "#f3cfae",
+      "shirt": "#5aa9d6",
+      "glasses": true
+    },
+    "voice": 12
+  },
+  {
+    "id": "hugo",
+    "name": "Hugo",
+    "archetype": "quiet",
+    "traits": {
+      "attention": 0.8,
+      "curiosity": 0.5,
+      "confidence": 0.2
+    },
+    "learning_style": "needs time to think before answering",
+    "personality": "Thoughtful and slow to speak. Hates being wrong in front of others.",
+    "openingLines": [
+      "Hi.",
+      "Um, hello.",
+      "Is it okay if I just listen?"
+    ],
+    "look": {
+      "hair": "short",
+      "hairColor": "#c9a25a",
+      "skin": "#f6d3b3",
+      "shirt": "#6f8f4a",
+      "glasses": false
+    },
+    "voice": 13
+  },
+  {
+    "id": "max",
+    "name": "Max",
+    "archetype": "clown",
+    "traits": {
+      "attention": 0.35,
+      "curiosity": 0.6,
+      "confidence": 0.95
+    },
+    "learning_style": "remembers anything funny",
+    "personality": "Loud, funny and restless. Turns everything into a joke, then feels a bit sorry.",
+    "openingLines": [
+      "Is today a movie day?",
+      "I vote for no homework.",
+      "My dog ate my attention span."
+    ],
+    "look": {
+      "hair": "curly",
+      "hairColor": "#d9722b",
+      "skin": "#f6d3b3",
+      "shirt": "#e04f3f",
+      "glasses": false
+    },
+    "voice": 14
+  },
+  {
+    "id": "dina",
+    "name": "Dina",
+    "archetype": "clown",
+    "traits": {
+      "attention": 0.4,
+      "curiosity": 0.7,
+      "confidence": 0.85
+    },
+    "learning_style": "learns through stories and silly voices",
+    "personality": "Chatty and playful. Whispers to neighbours and asks odd questions.",
+    "openingLines": [
+      "Can I sit next to my friend?",
+      "What if we teach YOU today?",
+      "Is this the fun kind of lesson?"
+    ],
+    "look": {
+      "hair": "pigtails",
+      "hairColor": "#2b2330",
+      "skin": "#dba77c",
+      "shirt": "#f08a3c",
+      "glasses": false
+    },
+    "voice": 15
+  },
+  {
+    "id": "ravi",
+    "name": "Ravi",
+    "archetype": "skeptic",
+    "traits": {
+      "attention": 0.8,
+      "curiosity": 0.85,
+      "confidence": 0.8
+    },
+    "learning_style": "wants proof and counter-examples",
+    "personality": "Sharp and doubtful. Looks for the case where the rule breaks.",
+    "openingLines": [
+      "Is that always true, though?",
+      "Who decided that?",
+      "I read something different."
+    ],
+    "look": {
+      "hair": "short",
+      "hairColor": "#1f1b26",
+      "skin": "#b97f52",
+      "shirt": "#4f6bd1",
+      "glasses": true
+    },
+    "voice": 16
+  },
+  {
+    "id": "elsa",
+    "name": "Elsa",
+    "archetype": "skeptic",
+    "traits": {
+      "attention": 0.75,
+      "curiosity": 0.7,
+      "confidence": 0.6
+    },
+    "learning_style": "asks why before she accepts how",
+    "personality": "Calm and questioning. Will not write down something she does not believe.",
+    "openingLines": [
+      "Why does it work that way?",
+      "Does this matter in real life?",
+      "Okay, convince me."
+    ],
+    "look": {
+      "hair": "bob",
+      "hairColor": "#e3b341",
+      "skin": "#f6d3b3",
+      "shirt": "#7a8fb3",
+      "glasses": false
+    },
+    "voice": 17
+  },
+  {
+    "id": "paulo",
+    "name": "Paulo",
+    "archetype": "carrier",
+    "traits": {
+      "attention": 0.7,
+      "curiosity": 0.5,
+      "confidence": 0.85
+    },
+    "learning_style": "trusts what he learned first",
+    "personality": "Sure of himself. Repeats what an older brother told him as fact.",
+    "openingLines": [
+      "My brother explained this already.",
+      "I know how this works.",
+      "This is the same as in math, right?"
+    ],
+    "look": {
+      "hair": "spiky",
+      "hairColor": "#2e2019",
+      "skin": "#c98d62",
+      "shirt": "#2fa39a",
+      "glasses": false
+    },
+    "voice": 18
+  },
+  {
+    "id": "mei",
+    "name": "Mei",
+    "archetype": "carrier",
+    "traits": {
+      "attention": 0.75,
+      "curiosity": 0.6,
+      "confidence": 0.7
+    },
+    "learning_style": "links new ideas to old ones, sometimes wrongly",
+    "personality": "Bright and a little stubborn. Holds on to her first idea of how something works.",
+    "openingLines": [
+      "I think I already get this.",
+      "Is it like what we did last year?",
+      "I have a theory."
+    ],
+    "look": {
+      "hair": "long",
+      "hairColor": "#1f1b26",
+      "skin": "#f1cfa5",
+      "shirt": "#b58be0",
+      "glasses": false
+    },
+    "voice": 19
+  },
+  {
+    "id": "anna",
+    "name": "Anna",
+    "archetype": "struggling",
+    "traits": {
+      "attention": 0.55,
+      "curiosity": 0.3,
+      "confidence": 0.25
+    },
+    "learning_style": "needs one small step at a time",
+    "personality": "Tries hard but loses the thread quickly. Lights up when something finally makes sense.",
+    "openingLines": [
+      "Can you go slowly?",
+      "I did not understand last time.",
+      "Will there be examples?"
+    ],
+    "look": {
+      "hair": "pigtails",
+      "hairColor": "#8a4b2a",
+      "skin": "#f3cfae",
+      "shirt": "#e77fa3",
+      "glasses": false
+    },
+    "voice": 20
+  },
+  {
+    "id": "jamal",
+    "name": "Jamal",
+    "archetype": "struggling",
+    "traits": {
+      "attention": 0.6,
+      "curiosity": 0.4,
+      "confidence": 0.35
+    },
+    "learning_style": "needs to see it done before trying",
+    "personality": "Kind and unsure. Nods along even when lost, so you have to check.",
+    "openingLines": [
+      "Is this going to be hard?",
+      "I will try my best.",
+      "Can I ask if I get stuck?"
+    ],
+    "look": {
+      "hair": "short",
+      "hairColor": "#1f1b26",
+      "skin": "#6b4226",
+      "shirt": "#4fa66a",
+      "glasses": false
+    },
+    "voice": 21
+  },
+  {
+    "id": "sofia",
+    "name": "Sofia",
+    "archetype": "other",
+    "traits": {
+      "attention": 0.8,
+      "curiosity": 0.6,
+      "confidence": 0.6
+    },
+    "learning_style": "likes clear steps and tidy rules",
+    "personality": "Organised and steady. Makes lists of everything.",
+    "openingLines": [
+      "Good morning!",
+      "I have a new pen for this.",
+      "What are the steps today?"
+    ],
+    "look": {
+      "hair": "long",
+      "hairColor": "#6b4424",
+      "skin": "#dba77c",
+      "shirt": "#d9534f",
+      "glasses": false
+    },
+    "voice": 22
+  },
+  {
+    "id": "noah",
+    "name": "Noah",
+    "archetype": "other",
+    "traits": {
+      "attention": 0.7,
+      "curiosity": 0.5,
+      "confidence": 0.5
+    },
+    "learning_style": "learns by trying things out",
+    "personality": "Easy-going. Would rather do an exercise than listen to a long talk.",
+    "openingLines": [
+      "Do we get to try it ourselves?",
+      "Morning.",
+      "Can we do an exercise?"
+    ],
+    "look": {
+      "hair": "cap",
+      "hairColor": "#c9a25a",
+      "skin": "#f6d3b3",
+      "shirt": "#3f7fd1",
+      "glasses": false
+    },
+    "voice": 23
+  },
+  {
+    "id": "amira",
+    "name": "Amira",
+    "archetype": "other",
+    "traits": {
+      "attention": 0.85,
+      "curiosity": 0.6,
+      "confidence": 0.5
+    },
+    "learning_style": "likes examples from everyday life",
+    "personality": "Gentle and attentive. Helps her neighbour without being asked.",
+    "openingLines": [
+      "Good morning, teacher.",
+      "Can you give a real example?",
+      "I am ready."
+    ],
+    "look": {
+      "hair": "hijab",
+      "hairColor": "#7c62c9",
+      "skin": "#c98d62",
+      "shirt": "#f2c230",
+      "glasses": false
+    },
+    "voice": 24
+  },
+  {
+    "id": "finn",
+    "name": "Finn",
+    "archetype": "other",
+    "traits": {
+      "attention": 0.45,
+      "curiosity": 0.4,
+      "confidence": 0.6
+    },
+    "learning_style": "pays attention when it feels like a game",
+    "personality": "Dreamy. Doodles in the margin and catches about half of what is said.",
+    "openingLines": [
+      "Hm? Oh, hi.",
+      "Is it nearly break?",
+      "I was drawing a dragon."
+    ],
+    "look": {
+      "hair": "spiky",
+      "hairColor": "#c9a25a",
+      "skin": "#f6d3b3",
+      "shirt": "#7f8aa3",
+      "glasses": false
+    },
+    "voice": 25
+  },
+  {
+    "id": "chloe",
+    "name": "Chloe",
+    "archetype": "other",
+    "traits": {
+      "attention": 0.75,
+      "curiosity": 0.8,
+      "confidence": 0.7
+    },
+    "learning_style": "asks lots of what-if questions",
+    "personality": "Lively and imaginative. Follows ideas further than the lesson goes.",
+    "openingLines": [
+      "What if we did it backwards?",
+      "I have so many questions.",
+      "Hi! What is today about?"
+    ],
+    "look": {
+      "hair": "bun",
+      "hairColor": "#d9722b",
+      "skin": "#f6d3b3",
+      "shirt": "#2fa39a",
+      "glasses": true
+    },
+    "voice": 26
+  },
+  {
+    "id": "diego",
+    "name": "Diego",
+    "archetype": "other",
+    "traits": {
+      "attention": 0.65,
+      "curiosity": 0.5,
+      "confidence": 0.7
+    },
+    "learning_style": "copies the board and learns it by heart",
+    "personality": "Confident and practical. Wants to know what will be on the test.",
+    "openingLines": [
+      "Is this on the test?",
+      "Will you write it on the board?",
+      "Morning."
+    ],
+    "look": {
+      "hair": "curly",
+      "hairColor": "#2b2330",
+      "skin": "#b97f52",
+      "shirt": "#f08a3c",
+      "glasses": false
+    },
+    "voice": 27
+  },
+  {
+    "id": "hana",
+    "name": "Hana",
+    "archetype": "other",
+    "traits": {
+      "attention": 0.8,
+      "curiosity": 0.5,
+      "confidence": 0.4
+    },
+    "learning_style": "likes drawings and diagrams",
+    "personality": "Soft-spoken and precise. Notices small mistakes on the board.",
+    "openingLines": [
+      "Could you draw it?",
+      "Good morning.",
+      "I like when there is a picture."
+    ],
+    "look": {
+      "hair": "bob",
+      "hairColor": "#2b2330",
+      "skin": "#f1cfa5",
+      "shirt": "#5aa9d6",
+      "glasses": false
+    },
+    "voice": 28
+  },
+  {
+    "id": "luca",
+    "name": "Luca",
+    "archetype": "other",
+    "traits": {
+      "attention": 0.5,
+      "curiosity": 0.6,
+      "confidence": 0.8
+    },
+    "learning_style": "learns by talking it through",
+    "personality": "Talkative and friendly. Thinks out loud, sometimes off topic.",
+    "openingLines": [
+      "Guess what happened this morning!",
+      "Can we work in pairs?",
+      "I have a story about this."
+    ],
+    "look": {
+      "hair": "short",
+      "hairColor": "#8a4b2a",
+      "skin": "#e8b98f",
+      "shirt": "#6f8f4a",
+      "glasses": false
+    },
+    "voice": 29
+  }
 ]

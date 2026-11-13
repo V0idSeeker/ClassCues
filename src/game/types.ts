@@ -1,6 +1,10 @@
 export type Emotion = 'CURIOUS' | 'CONFUSED' | 'BORED' | 'HAPPY' | 'NEUTRAL';
 export type Archetype = 'eager' | 'quiet' | 'clown' | 'skeptic' | 'carrier' | 'struggling' | 'other';
 
+export type HairStyle = 'short' | 'long' | 'bob' | 'spiky' | 'curly' | 'pigtails' | 'bun' | 'cap' | 'hijab';
+/** How a student is drawn. */
+export interface Look { hair: HairStyle; hairColor: string; skin: string; shirt: string; glasses: boolean }
+
 export interface Objective { id: string; text: string }
 
 export interface QuizQuestion {
@@ -31,6 +35,9 @@ export interface Persona {
   learning_style: string;
   personality: string;
   openingLines: string[];
+  look: Look;
+  /** Which browser voice this student uses (a position in the voice list). */
+  voice: number;
 }
 
 export interface Belief { id: string; text: string }

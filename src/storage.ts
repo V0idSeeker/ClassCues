@@ -11,6 +11,8 @@ export interface Settings {
   /** Requests per day on a free model. 0 means no limit. */
   dailyLimit: number;
   debugLog: boolean;
+  /** Students speak aloud with the browser's voices. */
+  voiceOn: boolean;
 }
 
 export const PRESETS: Record<string, { label: string; baseUrl: string; setup: string }> = {
@@ -38,10 +40,10 @@ export const PRESETS: Record<string, { label: string; baseUrl: string; setup: st
 
 const DEFAULTS: Settings = {
   baseUrl: PRESETS.openrouter.baseUrl, apiKey: '', studentModel: '', graderModel: '',
-  thinkingOff: true, rememberKey: true, dailyLimit: 0, debugLog: false,
+  thinkingOff: true, rememberKey: true, dailyLimit: 0, debugLog: false, voiceOn: true,
 };
 
-const K = { settings: 'ts.settings', key: 'ts.key', used: 'ts.used', lesson: 'ts.lesson', levels: 'ts.levels' };
+const K = { settings: 'ts.settings', key: 'ts.key', used: 'ts.used', lesson: 'ts.lesson2', levels: 'ts.levels' };
 
 /** True once the player has saved settings at least once. */
 export const hasSettings = (): boolean => localStorage.getItem(K.settings) !== null;

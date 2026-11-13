@@ -1,30 +1,73 @@
-:root { --bg: #1b2233; --panel: #262f45; --edge: #3a4664; --text: #eef1f8; --dim: #a3aec6; --gold: #ffc533; --go: #3fbf7f; --bad: #ff8a7a; color-scheme: dark; }
+:root { --bg: #1b2233; --panel: #262f45; --edge: #3a4664; --text: #eef1f8; --dim: #a3aec6; --gold: #ffc533; --gold-ink: #3b2a00; --go: #3fbf7f; --bad: #ff8a7a; --paper: #fdfdf6; --ink: #24304f; color-scheme: dark; }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 system-ui, sans-serif; }
 h1 { font-size: 20px; margin: 0; } h2 { font-size: 14px; margin: 0 0 6px; color: var(--dim); text-transform: uppercase; letter-spacing: .05em; }
 button { font: inherit; font-weight: 700; color: var(--text); background: var(--panel); border: 2px solid var(--edge); border-radius: 8px; padding: 6px 12px; cursor: pointer; }
 button:hover:not(:disabled) { border-color: var(--gold); } button:disabled { opacity: .5; cursor: default; }
 button.go { background: var(--go); border-color: #23804f; color: #062414; }
+button.gold { background: var(--gold); border-color: #b98600; color: var(--gold-ink); }
+button:focus-visible, textarea:focus-visible, input:focus-visible, select:focus-visible, .kid:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 input, select, textarea { font: inherit; color: var(--text); background: var(--bg); border: 2px solid var(--edge); border-radius: 8px; padding: 6px 8px; width: 100%; }
 label { display: block; font-size: 13px; color: var(--dim); margin-top: 10px; }
 label.check { display: flex; gap: 8px; align-items: center; } label.check input { width: auto; }
-.page { max-width: 1400px; margin: 0 auto; padding: 12px 16px; }
+.page { max-width: 1560px; margin: 0 auto; padding: 12px 16px; }
 .narrow { max-width: 640px; }
 .panel { background: var(--panel); border: 2px solid var(--edge); border-radius: 12px; padding: 12px; }
 .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .grow { flex: 1; }
 .error { color: var(--bad); font-weight: 700; } .ok { color: var(--go); font-weight: 700; } .dim { color: var(--dim); font-size: 13px; }
 .pill { background: var(--panel); border: 2px solid var(--edge); border-radius: 999px; padding: 2px 10px; font-weight: 700; font-size: 13px; font-variant-numeric: tabular-nums; }
-.play { display: grid; grid-template-columns: 270px minmax(0, 1fr) 280px; gap: 12px; align-items: start; margin-top: 12px; }
+.play { display: grid; grid-template-columns: minmax(0, 270px) minmax(0, 1fr) minmax(0, 280px); gap: 12px; align-items: start; margin-top: 12px; }
 .col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
-.board { min-height: 170px; background: #2f5d50; border: 8px solid #9a6a3c; border-radius: 6px; color: #f5f7f2; font-size: 20px; font-family: "Segoe Print", "Comic Sans MS", cursive; resize: vertical; }
-.desks { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
-.desk { text-align: center; padding: 8px 4px; border-radius: 10px; background: var(--bg); border: 2px solid var(--edge); cursor: pointer; }
-.desk.sel { border-color: var(--gold); } .desk b { display: block; }
+
+/* The drawn classroom */
+.stage { border: 4px solid var(--edge); border-radius: 14px; overflow-x: auto; background: #cfe0ea; }
+.stage-in { position: relative; min-width: 520px; container-type: inline-size; }
+.stage svg { display: block; width: 100%; height: auto; }
+.kid { cursor: pointer; }
+.kid .plate { fill: #fff; } .kid:hover .plate { fill: #ffe9a6; } .kid.sel .plate { fill: var(--gold); }
+.eyes, .mouth { transform-box: fill-box; transform-origin: center; }
+@media (prefers-reduced-motion: no-preference) {
+  .eyes { animation: blink 4.6s infinite; }
+  .emote { animation: pop 1.6s ease-in-out infinite; }
+  .kid.talking .mouth { animation: talk .22s ease-in-out infinite alternate; }
+}
+@keyframes blink { 0%, 94%, 100% { transform: scaleY(1); } 97% { transform: scaleY(.1); } }
+@keyframes pop { 50% { transform: translateY(-4px); } }
+@keyframes talk { from { transform: scaleY(.6); } to { transform: scaleY(1.9); } }
+
+/* The board: chalk writing, on the wall or filling the stage */
+.chalk { background: transparent; border: 0; border-radius: 0; resize: none; padding: 0; color: #f5f7f2; font-weight: 700; font-family: "Segoe Print", "Comic Sans MS", "Bradley Hand", cursive; line-height: 1.25; }
+.chalk::placeholder { color: #ffffff80; } .chalk::selection { background: #ffe08a; color: var(--ink); }
+.chalk:focus-visible { outline: 2px dashed #ffffffb0; outline-offset: 3px; }
+.wall-board { position: absolute; left: 19.8%; top: 5.6%; width: 60.4%; height: 43.8%; font-size: 2.5cqw; overflow: auto; }
+.bigboard { background: #2f5d50; border: 12px solid #9a6a3c; border-radius: 10px; padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; }
+.bigboard .chalk { min-height: 420px; font-size: 28px; }
+.strip { display: flex; flex-wrap: wrap; gap: 6px; }
+.mini { width: 66px; padding: 2px; font-size: 11px; background: transparent; border-color: transparent; color: #f5f7f2; position: relative; }
+.mini svg { display: block; width: 100%; height: auto; background: #cfe0ea; border: 3px solid var(--bg); border-radius: 10px; }
+.mini.up svg, .mini.sel svg { border-color: var(--gold); }
+.mini.up::after { content: "✋"; position: absolute; top: -6px; right: -2px; font-size: 16px; }
+
+/* Selected student */
+.talk { display: grid; grid-template-columns: 68px minmax(0, 1fr); gap: 10px; align-items: center; }
+.pic { background: #cfe0ea; border: 3px solid var(--gold); border-radius: 12px; overflow: hidden; } .pic svg { display: block; width: 100%; height: auto; }
+.who { font-size: 18px; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.chip { white-space: nowrap; background: var(--bg); border: 2px solid; font-size: 12px; font-weight: 800; border-radius: 999px; padding: 0 9px; }
+.line { font-size: 16px; margin: 10px 0; overflow-wrap: anywhere; }
+.paper { background: var(--paper) repeating-linear-gradient(transparent 0 25px, #b9cdea 25px 26px); background-position: 0 40px; color: var(--ink); border-radius: 6px; padding: 8px 12px 14px 44px; position: relative; box-shadow: 3px 4px 0 #0005; }
+.paper::before { content: ""; position: absolute; left: 32px; top: 0; bottom: 0; width: 2px; background: #e58a8a; }
+.paper h2 { color: var(--ink); line-height: 30px; margin: 0; }
+.paper ul { list-style: none; margin: 4px 0 0; padding: 0; font-family: "Segoe Print", "Comic Sans MS", "Bradley Hand", cursive; font-size: 14px; line-height: 26px; }
+.paper li.bent { color: #9a5b00; } .paper li.bent::after { content: "  (bent by a wrong belief)"; font: 700 11px system-ui, sans-serif; }
+.paper li.wrong { color: #c2331f; } .paper li.wrong::after { content: "  ✗ wrong belief, not corrected yet"; font: 700 11px system-ui, sans-serif; }
+
 .say textarea { min-height: 56px; }
-.log { max-height: 180px; overflow-y: auto; font-size: 14px; display: flex; flex-direction: column; gap: 4px; }
-.notes { margin: 0; padding-left: 18px; } .notes li.bent { color: var(--gold); } .notes li.wrong { color: var(--bad); }
-.goal { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; font-size: 14px; margin-bottom: 8px; }
+.log { max-height: 160px; overflow-y: auto; font-size: 14px; display: flex; flex-direction: column; gap: 4px; }
+.goal { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px; font-size: 14px; margin-bottom: 10px; }
+.pips { grid-column: 1 / -1; display: flex; gap: 3px; }
+.pips i { flex: 1; height: 7px; border-radius: 3px; background: var(--bg); border: 1px solid var(--edge); } .pips i.on { background: var(--go); border-color: var(--go); }
 table { border-collapse: collapse; width: 100%; } th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--edge); vertical-align: top; }
 .footer { text-align: center; margin-top: 16px; }
-@media (max-width: 1000px) { .play { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 1000px) { .play { grid-template-columns: minmax(0, 1fr); } .play > .col:nth-child(2) { order: -1; } }

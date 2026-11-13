@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { builtInChapter, students } from '../content';
+import { builtInChapter, studentPool, students } from '../content';
 import {
-  LESSON_MS, MAX_TURNS, applyNotes, boardAdded, classClock, coverage, hasObjective, lessonOver,
+  LESSON_MS, MAX_TURNS, applyNotes, drawClass, boardAdded, classClock, coverage, hasObjective, lessonOver,
   mergeTurns, patchStudent, pickReactor, shouldReact, startLesson,
 } from './lesson';
 import type { NoteTakerResult } from './types';
@@ -29,6 +29,35 @@ describe('startLesson', () => {
   it('works when the chapter has no misconceptions', () => {
     const s = startLesson({ ...builtInChapter, common_misconceptions: [] }, students, () => 0.5, 0);
     expect(s.students.every(x => x.beliefs.length === 0)).toBe(true);
+  });
+});
+
+describe('drawClass', () => {
+  it('draws ten different students with every core archetype', () => {
+    for (const seed of [0, 0.3, 0.77, 0.999]) {
+      const cls = drawClass(studentPool, () => seed);
+      expect(cls).toHaveLength(10);
+      expect(new Set(cls.map(p => p.id)).size).toBe(10);
+      for (const kind of ['eager', 'quiet', 'clown', 'skeptic', 'carrier', 'struggling']) expect(cls.some(p => p.archetype === kind)).toBe(true);
+    }
+  });
+
+  it('gives everyone when the pool is smaller than a class', () => {
+    expect(drawClass(students.slice(0, 4), () => 0.5)).toHaveLength(4);
+  });
+
+  it('has a pool of complete students with unique ids (checks content/students.json)', () => {
+    expect(studentPool.length).toBeGreaterThanOrEqual(30);
+    expect(studentPool.every(p => p.look.hair && p.look.skin && typeof p.voice === 'number')).toBe(true);
+    expect(new Set(studentPool.map(p => p.id)).size).toBe(studentPool.length);
+    const kinds = ['eager', 'quiet', 'clown', 'skeptic', 'carrier', 'struggling', 'other'];
+    for (const p of studentPool) {
+      expect(p.id).toMatch(/^[a-z0-9-]+$/);
+      expect(kinds).toContain(p.archetype);
+      expect(p.name && p.personality && p.learning_style).toBeTruthy();
+      expect(p.openingLines.length).toBeGreaterThanOrEqual(1);
+      for (const t of [p.traits.attention, p.traits.curiosity, p.traits.confidence]) { expect(t).toBeGreaterThanOrEqual(0); expect(t).toBeLessThanOrEqual(1); }
+    }
   });
 });
 

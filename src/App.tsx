@@ -2,9 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { makeAi } from './ai/calls';
 import { listModelInfo, pickFreeDefault } from './ai/models';
 import { AiError } from './ai/provider';
-import { students } from './content';
+import { studentPool } from './content';
 import { mustRingBell, quizReserve } from './game/budget';
-import { lessonOver, mergeTurns, startLesson } from './game/lesson';
+import { drawClass, lessonOver, mergeTurns, startLesson } from './game/lesson';
 import { computeReport } from './game/report';
 import type { Report as ReportType } from './game/report';
 import { askStudent, hearStudent, pickForClassQuestion, runQuiz, teachTurn } from './game/runLesson';
@@ -72,7 +72,7 @@ export default function App() {
   function play(chapter: Chapter) {
     queue.current = [];
     setError('');
-    commit(startLesson(chapter, students, Math.random, Date.now()));
+    commit(startLesson(chapter, drawClass(studentPool, Math.random), Math.random, Date.now()));
     setScreen('classroom');
   }
 
@@ -163,6 +163,7 @@ export default function App() {
       {screen === 'classroom' && lesson && (
         <Classroom
           state={lesson} used={used} busy={busy} error={error}
+          voiceOn={settings.voiceOn} onVoice={on => { const next = { ...settings, voiceOn: on }; saveSettings(next); setSettings(next); }}
           onTurn={t => { queue.current.push(t); void pump(); }}
           onHear={id => void act(s => hearStudent(s, id))}
           onAsk={(id, q) => void act(s => askStudent(s, id, q, ai))}

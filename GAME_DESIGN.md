@@ -90,7 +90,7 @@ The player sees the room from the teacher's position. Reference mockup: `docs/mo
 
 ### 0.4 Students
 
-- **Pool.** Students are JSON files in a built-in pool. Version 1 ships 30; the code works with any pool size, and the pool is meant to grow to 100.
+- **Pool.** All students are in one file, `content/students.json`. It holds 30; the code works with any number, and the pool is meant to grow to 100. Adding a student means adding one block to that file: `content/README.md` explains every field. `npm test` checks the file.
 - **Each student has:** name, traits (attention, curiosity, confidence), learning style, personality text, archetype, look settings (hair, skin tone, clothes, glasses), a voice, and three to five pre-written opening lines so the start of class needs no AI call.
 - **Class.** Each lesson draws 10 from the pool: one of each archetype from §3.3 (eager, quiet, class clown, skeptic, misconception carrier, struggling) plus four others at random.
 - **Wrong beliefs.** Student files hold no subject-specific beliefs, because the subject changes with the chapter. At lesson start, code hands out the chapter's `common_misconceptions`: the misconception carrier gets two, the struggling student one, and two other students picked at random get one each.
