@@ -14,6 +14,7 @@ interface Props {
   onBell(): void;
   onRetry(): void;
   onSettings(): void;
+  onLevels(): void;
 }
 
 const FEELING = { CURIOUS: '! curious', CONFUSED: '? confused', BORED: 'z bored', HAPPY: '♪ happy', NEUTRAL: '… listening' };
@@ -78,6 +79,7 @@ export default function Classroom(p: Props) {
         <span className="pill">Turn {state.turns} / {MAX_TURNS}</span>
         <span className="pill">AI requests today {p.used}</span>
         <label className="check" style={{ margin: 0 }}><input type="checkbox" checked={realistic} onChange={e => setRealistic(e.target.checked)} />Realistic mode</label>
+        <button onClick={p.onLevels}>Levels and PDF import</button>
         <button onClick={p.onSettings}>Settings</button>
         <button className="go" onClick={p.onBell} disabled={p.busy}>Ring the bell: quiz time</button>
       </div>

@@ -145,7 +145,7 @@ export default function App() {
       )}
 
       {screen === 'modules' && (
-        <Modules settings={settings} onRequest={() => setUsed(bumpUsed())} onPlay={play} onSettings={() => setScreen('settings')} />
+        <Modules settings={settings} lessonRunning={lesson !== null} onResume={() => setScreen('classroom')} onRequest={() => setUsed(bumpUsed())} onPlay={play} onSettings={() => setScreen('settings')} />
       )}
 
       {screen === 'classroom' && lesson && (
@@ -158,6 +158,7 @@ export default function App() {
           onBell={() => void bell()}
           onRetry={() => void pump()}
           onSettings={() => setScreen('settings')}
+          onLevels={() => setScreen('modules')}
         />
       )}
 

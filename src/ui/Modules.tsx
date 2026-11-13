@@ -8,7 +8,7 @@ import type { Settings } from '../storage';
 
 const MAX_CHARS = 30000;
 
-interface Props { settings: Settings; onRequest(): void; onPlay(c: Chapter): void; onSettings(): void }
+interface Props { settings: Settings; lessonRunning: boolean; onRequest(): void; onPlay(c: Chapter): void; onResume(): void; onSettings(): void }
 interface Pdf { file: File; pages: number; from: number; to: number }
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
@@ -160,11 +160,13 @@ export default function Modules(p: Props) {
     <div className="page narrow">
       <div className="row">
         <h1 className="grow">Choose a level</h1>
+        {p.lessonRunning && <button className="go" onClick={p.onResume}>Back to the running lesson</button>}
         <button onClick={p.onSettings}>Settings</button>
       </div>
 
       <div className="panel" style={{ marginTop: 12 }}>
         <h2>Levels</h2>
+        {p.lessonRunning && <p className="dim">A lesson is running. Teaching another level ends it without a quiz.</p>}
         {[builtInChapter, ...levels].map((c, i) => (
           <div className="row" key={c.id} style={{ marginBottom: 8 }}>
             <span className="grow"><b>{c.title}</b> <span className="dim">{i === 0 ? 'built-in · Intro to Python' : `${c.objectives.length} goals · ${c.quiz.length} questions`}</span></span>
