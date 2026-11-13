@@ -26,7 +26,7 @@ describe('prompts keep judge knowledge away from students', () => {
     expect(text).not.toContain(ANSWER_KEY);
   });
 
-  it('note-taker hears what students said just before, as context for the teacher's words', () => {
+  it('note-taker hears what students said just before, as context for what the teacher says', () => {
     const heard = { ...state, transcript: [...state.transcript, { who: 'Leo', text: 'Can a variable be called pizza?' }, { who: 'teacher', text: 'Yes, exactly.' }] };
     const text = all(noteTakerPrompt(heard, '', 'Yes, exactly.'));
     expect(text).toContain('Leo: Can a variable be called pizza?');
