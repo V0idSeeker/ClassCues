@@ -1,4 +1,5 @@
 // Student voices with the browser's built-in speech. Free, no key. Browser only.
+import { getLang } from './i18n';
 
 /** The voice for a student: one that speaks the language if there is any, reused in turn when students outnumber voices. */
 export function pickVoice<T extends { lang: string }>(voices: T[], index: number, lang: string): T | null {
@@ -12,15 +13,13 @@ export function voiceTuning(index: number): { pitch: number; rate: number } {
   return { pitch: 1 + ((index * 7) % 5) * 0.12, rate: 0.95 + ((index * 3) % 4) * 0.05 };
 }
 
-// ponytail: voices are English. For levels in other languages pass the level's language here once levels carry one.
-const LANG = 'en';
-
-/** Says the text aloud in the student's voice. onState(true) when speech starts, onState(false) when it ends. */
+/** Says the text aloud in the student's voice, in the game's language (any voice if the browser has none for it). onState(true) when speech starts, onState(false) when it ends. */
 export function speak(text: string, voiceIndex: number, onState: (talking: boolean) => void): void {
   const synth = typeof window === 'undefined' ? undefined : window.speechSynthesis;
   if (!synth || !text.trim()) return;
   const u = new SpeechSynthesisUtterance(text);
-  const voice = pickVoice(synth.getVoices(), voiceIndex, LANG);
+  u.lang = getLang();
+  const voice = pickVoice(synth.getVoices(), voiceIndex, getLang());
   if (voice) u.voice = voice;
   const { pitch, rate } = voiceTuning(voiceIndex);
   u.pitch = pitch;

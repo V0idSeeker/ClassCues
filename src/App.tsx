@@ -5,7 +5,7 @@ import type { AiDeps } from './ai/calls';
 import { autoModels, canReadPictures, listModelInfo } from './ai/models';
 import { preferModel } from './ai/provider';
 import { AiError } from './ai/provider';
-import { studentPool } from './content';
+import { inLanguage, studentPool } from './content';
 import { AFTER_QUIZ_REQUESTS, mustRingBell, quizReserve } from './game/budget';
 import { challengeById, challengeTitle, pickChallenge } from './game/challenges';
 import { recordScore } from './game/course';
@@ -20,6 +20,7 @@ import type { Chapter, Difficulty, LessonState, Persona, Turn } from './game/typ
 import { addPlay, addRun, courseLessonIds, loadPlays, loadRuns, saveRuns } from './progress';
 import { addLog, bumpUsed, clearLesson, hasSettings, helpSeen, markHelpSeen, loadGoodModel, loadLesson, loadMemory, loadScores, saveScores, saveGoodModel, loadSettings, loadSkipPrepare, saveMemory, loadUsed, saveLesson, saveSettings } from './storage';
 import type { Settings as SettingsType } from './storage';
+import { setLang, t } from './i18n';
 import Classroom from './ui/Classroom';
 import Codex from './ui/help/Codex';
 import MainMenu from './ui/MainMenu';
@@ -34,10 +35,12 @@ interface Plan { chapter: Chapter; personas?: Persona[]; held?: Record<string, s
 
 type Screen = 'menu' | 'settings' | 'modules' | 'prepare' | 'classroom' | 'quiz' | 'report' | 'review';
 
-const explain = (e: unknown) => (e instanceof AiError ? e.message : `Something went wrong: ${String(e)}`);
+const explain = (e: unknown) => (e instanceof AiError ? e.message : t('common.somethingWrong', { error: String(e) }));
 
 export default function App() {
   const [settings, setSettings] = useState<SettingsType>(loadSettings);
+  // Set before any child renders, so the whole tree reads the chosen language.
+  setLang(settings.language);
   const [screen, setScreen] = useState<Screen>('menu');
   // The guide opens over any screen, so a running lesson is never interrupted. null: closed.
   const [help, setHelp] = useState<string | null>(null);
@@ -75,6 +78,7 @@ export default function App() {
     provider: settings,
     studentModel: settings.studentModel,
     graderModel: settings.graderModel || settings.studentModel,
+    lang: settings.language,
     autoModels: () => autoList,
     onModel: model => saveGoodModel(settings.baseUrl, model),
     onRequest: () => setUsed(bumpUsed()),
@@ -121,7 +125,7 @@ export default function App() {
     queue.current = [];
     setError('');
     clearLesson();
-    commit(startLesson(chapter, personas ?? drawClass(studentPool, Math.random), Math.random, Date.now(), loadMemory(),
+    commit(startLesson(chapter, (personas ?? drawClass(studentPool, Math.random)).map(p => inLanguage(p, settings.language)), Math.random, Date.now(), loadMemory(),
       { difficulty: settings.difficulty, challenge: pickChallenge(Math.random).id, held }));
     setScreen('classroom');
   }
@@ -211,7 +215,7 @@ export default function App() {
       if (challenge) {
         const title = challengeTitle(challenge, s);
         const judged = challenge.check ? challenge.check(s) : await judgeChallenge(deps, title, challenge.detection, s.transcript).catch(() => null);
-        after.challenge = { title, met: judged?.met ?? null, reason: judged?.reason ?? 'The challenge could not be judged this time.' };
+        after.challenge = { title, met: judged?.met ?? null, reason: judged?.reason ?? t('report.notJudged') };
       }
       setProgress({ done: ++done, total });
 
@@ -265,7 +269,8 @@ export default function App() {
 
       {screen === 'settings' && (
         <Settings settings={settings} used={used} onSave={s => { saveSettings(s); setSettings(s); }} onPlay={() => setScreen(lessonRef.current ? 'classroom' : 'modules')}
-          onMenu={() => setScreen('menu')} onHelp={() => openHelp('providers')} />
+          onMenu={() => setScreen('menu')} onHelp={() => openHelp('providers')}
+          onLanguage={language => { const next = { ...settings, language }; saveSettings(next); setSettings(next); }} />
       )}
 
       {screen === 'modules' && (
@@ -297,11 +302,11 @@ export default function App() {
 
       {screen === 'quiz' && (
         <div className="page narrow">
-          <h1>Quiz in progress</h1>
+          <h1>{t('quiz.title')}</h1>
           <div className="panel">
-            <p role="status">Students are writing… {progress.done} of {progress.total} steps done.</p>
+            <p role="status">{t('quiz.progress', { done: progress.done, total: progress.total })}</p>
             <progress value={progress.done} max={progress.total} style={{ width: '100%' }} />
-            {error && <p className="error" role="alert">{error} <button onClick={() => void bell()}>Retry the quiz</button></p>}
+            {error && <p className="error" role="alert">{error} <button onClick={() => void bell()}>{t('quiz.retry')}</button></p>}
           </div>
         </div>
       )}
@@ -313,7 +318,7 @@ export default function App() {
 
       {help && <Codex entry={help} onOpen={setHelp} onClose={() => setHelp(null)} />}
 
-      {screen !== 'classroom' && screen !== 'menu' && <p className="dim footer">Class Is In Session · v{__APP_VERSION__}</p>}
+      {screen !== 'classroom' && screen !== 'menu' && <p className="dim footer">{t('app.footer', { version: __APP_VERSION__ })}</p>}
     </>
   );
 }

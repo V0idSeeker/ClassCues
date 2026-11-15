@@ -3,6 +3,8 @@ import type { Chapter } from '../game/types';
 import { loadRuns, oftenMissed } from '../progress';
 import { loadSkipPrepare, saveSkipPrepare } from '../storage';
 import StudyNotes from './StudyNotes';
+import { isBuiltIn } from '../content';
+import { getLang, t } from '../i18n';
 
 interface Props { chapter: Chapter; onStart(): void; onBack(): void; onHelp(): void }
 
@@ -17,29 +19,30 @@ export default function Prepare({ chapter, onStart, onBack, onHelp }: Props) {
           {chapter.course && <p className="dim">{chapter.course}</p>}
           <h1>{chapter.title}</h1>
         </div>
-        <button onClick={onHelp}>Help</button>
+        <button onClick={onHelp}>{t('common.help')}</button>
       </div>
+      {getLang() !== 'en' && isBuiltIn(chapter) && <p className="dim">{t('common.builtInEnglish')}</p>}
       <div className="panel">
         {missed.length > 0 && (
           <>
-            <h2>Your classes often missed:</h2>
+            <h2>{t('prepare.missed')}</h2>
             <ul>{missed.map(o => <li key={o.id}>{o.text}</li>)}</ul>
           </>
         )}
         <StudyNotes chapter={chapter} />
-        <h2>How to teach it</h2>
+        <h2>{t('prepare.how')}</h2>
         <ul>
-          <li>Cover every goal.</li>
-          <li>Write the key points on the board.</li>
-          <li>Ask questions to check what students understood.</li>
-          <li>Correct wrong beliefs out loud.</li>
+          <li>{t('prepare.how1')}</li>
+          <li>{t('prepare.how2')}</li>
+          <li>{t('prepare.how3')}</li>
+          <li>{t('prepare.how4')}</li>
         </ul>
-        <p className="dim">The quiz has {chapter.quiz.length} question{chapter.quiz.length === 1 ? '' : 's'}. It stays hidden until you ring the bell.</p>
-        <label className="check"><input type="checkbox" checked={skip} onChange={e => { setSkip(e.target.checked); saveSkipPrepare(e.target.checked); }} />Skip this screen next time</label>
+        <p className="dim">{t('prepare.quiz', { count: chapter.quiz.length })}</p>
+        <label className="check"><input type="checkbox" checked={skip} onChange={e => { setSkip(e.target.checked); saveSkipPrepare(e.target.checked); }} />{t('prepare.skip')}</label>
         <div className="row" style={{ marginTop: 12 }}>
-          <button onClick={onBack}>Back to the lessons</button>
+          <button onClick={onBack}>{t('prepare.back')}</button>
           <span className="grow" />
-          <button className="go" onClick={onStart}>Start the lesson</button>
+          <button className="go" onClick={onStart}>{t('prepare.start')}</button>
         </div>
       </div>
     </div>

@@ -6,17 +6,14 @@ import { AiError } from '../ai/provider';
 import { PRESETS, addLog, clearMemory, loadGoodModel, loadSkipPrepare, loadTips, logText, saveSkipPrepare, saveGoodModel, saveTips } from '../storage';
 import type { Settings as SettingsType } from '../storage';
 import type { Difficulty } from '../game/types';
+import { LANGS, t } from '../i18n';
+import type { Key, Lang } from '../i18n';
 
-const DIFFICULTIES: { id: Difficulty; label: string; line: string }[] = [
-  { id: 'easy', label: 'Easy', line: 'Students pay a little more attention, and only one student starts with wrong ideas.' },
-  { id: 'normal', label: 'Normal', line: 'The class as designed: a few students start with wrong ideas.' },
-  { id: 'hard', label: 'Hard', line: 'Students pay less attention, and all but the eager one start with a wrong idea (one with three).' },
-  { id: 'inspection', label: 'Inspection', line: 'As Hard, and a right written answer that is not in the notes gets no marks. Your report is stamped.' },
-];
+const DIFFICULTIES: Difficulty[] = ['easy', 'normal', 'hard', 'inspection'];
 
-interface Props { settings: SettingsType; used: number; onSave(s: SettingsType): void; onPlay(): void; onMenu(): void; onHelp(): void }
+interface Props { settings: SettingsType; used: number; onSave(s: SettingsType): void; onPlay(): void; onMenu(): void; onHelp(): void; onLanguage(lang: Lang): void }
 
-export default function Settings({ settings, used, onSave, onPlay, onMenu, onHelp }: Props) {
+export default function Settings({ settings, used, onSave, onPlay, onMenu, onHelp, onLanguage }: Props) {
   const [s, setS] = useState(settings);
   const [test, setTest] = useState<{ ok: boolean; text: string } | null>(null);
   const [testing, setTesting] = useState(false);
@@ -44,9 +41,9 @@ export default function Settings({ settings, used, onSave, onPlay, onMenu, onHel
         provider: s, studentModel: s.studentModel, graderModel: s.graderModel || s.studentModel,
         autoModels: candidates, onModel: model => saveGoodModel(s.baseUrl, model), log: s.debugLog ? addLog : undefined,
       });
-      setTest({ ok: true, text: 'Connection works.' });
+      setTest({ ok: true, text: t('settings.works') });
     } catch (e) {
-      setTest({ ok: false, text: e instanceof AiError ? e.message : `Something went wrong: ${String(e)}` });
+      setTest({ ok: false, text: e instanceof AiError ? e.message : t('common.somethingWrong', { error: String(e) }) });
     } finally {
       setTesting(false);
     }
@@ -55,64 +52,69 @@ export default function Settings({ settings, used, onSave, onPlay, onMenu, onHel
   return (
     <div className="page narrow">
       <div className="row">
-        <h1 className="grow">Settings</h1>
-        <button onClick={onHelp}>Help: choosing an AI</button>
-        <button onClick={onMenu}>Main menu (without saving)</button>
+        <h1 className="grow">{t('settings.title')}</h1>
+        <button onClick={onHelp}>{t('settings.helpAi')}</button>
+        <button onClick={onMenu}>{t('settings.menuNoSave')}</button>
       </div>
-      {!s.apiKey && <p className="dim">Choose an AI to play your students. Groq and Google Gemini have free keys; "Help: choosing an AI" explains the options.</p>}
+      {!s.apiKey && <p className="dim">{t('settings.chooseAi')}</p>}
       <div className="panel">
-        <label htmlFor="preset">AI provider</label>
+        <label htmlFor="lang">{t('settings.language')}</label>
+        <select id="lang" value={s.language} onChange={e => { const language = e.target.value as Lang; set({ language }); onLanguage(language); }}>
+          {LANGS.map(l => <option key={l.id} value={l.id} lang={l.id}>{l.name}</option>)}
+        </select>
+
+        <label htmlFor="preset">{t('settings.provider')}</label>
         <select id="preset" value={preset ? s.baseUrl : ''} onChange={e => e.target.value && set({ baseUrl: e.target.value })}>
           {Object.values(PRESETS).map(p => <option key={p.baseUrl} value={p.baseUrl}>{p.label}</option>)}
-          <option value="">Other (type the address below)</option>
+          <option value="">{t('settings.other')}</option>
         </select>
         {preset && <p className="dim">{preset.setup}</p>}
 
-        <label htmlFor="url">Address (chat completions URL)</label>
+        <label htmlFor="url">{t('settings.address')}</label>
         <input id="url" value={s.baseUrl} onChange={e => set({ baseUrl: e.target.value.trim() })} />
 
-        <label htmlFor="key">API key (stays in this browser, never sent anywhere except the address above)</label>
+        <label htmlFor="key">{t('settings.key')}</label>
         <input id="key" type="password" autoComplete="off" value={s.apiKey} onChange={e => set({ apiKey: e.target.value.trim() })} />
         <div className="row">
-          <label className="check"><input type="checkbox" checked={s.rememberKey} onChange={e => set({ rememberKey: e.target.checked })} />Remember key on this device</label>
-          <button type="button" onClick={() => set({ apiKey: '' })}>Remove key</button>
+          <label className="check"><input type="checkbox" checked={s.rememberKey} onChange={e => set({ rememberKey: e.target.checked })} />{t('settings.rememberKey')}</label>
+          <button type="button" onClick={() => set({ apiKey: '' })}>{t('settings.removeKey')}</button>
         </div>
 
-        <label htmlFor="model">Model for students (empty: a suitable model is picked for you on OpenRouter, Gemini and Groq)</label>
-        <input id="model" list="models" placeholder="Automatic" value={s.studentModel} onChange={e => set({ studentModel: e.target.value.trim() })} />
-        <label htmlFor="grader">Model for grading and for making levels from PDFs (empty: same as students; a stronger model does both better)</label>
-        <input id="grader" list="models" placeholder="Same as students" value={s.graderModel} onChange={e => set({ graderModel: e.target.value.trim() })} />
+        <label htmlFor="model">{t('settings.studentModel')}</label>
+        <input id="model" list="models" placeholder={t('settings.automatic')} value={s.studentModel} onChange={e => set({ studentModel: e.target.value.trim() })} />
+        <label htmlFor="grader">{t('settings.graderModel')}</label>
+        <input id="grader" list="models" placeholder={t('settings.sameAsStudents')} value={s.graderModel} onChange={e => set({ graderModel: e.target.value.trim() })} />
         <datalist id="models">{models.map(m => <option key={m.id} value={m.id} />)}</datalist>
         <p className="dim" role="status">
           {models.length > 0
-            ? `${models.length} models found. Click a model box and type to search the list.`
-            : 'No model list from this address yet. Check the address and key, or type a model name by hand.'}
+            ? t('settings.modelsFound', { count: models.length })
+            : t('settings.noModels')}
         </p>
-        {auto && <p className="dim">With no model chosen, the game uses: <b>{auto}</b>{candidates.length > 1 ? `. If it is overloaded, it falls back to: ${candidates.filter(m => m !== auto).join(', ')}` : ''}</p>}
+        {auto && <p className="dim">{t('settings.autoModel')} <b>{auto}</b>{candidates.length > 1 ? t('settings.fallback', { models: candidates.filter(m => m !== auto).join(', ') }) : ''}</p>}
 
-        <label htmlFor="limit">Daily request limit for free models (0 = no limit). Used today: {used}</label>
+        <label htmlFor="limit">{t('settings.limit', { used })}</label>
         <input id="limit" type="number" min={0} value={s.dailyLimit} onChange={e => set({ dailyLimit: Math.max(0, Number(e.target.value) || 0) })} />
 
         <fieldset className="difficulty">
-          <legend>Class difficulty</legend>
+          <legend>{t('settings.difficulty')}</legend>
           {DIFFICULTIES.map(d => (
-            <label key={d.id} className="check"><input type="radio" name="difficulty" checked={s.difficulty === d.id} onChange={() => set({ difficulty: d.id })} /><b>{d.label}</b>: {d.line}</label>
+            <label key={d} className="check"><input type="radio" name="difficulty" checked={s.difficulty === d} onChange={() => set({ difficulty: d })} /><b>{t(`difficulty.${d}`)}</b>: {t(`difficulty.${d}.line` as Key)}</label>
           ))}
         </fieldset>
 
-        <label className="check"><input type="checkbox" checked={s.thinkingOff} onChange={e => set({ thinkingOff: e.target.checked })} />Ask the model not to "think" first (turn off if the provider rejects requests)</label>
-        <label className="check"><input type="checkbox" checked={!tipsOff} onChange={e => { const off = !e.target.checked; setTipsOff(off); saveTips({ off, seen: off ? loadTips().seen : [] }); }} />Show tips during lessons (turning this back on shows every tip again)</label>
-        <label className="check"><input type="checkbox" checked={!skipPrepare} onChange={e => { setSkipPrepare(!e.target.checked); saveSkipPrepare(!e.target.checked); }} />Show the study screen before each lesson</label>
-        <label className="check"><input type="checkbox" checked={s.forceVision} onChange={e => set({ forceVision: e.target.checked })} />My model can read pictures (drawing on the board is offered only for models that can; Gemini and marked OpenRouter models are detected by themselves)</label>
-        <label className="check"><input type="checkbox" checked={s.voiceOn} onChange={e => set({ voiceOn: e.target.checked })} />Students speak aloud (uses your browser's voices; text is always shown)</label>
-        <label className="check"><input type="checkbox" checked={s.debugLog} onChange={e => set({ debugLog: e.target.checked })} />Keep a debug log of AI requests (never includes the key)</label>
+        <label className="check"><input type="checkbox" checked={s.thinkingOff} onChange={e => set({ thinkingOff: e.target.checked })} />{t('settings.thinkingOff')}</label>
+        <label className="check"><input type="checkbox" checked={!tipsOff} onChange={e => { const off = !e.target.checked; setTipsOff(off); saveTips({ off, seen: off ? loadTips().seen : [] }); }} />{t('settings.tips')}</label>
+        <label className="check"><input type="checkbox" checked={!skipPrepare} onChange={e => { setSkipPrepare(!e.target.checked); saveSkipPrepare(!e.target.checked); }} />{t('settings.study')}</label>
+        <label className="check"><input type="checkbox" checked={s.forceVision} onChange={e => set({ forceVision: e.target.checked })} />{t('settings.vision')}</label>
+        <label className="check"><input type="checkbox" checked={s.voiceOn} onChange={e => set({ voiceOn: e.target.checked })} />{t('settings.voice')}</label>
+        <label className="check"><input type="checkbox" checked={s.debugLog} onChange={e => set({ debugLog: e.target.checked })} />{t('settings.debug')}</label>
 
         <div className="row" style={{ marginTop: 12 }}>
-          <button type="button" onClick={testConnection} disabled={testing}>{testing ? 'Testing…' : 'Test connection'}</button>
-          <button type="button" onClick={() => navigator.clipboard.writeText(logText())}>Copy debug log</button>
-          <button type="button" onClick={() => { clearMemory(); setTest({ ok: true, text: 'Students have forgotten all earlier lessons.' }); }}>Make students forget earlier lessons</button>
+          <button type="button" onClick={testConnection} disabled={testing}>{testing ? t('settings.testing') : t('settings.test')}</button>
+          <button type="button" onClick={() => navigator.clipboard.writeText(logText())}>{t('settings.copyLog')}</button>
+          <button type="button" onClick={() => { clearMemory(); setTest({ ok: true, text: t('settings.forgotten') }); }}>{t('settings.forget')}</button>
           <span className="grow" />
-          <button type="button" className="go" onClick={() => { onSave(s); onPlay(); }}>Save and choose a lesson</button>
+          <button type="button" className="go" onClick={() => { onSave(s); onPlay(); }}>{t('settings.save')}</button>
         </div>
         {test && <p className={test.ok ? 'ok' : 'error'} role="status">{test.text}</p>}
       </div>

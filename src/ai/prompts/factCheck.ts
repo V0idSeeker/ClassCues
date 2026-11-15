@@ -1,12 +1,13 @@
 import type { Chapter, TranscriptLine } from '../../game/types';
 import type { ChatMessage } from '../provider';
-import { QUOTED_RULE, facts } from './shared';
+import type { Lang } from '../../i18n';
+import { QUOTED_RULE, facts, languageRule } from './shared';
 
 /** What the teacher said and wrote on the board, in order. Student lines are left out. */
 export const teacherLines = (transcript: TranscriptLine[]): string[] =>
   transcript.filter(l => l.who === 'teacher' || l.who === 'board').map(l => `${l.who}: ${l.text}`);
 
-export function factCheckPrompt(chapter: Chapter, transcript: TranscriptLine[]): ChatMessage[] {
+export function factCheckPrompt(chapter: Chapter, transcript: TranscriptLine[], lang: Lang = 'en'): ChatMessage[] {
   return [
     {
       role: 'system',
@@ -18,6 +19,7 @@ export function factCheckPrompt(chapter: Chapter, transcript: TranscriptLine[]):
         'For each mistake: claim quotes or closely paraphrases what the teacher said; correction is one or two plain sentences saying what is right, based on reference;',
         'severity is "major" if it would make students learn something wrong about a goal, "minor" otherwise.',
         'An empty errors list is a normal, good result. Do not invent mistakes.',
+        `${languageRule(lang, 'each correction')} claim stays in the teacher's own words and language. The teacher may speak another language than reference: judge the meaning.`,
         QUOTED_RULE,
       ].join('\n'),
     },

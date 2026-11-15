@@ -1,8 +1,9 @@
 import type { GraderInputRow, QuizQuestion } from '../../game/types';
 import type { ChatMessage } from '../provider';
-import { QUOTED_RULE, facts } from './shared';
+import type { Lang } from '../../i18n';
+import { QUOTED_RULE, facts, languageRule } from './shared';
 
-export function graderPrompt(question: QuizQuestion, rows: GraderInputRow[]): ChatMessage[] {
+export function graderPrompt(question: QuizQuestion, rows: GraderInputRow[], lang: Lang = 'en'): ChatMessage[] {
   return [
     {
       role: 'system',
@@ -13,6 +14,8 @@ export function graderPrompt(question: QuizQuestion, rows: GraderInputRow[]): Ch
         'supported_by_notes is true only if the facts in the answer appear in that student\'s notes.',
         'feedback is one short sentence saying why the answer lost points, or "Correct." if it lost none.',
         'Return every student exactly once, with the same student_id.',
+        'Answers may be in a different language from answer_key, rubric and notes. Judge the meaning, not the language: a correct answer in another language gets full marks.',
+        languageRule(lang, 'feedback'),
         QUOTED_RULE,
       ].join('\n'),
     },

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { CSSProperties, PointerEvent } from 'react';
+import { t } from '../i18n';
 
 /** The picture layer of a board: freehand chalk drawing and pasted images. Drawn at a fixed size and stretched to fit. */
 export const ART_W = 760;
@@ -19,7 +20,7 @@ interface Props {
 const loadImage = (src: string) => new Promise<HTMLImageElement>((resolve, reject) => {
   const img = new Image();
   img.onload = () => resolve(img);
-  img.onerror = () => reject(new Error('Could not read this picture.'));
+  img.onerror = () => reject(new Error(t('art.unreadable')));
   img.src = src;
 });
 
@@ -29,7 +30,7 @@ export async function addPicture(file: File, existing: string | null): Promise<s
   canvas.width = ART_W;
   canvas.height = ART_H;
   const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('This browser cannot draw pictures.');
+  if (!ctx) throw new Error(t('art.noCanvas'));
   if (existing) ctx.drawImage(await loadImage(existing), 0, 0, ART_W, ART_H);
   const url = URL.createObjectURL(file);
   try {
@@ -105,7 +106,7 @@ export default function BoardArt({ art, drawing, color, style, onChange }: Props
 
   return (
     <canvas ref={ref} width={ART_W} height={ART_H} className={`art${drawing ? ' drawing' : ''}`} style={style}
-      aria-label="Picture on the board. Students cannot see it; describe it in the box below."
+      aria-label={t('art.label')}
       onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} />
   );
 }

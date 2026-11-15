@@ -1,9 +1,10 @@
 import { atmosphere, visibleBoard } from '../../game/lesson';
 import type { LessonState } from '../../game/types';
 import type { ChatMessage } from '../provider';
-import { QUOTED_RULE, facts, lastLines, withPicture } from './shared';
+import type { Lang } from '../../i18n';
+import { QUOTED_RULE, facts, languageRule, lastLines, withPicture } from './shared';
 
-export function noteTakerPrompt(state: LessonState, boardAdded: string, say: string, picture?: string | null): ChatMessage[] {
+export function noteTakerPrompt(state: LessonState, boardAdded: string, say: string, picture?: string | null, lang: Lang = 'en'): ChatMessage[] {
   return [
     {
       role: 'system',
@@ -27,6 +28,7 @@ export function noteTakerPrompt(state: LessonState, boardAdded: string, say: str
         '- If a classmate answered or claimed something and the teacher moved on without confirming or correcting it, up to three students with low attention may write it down as hearsay: the note starts with "<classmate name> said:" and distorted is true. They may feel CONFUSED.',
         '- When board_picture says a picture is attached, the students can see it on the board. They may note what it shows, in their own words, as far as they understand it. A picture the teacher did not explain teaches less than one the teacher explained.',
         '- Never add knowledge the teacher did not say, write or draw. This rule is the most important.',
+        `- ${languageRule(lang, 'every note')}`,
         QUOTED_RULE,
       ].join('\n'),
     },

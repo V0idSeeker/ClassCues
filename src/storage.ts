@@ -2,6 +2,8 @@ import type { LogEntry } from './ai/provider';
 import type { Scores } from './game/course';
 import type { ClassMemory } from './game/lesson';
 import type { Chapter, Difficulty, LessonState } from './game/types';
+import { detectLang, t } from './i18n';
+import type { Lang } from './i18n';
 
 export interface Settings {
   baseUrl: string;
@@ -19,44 +21,23 @@ export interface Settings {
   forceVision: boolean;
   /** How hard the class is: Normal is the game as designed. */
   difficulty: Difficulty;
+  /** Interface language, also the language students speak. */
+  language: Lang;
 }
 
 export const PRESETS: Record<string, { label: string; baseUrl: string; setup: string }> = {
-  openrouter: {
-    label: 'OpenRouter',
-    baseUrl: 'https://openrouter.ai/api/v1/chat/completions',
-    setup: 'Create a key at openrouter.ai and paste it below. Leave the model empty to play on free models (about 50 requests a day, roughly one lesson), or pick one from the list: names ending in :free cost nothing, the others need credit on your OpenRouter account.',
-  },
-  gemini: {
-    label: 'Google Gemini',
-    baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
-    setup: 'Create a free key at aistudio.google.com ("Get API key") and paste it below. Leave the model empty to use a fast Flash model, or pick one from the list. The free tier allows many requests a day but only a few per minute: if you see "too many requests", wait a minute.',
-  },
-  groq: {
-    label: 'Groq',
-    baseUrl: 'https://api.groq.com/openai/v1/chat/completions',
-    setup: 'Create a free key at console.groq.com ("API Keys") and paste it below. Groq is very fast. Leave the model empty and the game picks one, or choose from the list. The free tier limits how much text you can send per minute: if you see "too many requests", wait a minute.',
-  },
-  ollama: {
-    label: 'Ollama (local)',
-    baseUrl: 'http://127.0.0.1:11434/v1/chat/completions',
-    setup: 'Ollama must allow this page to call it: start Ollama with the OLLAMA_ORIGINS setting set to this page\'s address. No key needed. Type the name of a model you have pulled.',
-  },
-  lmstudio: {
-    label: 'LM Studio (local)',
-    baseUrl: 'http://127.0.0.1:1234/v1/chat/completions',
-    setup: 'In LM Studio, start the local server and turn on "Enable CORS". No key needed. Type the name of the loaded model.',
-  },
-  llamacpp: {
-    label: 'llama.cpp (local)',
-    baseUrl: 'http://127.0.0.1:8080/v1/chat/completions',
-    setup: 'Start llama-server with your model. No key needed. The model name can be anything.',
-  },
+  openrouter: { label: 'OpenRouter', baseUrl: 'https://openrouter.ai/api/v1/chat/completions', get setup() { return t('preset.openrouter'); } },
+  gemini: { label: 'Google Gemini', baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', get setup() { return t('preset.gemini'); } },
+  groq: { label: 'Groq', baseUrl: 'https://api.groq.com/openai/v1/chat/completions', get setup() { return t('preset.groq'); } },
+  ollama: { get label() { return t('preset.local', { name: 'Ollama' }); }, baseUrl: 'http://127.0.0.1:11434/v1/chat/completions', get setup() { return t('preset.ollama'); } },
+  lmstudio: { get label() { return t('preset.local', { name: 'LM Studio' }); }, baseUrl: 'http://127.0.0.1:1234/v1/chat/completions', get setup() { return t('preset.lmstudio'); } },
+  llamacpp: { get label() { return t('preset.local', { name: 'llama.cpp' }); }, baseUrl: 'http://127.0.0.1:8080/v1/chat/completions', get setup() { return t('preset.llamacpp'); } },
 };
 
 const DEFAULTS: Settings = {
   baseUrl: PRESETS.openrouter.baseUrl, apiKey: '', studentModel: '', graderModel: '',
   thinkingOff: true, rememberKey: true, dailyLimit: 0, debugLog: false, voiceOn: true, forceVision: false, difficulty: 'normal',
+  language: detectLang(),
 };
 
 const K = { settings: 'ts.settings', key: 'ts.key', used: 'ts.used', lesson: 'ts.lesson6', art: 'ts.art', memory: 'ts.memory', scores: 'ts.scores', levels: 'ts.levels' };

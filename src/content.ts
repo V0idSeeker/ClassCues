@@ -4,6 +4,10 @@ import python from '../content/modules/python-intro.json';
 import sql from '../content/modules/sql.json';
 import pool from '../content/students.json';
 import type { Chapter, Look, Persona } from './game/types';
+import type { Lang } from './i18n';
+import { openingAr } from './i18n/students/ar';
+import { openingEs } from './i18n/students/es';
+import { openingFr } from './i18n/students/fr';
 
 /**
  * The lesson files that ship with the game, in the order they are shown.
@@ -36,3 +40,14 @@ export const studentPool: Persona[] = (pool as unknown as (Omit<Persona, 'look' 
 
 /** The original ten, in a fixed order: used by tests and scripted lessons. */
 export const students = studentPool.slice(0, 10);
+
+/** Ids of every built-in lesson. Their content (goals, notes, quiz) is in English. */
+export const builtInIds = new Set(builtInCourses.flatMap(c => c.lessons.map(l => l.id)));
+
+/** True for a built-in lesson, or a follow-up of one. */
+export const isBuiltIn = (c: Chapter): boolean => builtInIds.has(c.followUpOf ?? c.id);
+
+const OPENING: Record<Lang, Record<string, string[]>> = { en: {}, fr: openingFr, es: openingEs, ar: openingAr };
+
+/** A student who says their opening line in the language. */
+export const inLanguage = (p: Persona, lang: Lang): Persona => ({ ...p, openingLines: OPENING[lang][p.id] ?? p.openingLines });
