@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { explainBack, factCheck, makeAi, ping } from './ai/calls';
+import { explainBack, factCheck, judgeChallenge, makeAi, ping } from './ai/calls';
 import { teacherLines } from './ai/prompts/factCheck';
 import type { AiDeps } from './ai/calls';
 import { autoModels, canReadPictures, listModelInfo } from './ai/models';
@@ -7,12 +7,16 @@ import { preferModel } from './ai/provider';
 import { AiError } from './ai/provider';
 import { studentPool } from './content';
 import { AFTER_QUIZ_REQUESTS, mustRingBell, quizReserve } from './game/budget';
+import { challengeById, challengeTitle, pickChallenge } from './game/challenges';
 import { recordScore } from './game/course';
 import { drawClass, lessonOver, mergeTurns, rememberLesson, startLesson } from './game/lesson';
+import { earnedBadges, newBadges, rankOf } from './game/rank';
+import type { Badge, Rank } from './game/rank';
 import { closestToAverage, computeReport, missingGoals } from './game/report';
 import type { AfterQuiz, Report as ReportType } from './game/report';
 import { askStudent, hearStudent, pickForClassQuestion, runQuiz, teachTurn } from './game/runLesson';
-import type { Chapter, LessonState, Turn } from './game/types';
+import type { Chapter, Difficulty, LessonState, Turn } from './game/types';
+import { addPlay, courseLessonIds, loadPlays } from './progress';
 import { addLog, bumpUsed, clearLesson, hasSettings, helpSeen, markHelpSeen, loadGoodModel, loadLesson, loadMemory, loadScores, saveScores, saveGoodModel, loadSettings, loadSkipPrepare, saveMemory, loadUsed, saveLesson, saveSettings } from './storage';
 import type { Settings as SettingsType } from './storage';
 import Classroom from './ui/Classroom';
@@ -37,7 +41,7 @@ export default function App() {
   const [lesson, setLesson] = useState<LessonState | null>(null);
   // The lesson being studied on the prepare screen, before it starts.
   const [studying, setStudying] = useState<Chapter | null>(null);
-  const [report, setReport] = useState<{ report: ReportType; after: AfterQuiz; chapter: Chapter; best: number; bestBefore: number | null } | null>(null);
+  const [report, setReport] = useState<{ report: ReportType; after: AfterQuiz; chapter: Chapter; best: number; bestBefore: number | null; difficulty: Difficulty; rank: Rank; badges: Badge[] } | null>(null);
   const [used, setUsed] = useState(loadUsed);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -109,7 +113,7 @@ export default function App() {
     queue.current = [];
     setError('');
     clearLesson();
-    commit(startLesson(chapter, drawClass(studentPool, Math.random), Math.random, Date.now(), loadMemory()));
+    commit(startLesson(chapter, drawClass(studentPool, Math.random), Math.random, Date.now(), loadMemory(), { difficulty: settings.difficulty, challenge: pickChallenge(Math.random).id }));
     setScreen('classroom');
   }
 
@@ -176,7 +180,7 @@ export default function App() {
       let done = s.students.length + s.chapter.quiz.filter(q => q.type === 'short').length;
       const total = done + AFTER_QUIZ_REQUESTS;
       const said = teacherLines(s.transcript).length > 0;
-      const after: AfterQuiz = { factCheck: { checked: said, errors: [] }, explain: null };
+      const after: AfterQuiz = { factCheck: { checked: said, errors: [] }, explain: null, challenge: null };
       if (said) after.factCheck.errors = await factCheck(deps, s.chapter, s.transcript).then(r => r.errors, () => null);
       setProgress({ done: ++done, total });
       const student = s.students.find(st => st.persona.id === closestToAverage(result));
@@ -185,8 +189,24 @@ export default function App() {
         after.explain = { name: student.persona.name, text, missingGoals: missingGoals(student, s.chapter.objectives) };
       }
       setProgress({ done: ++done, total });
+      // The challenge: checked in code when that is exact, otherwise by one AI call.
+      const challenge = challengeById(s.challenge);
+      if (challenge) {
+        const title = challengeTitle(challenge, s);
+        const judged = challenge.check ? challenge.check(s) : await judgeChallenge(deps, title, challenge.detection, s.transcript).catch(() => null);
+        after.challenge = { title, met: judged?.met ?? null, reason: judged?.reason ?? 'The challenge could not be judged this time.' };
+      }
+      setProgress({ done: ++done, total });
 
-      setReport({ report: result, after, chapter: s.chapter, best: scores[s.chapter.id].best, bestBefore: before[s.chapter.id]?.best ?? null });
+      const difficulty = s.difficulty ?? 'normal';
+      const courses = courseLessonIds();
+      const playsBefore = loadPlays();
+      const plays = addPlay({
+        levelId: s.chapter.id, percent: result.classAverage, difficulty, at: new Date().toISOString(),
+        challengeMet: after.challenge?.met ?? null, factErrors: said ? after.factCheck.errors?.length ?? null : null,
+      });
+      const badges = newBadges(earnedBadges(playsBefore, courses, before), earnedBadges(plays, courses, scores));
+      setReport({ report: result, after, chapter: s.chapter, best: scores[s.chapter.id].best, bestBefore: before[s.chapter.id]?.best ?? null, difficulty, rank: rankOf(plays, scores), badges });
       setScreen('report');
     } catch (e) {
       setError(explain(e));
@@ -211,6 +231,7 @@ export default function App() {
     <>
       {screen === 'menu' && (
         <MainMenu
+          rank={rankOf(loadPlays(), loadScores())} badges={earnedBadges(loadPlays(), courseLessonIds(), loadScores())}
           lessonTitle={lesson?.chapter.title ?? null} firstVisit={firstVisit}
           onContinue={() => setScreen('classroom')}
           onStart={() => setScreen(hasSettings() ? 'modules' : 'settings')}
@@ -262,7 +283,7 @@ export default function App() {
         </div>
       )}
 
-      {screen === 'report' && report && <Report report={report.report} after={report.after} chapter={report.chapter} best={report.best} bestBefore={report.bestBefore} onAgain={() => setScreen('modules')} onHelp={() => openHelp('report')} />}
+      {screen === 'report' && report && <Report {...report} onAgain={() => setScreen('modules')} onHelp={() => openHelp('report')} />}
 
       {help && <Codex entry={help} onOpen={setHelp} onClose={() => setHelp(null)} />}
 

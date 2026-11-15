@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["met", "reason"],
+  "properties": {
+    "met": { "type": "boolean" },
+    "reason": { "type": "string" }
+  }
+}

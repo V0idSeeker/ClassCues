@@ -79,7 +79,13 @@ export interface LessonState {
   seenPictures: string[];
   turns: number;
   startedAt: number;
+  /** How hard this class is. Missing (older saves): normal. */
+  difficulty?: Difficulty;
+  /** The id of this lesson's teaching challenge (src/game/challenges.ts). Missing in older saves. */
+  challenge?: string;
 }
+
+export type Difficulty = 'easy' | 'normal' | 'hard' | 'inspection';
 
 /**
  * One teacher turn: what was said, and the text of all boards at that moment.
@@ -111,3 +117,4 @@ export interface Ai {
 export interface FactError { claim: string; correction: string; severity: 'minor' | 'major' }
 export interface FactCheckResult { errors: FactError[] }
 export interface ExplainBackResult { explanation: string }
+export interface ChallengeResult { met: boolean; reason: string }

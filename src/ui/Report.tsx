@@ -1,9 +1,30 @@
+import { useState } from 'react';
+import type { Badge, Rank } from '../game/rank';
 import type { AfterQuiz, Report as ReportType } from '../game/report';
-import type { Chapter } from '../game/types';
+import type { Chapter, Difficulty } from '../game/types';
+import { shareCard } from './shareCard';
 
-interface Props { report: ReportType; after: AfterQuiz; chapter: Chapter; best: number; bestBefore: number | null; onAgain(): void; onHelp(): void }
+interface Props {
+  report: ReportType; after: AfterQuiz; chapter: Chapter; best: number; bestBefore: number | null;
+  difficulty: Difficulty; rank: Rank; badges: Badge[]; onAgain(): void; onHelp(): void;
+}
 
-export default function Report({ report, after, chapter, best, bestBefore, onAgain, onHelp }: Props) {
+const LEVEL: Record<Difficulty, string> = { easy: 'Easy', normal: 'Normal', hard: 'Hard', inspection: 'Inspection' };
+
+export default function Report({ report, after, chapter, best, bestBefore, difficulty, rank, badges, onAgain, onHelp }: Props) {
+  const [shared, setShared] = useState('');
+  const challenge = after.challenge;
+  async function share() {
+    try {
+      const how = await shareCard({
+        lesson: chapter.title, course: chapter.course, average: report.classAverage, best, rank: rank.name, difficulty: LEVEL[difficulty],
+        challenge: challenge && { title: challenge.title, met: challenge.met }, date: new Date().toLocaleDateString(), version: __APP_VERSION__,
+      });
+      setShared(how === 'downloaded' ? 'The report card picture was downloaded.' : '');
+    } catch (e) {
+      setShared(`Could not make the picture: ${String(e)}`);
+    }
+  }
   const prompt = (id: string) => chapter.quiz.find(q => q.id === id)?.prompt ?? id;
   const { checked, errors } = after.factCheck;
   const sorted = errors && [...errors].sort((a, b) => Number(b.severity === 'major') - Number(a.severity === 'major'));
@@ -16,8 +37,24 @@ export default function Report({ report, after, chapter, best, bestBefore, onAga
         <span className="pill">
           {bestBefore === null ? 'First time teaching this lesson' : report.classAverage > bestBefore ? `New best! Before: ${bestBefore}%` : `Your best: ${best}%`}
         </span>
+        <span className="pill">{LEVEL[difficulty]} class</span>
+        {difficulty === 'inspection' && <span className="stamp">Inspection</span>}
         <button className="go" onClick={onAgain}>Back to the lessons</button>
+        <button onClick={() => void share()}>Share</button>
         <button onClick={onHelp}>What does this mean?</button>
+      </div>
+      {shared && <p className="dim" role="status">{shared}</p>}
+
+      <div className="panel" style={{ marginTop: 12 }}>
+        <h2>Your rank: {rank.name}</h2>
+        <p>{rank.lessons} lesson{rank.lessons === 1 ? '' : 's'} taught, average best {rank.average}% (harder classes count more).
+          {rank.next ? ` Next: ${rank.next.name} at ${rank.next.lessons} lessons and ${rank.next.average}%.` : ' This is the highest rank.'}</p>
+        {badges.map(b => <p key={b.id} className="ok">New badge: <b>{b.name}</b> · {b.how}</p>)}
+        {challenge && (
+          <p>
+            <b>{challenge.met === null ? 'Challenge not judged' : challenge.met ? 'Challenge met' : 'Challenge not met'}</b>: {challenge.title}. {challenge.reason}
+          </p>
+        )}
       </div>
 
       <div className="panel" style={{ marginTop: 12 }}>

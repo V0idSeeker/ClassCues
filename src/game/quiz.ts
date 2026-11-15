@@ -35,13 +35,13 @@ export function gradeMcq(studentId: string, q: QuizQuestion, answer: string): Gr
   };
 }
 
-/** A correct answer the notebook does not support gets at most half credit. */
-export function gradeWritten(q: QuizQuestion, row: GraderRow): Grade {
+/** A correct answer the notebook does not support gets at most half credit, or nothing when strict (Inspection). */
+export function gradeWritten(q: QuizQuestion, row: GraderRow, strict = false): Grade {
   const raw = row.max > 0 ? Math.min(1, Math.max(0, row.score / row.max)) : 0;
   return {
     student_id: row.student_id,
     question_id: q.id,
-    fraction: row.supported_by_notes ? raw : Math.min(raw, 0.5),
+    fraction: row.supported_by_notes ? raw : strict ? 0 : Math.min(raw, 0.5),
     feedback: row.feedback,
   };
 }

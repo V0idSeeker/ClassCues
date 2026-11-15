@@ -1,5 +1,5 @@
 import type { Rng } from './rng';
-import type { Archetype, Belief, Chapter, Emotion, LessonState, NoteTakerResult, Persona, Student, TranscriptLine, Turn } from './types';
+import type { Archetype, Belief, Chapter, Difficulty, Emotion, LessonState, NoteTakerResult, Persona, Student, TranscriptLine, Turn } from './types';
 
 export const MAX_TURNS = 20;
 export const LESSON_MS = 15 * 60 * 1000;
@@ -54,25 +54,39 @@ export function memoryFor(memory: ClassMemory, studentId: string, chapterId: str
     .flatMap(m => m.notes.map(text => `From the lesson "${m.title}": ${text}`));
 }
 
-export function startLesson(chapter: Chapter, personas: Persona[], rng: Rng, now: number, memory: ClassMemory = {}): LessonState {
+export interface LessonOptions { difficulty?: Difficulty; challenge?: string }
+
+/** How much attention each difficulty adds to every student (kept between 0 and 1). */
+export const ATTENTION_SHIFT: Record<Difficulty, number> = { easy: 0.15, normal: 0, hard: -0.15, inspection: -0.15 };
+
+export function startLesson(chapter: Chapter, personas: Persona[], rng: Rng, now: number, memory: ClassMemory = {}, opts: LessonOptions = {}): LessonState {
+  const difficulty = opts.difficulty ?? 'normal';
+  const hard = difficulty === 'hard' || difficulty === 'inspection';
   const beliefs: Belief[] = chapter.common_misconceptions.map((text, i) => ({ id: `b${i + 1}`, text }));
   const take = (n: number, from: number): Belief[] =>
     beliefs.length === 0 ? [] : Array.from({ length: Math.min(n, beliefs.length) }, (_, k) => beliefs[(from + k) % beliefs.length]);
 
   const lucky = draw(personas.filter(p => p.archetype !== 'carrier' && p.archetype !== 'struggling'), 2, rng).map(p => p.id);
 
-  const students: Student[] = personas.map(p => ({
-    persona: p,
+  const beliefsOf = (p: Persona, i: number): Belief[] => {
+    if (difficulty === 'easy') return p.archetype === 'carrier' ? take(2, 0) : [];
+    // Hard: everyone but the eager student starts with a wrong belief, the carrier with three.
+    if (hard) return p.archetype === 'carrier' ? take(3, 0) : p.archetype === 'eager' ? [] : take(1, i);
+    return p.archetype === 'carrier' ? take(2, 0)
+      : p.archetype === 'struggling' ? take(1, 2)
+      : lucky.includes(p.id) ? take(1, 3 + lucky.indexOf(p.id))
+      : [];
+  };
+  const shift = ATTENTION_SHIFT[difficulty];
+
+  const students: Student[] = personas.map((p, i) => ({
+    persona: shift === 0 ? p : { ...p, traits: { ...p.traits, attention: Math.min(1, Math.max(0, p.traits.attention + shift)) } },
     notes: [],
     memory: memoryFor(memory, p.id, chapter.id),
     emotion: 'NEUTRAL',
     handUp: false,
     pendingLine: null,
-    beliefs:
-      p.archetype === 'carrier' ? take(2, 0)
-      : p.archetype === 'struggling' ? take(1, 2)
-      : lucky.includes(p.id) ? take(1, 3 + lucky.indexOf(p.id))
-      : [],
+    beliefs: beliefsOf(p, i),
   }));
 
   // Two pre-written opening lines, so class starts without an AI call.
@@ -81,7 +95,11 @@ export function startLesson(chapter: Chapter, personas: Persona[], rng: Rng, now
     text: p.openingLines[Math.floor(rng() * p.openingLines.length)],
   }));
 
-  return { chapter, students, transcript, board: '', boardPages: [''], boardPage: 0, boardCaptions: [''], boardPicture: null, seenPictures: [], turns: 0, startedAt: now };
+  return {
+    chapter, students, transcript, board: '', boardPages: [''], boardPage: 0, boardCaptions: [''], boardPicture: null, seenPictures: [], turns: 0, startedAt: now,
+    ...(opts.difficulty ? { difficulty: opts.difficulty } : {}),
+    ...(opts.challenge ? { challenge: opts.challenge } : {}),
+  };
 }
 
 /** The board the class is looking at right now. */

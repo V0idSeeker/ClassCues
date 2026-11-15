@@ -15,6 +15,8 @@ export interface AfterQuiz {
   factCheck: { checked: boolean; errors: FactError[] | null };
   /** One student's explanation of the lesson, and the goals missing from their notes (computed in code). */
   explain: { name: string; text: string | null; missingGoals: string[] } | null;
+  /** The lesson's challenge. met null: it could not be judged. null: the lesson had no challenge (an older save). */
+  challenge: { title: string; met: boolean | null; reason: string } | null;
 }
 
 /** The student whose quiz percentage is closest to the class average; ties go to the first in class order. */

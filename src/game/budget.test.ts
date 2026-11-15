@@ -3,8 +3,8 @@ import { builtInChapter } from '../content';
 import { mustRingBell, quizReserve } from './budget';
 
 describe('budget', () => {
-  it('reserves one request per student, one per written question and two for after the quiz', () => {
-    expect(quizReserve(10, builtInChapter.quiz)).toBe(15);
+  it('reserves one request per student, one per written question and three for after the quiz', () => {
+    expect(quizReserve(10, builtInChapter.quiz)).toBe(16);
   });
 
   it('rings the bell when the remaining requests reach the reserve', () => {

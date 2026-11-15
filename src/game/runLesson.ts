@@ -169,7 +169,7 @@ export async function runQuiz(
     })));
     for (const st of state.students) {
       const row = r.results.find(x => x.student_id === st.persona.id);
-      grades.push(row ? gradeWritten(q, row) : { student_id: st.persona.id, question_id: q.id, fraction: 0, feedback: 'Not graded.' });
+      grades.push(row ? gradeWritten(q, row, state.difficulty === 'inspection') : { student_id: st.persona.id, question_id: q.id, fraction: 0, feedback: 'Not graded.' });
     }
     onProgress(++done, total);
   }

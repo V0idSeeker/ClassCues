@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { challengeById, challengeTitle } from '../../game/challenges';
 import { MAX_TURNS, atmosphere, classClock } from '../../game/lesson';
 import type { LessonState } from '../../game/types';
 import { stopSpeaking } from '../../voice';
@@ -27,6 +28,8 @@ interface Props {
 /** One row: lesson, clock, turns, class mood, goals counter, help, a menu for the rarer controls, and the bell. */
 export default function TopBar(p: Props) {
   const { state } = p;
+  const found = challengeById(state.challenge);
+  const challenge = found && challengeTitle(found, state);
   return (
     <header className="topbar">
       <h1>{state.chapter.title}</h1>
@@ -35,6 +38,7 @@ export default function TopBar(p: Props) {
       <span className="pill" title="How the class feels as a whole. It spreads: bored or lost classmates pull others along.">
         <span className="hide-phone">Class mood: </span>{atmosphere(state).mood}
       </span>{p.help('class-mood', 'class mood')}
+      {challenge && <span className="pill challenge-chip" title={`Challenge: ${challenge}`}><span className="hide-phone">Challenge: </span>🎯 {challenge}</span>}
       <button className={`pill-button${p.goalsOpen ? ' on' : ''}`} onClick={p.onGoals} aria-pressed={p.goalsOpen}
         title="Lesson goals that at least one student has in their notes">
         Goals {p.realistic ? '?' : p.goalsReached}/{state.chapter.objectives.length}
@@ -44,6 +48,7 @@ export default function TopBar(p: Props) {
         <summary aria-label="More">☰</summary>
         <div className="menu-pop-list">
           <span className="dim">Version {__APP_VERSION__} · AI requests today: {p.used}</span>
+          {challenge && <span>Challenge: {challenge}</span>}
           <label className="check"><input type="checkbox" checked={p.voiceOn} onChange={e => { if (!e.target.checked) stopSpeaking(); p.onVoice(e.target.checked); }} />Voices</label>
           <label className="check"><input type="checkbox" checked={p.realistic} onChange={e => p.onRealistic(e.target.checked)} />Realistic mode</label>
           <button onClick={p.onNotes}>Lesson notes</button>
