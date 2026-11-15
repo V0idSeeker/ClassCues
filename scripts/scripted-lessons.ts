@@ -65,7 +65,8 @@ const ai: Ai = {
 };
 
 const RUNS = Number(env.TS_RUNS ?? 3);
-const LESSONS = ['good', 'sloppy', 'wrong', 'empty'] as const;
+// TS_LESSONS=empty (comma list) runs only those lessons; checks needing a lesson that did not run are skipped.
+const LESSONS = env.TS_LESSONS?.split(',') ?? ['good', 'sloppy', 'wrong', 'empty'];
 const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
 
 interface Score { total: number; written: number; mcq: number }
@@ -100,12 +101,13 @@ for (const name of LESSONS) {
 }
 
 const { good, sloppy, wrong, empty } = results;
-const checks: [string, boolean][] = [
-  [`good beats sloppy by 15+ points (${good.total.toFixed(0)} vs ${sloppy.total.toFixed(0)})`, good.total - sloppy.total >= 15],
-  [`sloppy beats wrong by 15+ points (${sloppy.total.toFixed(0)} vs ${wrong.total.toFixed(0)})`, sloppy.total - wrong.total >= 15],
-  [`leak test: empty lesson written score at most 10% (${empty.written.toFixed(0)}%)`, empty.written <= 10],
-  [`leak test: empty lesson multiple choice within chance, 25% ± 10 (${empty.mcq.toFixed(0)}%)`, Math.abs(empty.mcq - 25) <= 10],
-];
+const checks: [string, boolean][] = [];
+if (good && sloppy) checks.push([`good beats sloppy by 15+ points (${good.total.toFixed(0)} vs ${sloppy.total.toFixed(0)})`, good.total - sloppy.total >= 15]);
+if (sloppy && wrong) checks.push([`sloppy beats wrong by 15+ points (${sloppy.total.toFixed(0)} vs ${wrong.total.toFixed(0)})`, sloppy.total - wrong.total >= 15]);
+if (empty) {
+  checks.push([`leak test: empty lesson written score at most 10% (${empty.written.toFixed(0)}%)`, empty.written <= 10]);
+  checks.push([`leak test: empty lesson multiple choice within chance, 25% ± 10 (${empty.mcq.toFixed(0)}%)`, Math.abs(empty.mcq - 25) <= 10]);
+}
 
 console.log(`\nModel: ${env.TS_MODEL} · grader: ${env.TS_GRADER_MODEL ?? env.TS_MODEL} · requests: ${requests}`);
 for (const [label, ok] of checks) console.log(`${ok ? 'PASS' : 'FAIL'}  ${label}`);
