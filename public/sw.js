@@ -2,7 +2,7 @@
 // It only ever touches files of the game itself. Calls to AI providers and local models pass straight through.
 const VERSION = new URL(self.location.href).searchParams.get('v') || 'dev';
 const CACHE = `class-${VERSION}`;
-const SHELL = ['/', '/manifest.webmanifest', '/icon.svg', '/icon-192.png', '/icon-512.png'];
+const SHELL = ['/', '/manifest.webmanifest', '/favicon-32.png', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL)).then(() => self.skipWaiting()));

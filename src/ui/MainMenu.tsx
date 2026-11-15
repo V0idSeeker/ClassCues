@@ -36,6 +36,7 @@ export default function MainMenu(p: Props) {
         <div className="stage-in">
           <svg viewBox={SCENE_VIEWBOX} aria-hidden="true" dangerouslySetInnerHTML={{ __html: scene }} />
           <div className="menu-title" style={boardArea(16)}>
+            <img className="menu-logo" src="/icon-512.png" alt="" />
             <h1>{t('app.title')}</h1>
             <p>{t('menu.tagline')}</p>
           </div>

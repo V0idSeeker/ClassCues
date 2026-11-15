@@ -1,3 +1,5 @@
+<p align="center"><img src="public/icon-512.png" alt="Class Is In Session icon: an open book under a desk lamp" width="160" /></p>
+
 # Class Is In Session
 
 A free teaching game. You are the teacher. Your ten students are played by AI, and they only know what you taught them. At the end of the lesson they take a quiz from their own notes, so their scores show how well you taught.

@@ -170,6 +170,8 @@ table { border-collapse: collapse; width: 100%; } th, td { text-align: start; pa
 .menu-stage svg { pointer-events: none; }
 .menu-title { position: absolute; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; color: #f5f7f2; font-family: "Segoe Print", "Comic Sans MS", "Bradley Hand", cursive; }
 .menu-title h1 { font-size: 5cqw; margin: 0; }
+/* The app icon drawn in chalk: inverted, and its (now black) background blended away. */
+.menu-logo { width: 9cqw; height: 9cqw; margin-bottom: .6cqw; filter: invert(1); mix-blend-mode: screen; opacity: .9; }
 .menu-title p { font-size: 1.8cqw; margin: 1cqw 0 0; }
 .menu-buttons { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 420px; margin: 0 auto; }
 .menu-buttons button { font-size: 17px; padding: 10px 14px; }
