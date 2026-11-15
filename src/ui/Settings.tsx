@@ -3,15 +3,16 @@ import { ping } from '../ai/calls';
 import { autoModels, listModelInfo } from '../ai/models';
 import type { ModelInfo } from '../ai/models';
 import { AiError } from '../ai/provider';
-import { PRESETS, addLog, clearMemory, loadGoodModel, logText, saveGoodModel } from '../storage';
+import { PRESETS, addLog, clearMemory, loadGoodModel, loadTips, logText, saveGoodModel, saveTips } from '../storage';
 import type { Settings as SettingsType } from '../storage';
 
-interface Props { settings: SettingsType; used: number; onSave(s: SettingsType): void; onPlay(): void }
+interface Props { settings: SettingsType; used: number; onSave(s: SettingsType): void; onPlay(): void; onMenu(): void; onHelp(): void }
 
-export default function Settings({ settings, used, onSave, onPlay }: Props) {
+export default function Settings({ settings, used, onSave, onPlay, onMenu, onHelp }: Props) {
   const [s, setS] = useState(settings);
   const [test, setTest] = useState<{ ok: boolean; text: string } | null>(null);
   const [testing, setTesting] = useState(false);
+  const [tipsOff, setTipsOff] = useState(() => loadTips().off);
   const set = (patch: Partial<SettingsType>) => { setS({ ...s, ...patch }); setTest(null); };
   const preset = Object.values(PRESETS).find(p => p.baseUrl === s.baseUrl);
   const [models, setModels] = useState<ModelInfo[]>([]);
@@ -44,7 +45,12 @@ export default function Settings({ settings, used, onSave, onPlay }: Props) {
 
   return (
     <div className="page narrow">
-      <h1>Settings</h1>
+      <div className="row">
+        <h1 className="grow">Settings</h1>
+        <button onClick={onHelp}>Help: choosing an AI</button>
+        <button onClick={onMenu}>Main menu (without saving)</button>
+      </div>
+      {!s.apiKey && <p className="dim">Choose an AI to play your students. Groq and Google Gemini have free keys; "Help: choosing an AI" explains the options.</p>}
       <div className="panel">
         <label htmlFor="preset">AI provider</label>
         <select id="preset" value={preset ? s.baseUrl : ''} onChange={e => e.target.value && set({ baseUrl: e.target.value })}>
@@ -79,6 +85,7 @@ export default function Settings({ settings, used, onSave, onPlay }: Props) {
         <input id="limit" type="number" min={0} value={s.dailyLimit} onChange={e => set({ dailyLimit: Math.max(0, Number(e.target.value) || 0) })} />
 
         <label className="check"><input type="checkbox" checked={s.thinkingOff} onChange={e => set({ thinkingOff: e.target.checked })} />Ask the model not to "think" first (turn off if the provider rejects requests)</label>
+        <label className="check"><input type="checkbox" checked={!tipsOff} onChange={e => { const off = !e.target.checked; setTipsOff(off); saveTips({ off, seen: off ? loadTips().seen : [] }); }} />Show tips during lessons (turning this back on shows every tip again)</label>
         <label className="check"><input type="checkbox" checked={s.forceVision} onChange={e => set({ forceVision: e.target.checked })} />My model can read pictures (drawing on the board is offered only for models that can; Gemini and marked OpenRouter models are detected by themselves)</label>
         <label className="check"><input type="checkbox" checked={s.voiceOn} onChange={e => set({ voiceOn: e.target.checked })} />Students speak aloud (uses your browser's voices; text is always shown)</label>
         <label className="check"><input type="checkbox" checked={s.debugLog} onChange={e => set({ debugLog: e.target.checked })} />Keep a debug log of AI requests (never includes the key)</label>

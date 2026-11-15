@@ -119,6 +119,9 @@ Local models are slower. The first call can take a minute while the model loads.
 
 ## How to play
 
+The game has a guide built in: **How to play** on the main menu, **Help** on every screen, and **?** buttons next to the class mood, the notebook and the lesson goals. During your first lessons, tips appear the first time something happens (a raised hand, a restless class); turn them off or back on in Settings.
+
+
 1. **Choose a lesson** and press **Teach**. Ten students are drawn from a pool of thirty.
 2. **Teach.** Type what you say and press Enter. Write key points on the board: students copy what they see. You have 20 turns or 15 minutes.
 3. **Watch the class.** Each student shows a mood. Click a student to read their notebook. Wrong beliefs they have not dropped are marked. The goals panel shows how many students have each goal in their notes.

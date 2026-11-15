@@ -1,9 +1,9 @@
 import type { Report as ReportType } from '../game/report';
 import type { Chapter } from '../game/types';
 
-interface Props { report: ReportType; chapter: Chapter; best: number; bestBefore: number | null; onAgain(): void }
+interface Props { report: ReportType; chapter: Chapter; best: number; bestBefore: number | null; onAgain(): void; onHelp(): void }
 
-export default function Report({ report, chapter, best, bestBefore, onAgain }: Props) {
+export default function Report({ report, chapter, best, bestBefore, onAgain, onHelp }: Props) {
   const prompt = (id: string) => chapter.quiz.find(q => q.id === id)?.prompt ?? id;
   return (
     <div className="page">
@@ -14,6 +14,7 @@ export default function Report({ report, chapter, best, bestBefore, onAgain }: P
           {bestBefore === null ? 'First time teaching this lesson' : report.classAverage > bestBefore ? `New best! Before: ${bestBefore}%` : `Your best: ${best}%`}
         </span>
         <button className="go" onClick={onAgain}>Back to the lessons</button>
+        <button onClick={onHelp}>What does this mean?</button>
       </div>
 
       <div className="panel" style={{ marginTop: 12 }}>

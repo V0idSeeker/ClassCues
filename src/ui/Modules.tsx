@@ -7,7 +7,7 @@ import type { Chapter, QuizQuestion } from '../game/types';
 import { normalizeChapter, packLessons, unpackLessons, validateChapter } from '../game/validate';
 import { loadLevels, loadScores, saveLevels } from '../storage';
 
-interface Props { deps: AiDeps; lessonRunning: boolean; onPlay(c: Chapter): void; onResume(): void; onSettings(): void }
+interface Props { deps: AiDeps; lessonRunning: boolean; onPlay(c: Chapter): void; onResume(): void; onSettings(): void; onMenu(): void; onHelp(): void }
 /** The PDFs the player picked: every page's text in order, and which pages to use. */
 interface Source { names: string[]; pages: string[]; from: number; to: number; title: string; count: number; how: 'chapters' | 'equal' }
 
@@ -261,7 +261,9 @@ export default function Modules(p: Props) {
       <div className="row">
         <h1 className="grow">Choose a lesson</h1>
         {p.lessonRunning && <button className="go" onClick={p.onResume}>Back to the running lesson</button>}
+        <button onClick={p.onHelp}>Help</button>
         <button onClick={p.onSettings}>Settings</button>
+        <button onClick={p.onMenu}>Main menu</button>
       </div>
       {p.lessonRunning && <p className="dim">A lesson is running. Teaching another one ends it without a quiz.</p>}
       {notice && <p className="ok" role="status">{notice}</p>}

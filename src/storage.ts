@@ -136,6 +136,19 @@ export function saveScores(scores: Scores): void {
   localStorage.setItem(K.scores, JSON.stringify(scores));
 }
 
+/** Tips already shown during lessons, and whether tips are wanted at all. */
+export function loadTips(): { off: boolean; seen: string[] } {
+  return read<{ off: boolean; seen: string[] }>(localStorage, 'ts.tips') ?? { off: false, seen: [] };
+}
+
+export function saveTips(tips: { off: boolean; seen: string[] }): void {
+  localStorage.setItem('ts.tips', JSON.stringify(tips));
+}
+
+/** True once the player has opened the guide. */
+export const helpSeen = (): boolean => localStorage.getItem('ts.helpSeen') !== null;
+export const markHelpSeen = (): void => localStorage.setItem('ts.helpSeen', '1');
+
 /** What students remember from past lessons. */
 export function loadMemory(): ClassMemory {
   return read<ClassMemory>(localStorage, K.memory) ?? {};

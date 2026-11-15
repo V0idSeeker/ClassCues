@@ -12,20 +12,26 @@ import { computeReport } from './game/report';
 import type { Report as ReportType } from './game/report';
 import { askStudent, hearStudent, pickForClassQuestion, runQuiz, teachTurn } from './game/runLesson';
 import type { Chapter, LessonState, Turn } from './game/types';
-import { addLog, bumpUsed, clearLesson, hasSettings, loadGoodModel, loadLesson, loadMemory, loadScores, saveScores, saveGoodModel, loadSettings, saveMemory, loadUsed, saveLesson, saveSettings } from './storage';
+import { addLog, bumpUsed, clearLesson, hasSettings, helpSeen, markHelpSeen, loadGoodModel, loadLesson, loadMemory, loadScores, saveScores, saveGoodModel, loadSettings, saveMemory, loadUsed, saveLesson, saveSettings } from './storage';
 import type { Settings as SettingsType } from './storage';
 import Classroom from './ui/Classroom';
+import Codex from './ui/help/Codex';
+import MainMenu from './ui/MainMenu';
 import Modules from './ui/Modules';
 import Report from './ui/Report';
 import Settings from './ui/Settings';
 
-type Screen = 'settings' | 'modules' | 'classroom' | 'quiz' | 'report';
+type Screen = 'menu' | 'settings' | 'modules' | 'classroom' | 'quiz' | 'report';
 
 const explain = (e: unknown) => (e instanceof AiError ? e.message : `Something went wrong: ${String(e)}`);
 
 export default function App() {
   const [settings, setSettings] = useState<SettingsType>(loadSettings);
-  const [screen, setScreen] = useState<Screen>(() => (hasSettings() ? 'modules' : 'settings'));
+  const [screen, setScreen] = useState<Screen>('menu');
+  // The guide opens over any screen, so a running lesson is never interrupted. null: closed.
+  const [help, setHelp] = useState<string | null>(null);
+  const [firstVisit, setFirstVisit] = useState(() => !helpSeen());
+  const openHelp = (entry = 'goal') => { setHelp(entry); markHelpSeen(); setFirstVisit(false); };
   const [lesson, setLesson] = useState<LessonState | null>(null);
   const [report, setReport] = useState<{ report: ReportType; chapter: Chapter; best: number; bestBefore: number | null } | null>(null);
   const [used, setUsed] = useState(loadUsed);
@@ -89,12 +95,10 @@ export default function App() {
     saveLesson(state, Date.now());
   }
 
-  // A lesson that was running when the page closed continues where it stopped.
+  // A lesson that was running when the page closed can be continued from the main menu.
   useEffect(() => {
     const saved = hasSettings() ? loadLesson(Date.now()) : null;
-    if (!saved) return;
-    commit(saved);
-    setScreen('classroom');
+    if (saved) commit(saved);
   }, []);
 
   function play(chapter: Chapter) {
@@ -186,12 +190,24 @@ export default function App() {
 
   return (
     <>
+      {screen === 'menu' && (
+        <MainMenu
+          lessonTitle={lesson?.chapter.title ?? null} firstVisit={firstVisit}
+          onContinue={() => setScreen('classroom')}
+          onStart={() => setScreen(hasSettings() ? 'modules' : 'settings')}
+          onHelp={() => openHelp()}
+          onSettings={() => setScreen('settings')}
+        />
+      )}
+
       {screen === 'settings' && (
-        <Settings settings={settings} used={used} onSave={s => { saveSettings(s); setSettings(s); }} onPlay={() => setScreen(lessonRef.current ? 'classroom' : 'modules')} />
+        <Settings settings={settings} used={used} onSave={s => { saveSettings(s); setSettings(s); }} onPlay={() => setScreen(lessonRef.current ? 'classroom' : 'modules')}
+          onMenu={() => setScreen('menu')} onHelp={() => openHelp('providers')} />
       )}
 
       {screen === 'modules' && (
-        <Modules deps={deps} lessonRunning={lesson !== null} onResume={() => setScreen('classroom')} onPlay={play} onSettings={() => setScreen('settings')} />
+        <Modules deps={deps} lessonRunning={lesson !== null} onResume={() => setScreen('classroom')} onPlay={play} onSettings={() => setScreen('settings')}
+          onMenu={() => setScreen('menu')} onHelp={() => openHelp('courses')} />
       )}
 
       {screen === 'classroom' && lesson && (
@@ -207,6 +223,8 @@ export default function App() {
           onRetry={() => void pump()}
           onSettings={() => setScreen('settings')}
           onLevels={() => setScreen('modules')}
+          onMenu={() => setScreen('menu')}
+          onHelp={openHelp}
         />
       )}
 
@@ -221,7 +239,9 @@ export default function App() {
         </div>
       )}
 
-      {screen === 'report' && report && <Report report={report.report} chapter={report.chapter} best={report.best} bestBefore={report.bestBefore} onAgain={() => setScreen('modules')} />}
+      {screen === 'report' && report && <Report report={report.report} chapter={report.chapter} best={report.best} bestBefore={report.bestBefore} onAgain={() => setScreen('modules')} onHelp={() => openHelp('report')} />}
+
+      {help && <Codex entry={help} onOpen={setHelp} onClose={() => setHelp(null)} />}
 
       <p className="dim footer">Class Is In Session · v{__APP_VERSION__}</p>
     </>

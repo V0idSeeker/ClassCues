@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent, MouseEvent } from 'react';
 import { MAX_TURNS, atmosphere, boardText, classClock, coverage } from '../game/lesson';
 import type { LessonState, Turn } from '../game/types';
-import { loadArt, saveArt } from '../storage';
+import { loadArt, loadTips, saveArt, saveTips } from '../storage';
+import { nextTip } from './help/tips';
 import { speak, stopSpeaking } from '../voice';
 import BoardArt, { addPicture, pictureForStudents } from './BoardArt';
 import { HAND, SCENE_VIEWBOX, STATE, portraitSvg, sceneSvg } from './scene';
@@ -24,6 +25,9 @@ interface Props {
   onRetry(): void;
   onSettings(): void;
   onLevels(): void;
+  onMenu(): void;
+  /** Opens the guide, at a page when given. */
+  onHelp(entry?: string): void;
 }
 
 const still = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -77,6 +81,14 @@ export default function Classroom(p: Props) {
     const speaker = line && state.students.find(s => s.persona.name === line.who);
     if (line && speaker) speak(line.text, speaker.persona.voice, on => setTalking(on ? speaker.persona.id : null));
   }, [state.transcript.length]);
+
+  // Tips: the first time something happens, a line explains it, with a link to the guide.
+  const [tips, setTips] = useState(loadTips);
+  const tip = tips.off ? null : nextTip(state, tips.seen);
+  const keepTips = (next: { off: boolean; seen: string[] }) => { setTips(next); saveTips(next); };
+  const ask = (entry: string, what: string) => (
+    <button className="q" onClick={() => p.onHelp(entry)} aria-label={`Help: ${what}`} title={`What is ${what}?`}>?</button>
+  );
 
   const student = state.students.find(s => s.persona.id === sel) ?? state.students[0];
   const inNotes = coverage(state);
@@ -174,19 +186,30 @@ export default function Classroom(p: Props) {
         <h1 className="grow">{state.chapter.title}</h1>
         <span className="pill">Clock {classClock(state, now)} / 45:00</span>
         <span className="pill">Turn {state.turns} / {MAX_TURNS}</span>
-        <span className="pill" title="How the class feels as a whole. It spreads: bored or lost classmates pull others along.">Class mood: {atmosphere(state).mood}</span>
+        <span className="pill" title="How the class feels as a whole. It spreads: bored or lost classmates pull others along.">Class mood: {atmosphere(state).mood}</span>{ask('class-mood', 'class mood')}
         <span className="pill">AI requests today {p.used}</span>
         <label className="check" style={{ margin: 0 }}><input type="checkbox" checked={p.voiceOn} onChange={e => { if (!e.target.checked) stopSpeaking(); p.onVoice(e.target.checked); }} />Voices</label>
         <label className="check" style={{ margin: 0 }}><input type="checkbox" checked={realistic} onChange={e => setRealistic(e.target.checked)} />Realistic mode</label>
+        <button onClick={() => p.onHelp()}>Help</button>
         <button onClick={p.onLevels}>Lessons and PDF import</button>
         <button onClick={p.onSettings}>Settings</button>
+        <button onClick={p.onMenu}>Main menu</button>
         <button className="go" onClick={p.onBell} disabled={p.busy}>Ring the bell: quiz time</button>
       </div>
+
+      {tip && (
+        <div className="tip" role="status">
+          <span className="grow"><b>Tip:</b> {tip.text}</span>
+          <button onClick={() => p.onHelp(tip.entry)}>Tell me more</button>
+          <button onClick={() => keepTips({ ...tips, seen: [...tips.seen, tip.id] })}>Got it</button>
+          <button className="linkish" onClick={() => keepTips({ ...tips, off: true })}>Turn tips off</button>
+        </div>
+      )}
 
       <div className="play">
         <div className="col">
           <div className="panel">
-            <h2>Student</h2>
+            <h2>Student {ask('moods', 'a student\'s mood')}</h2>
             <div className="talk">
               <div className="pic" dangerouslySetInnerHTML={{ __html: portraitSvg(student) }} />
               <div>
@@ -203,7 +226,7 @@ export default function Classroom(p: Props) {
             </div>
           </div>
           <div className="paper">
-            <h2>{student.persona.name}'s notebook</h2>
+            <h2>{student.persona.name}'s notebook {ask('notebooks', 'the notebook')}</h2>
             {realistic ? <p>Hidden in realistic mode.</p> : (
               <ul>
                 {student.notes.map((n, i) => <li key={i} className={n.distorted ? 'bent' : ''}>{n.text}</li>)}
@@ -294,7 +317,7 @@ export default function Classroom(p: Props) {
 
         <div className="col">
           <div className="panel">
-            <h2>Lesson goals · students who have it in their notes</h2>
+            <h2>Lesson goals · students who have it in their notes {ask('goals', 'lesson goals')}</h2>
             {state.chapter.objectives.map(o => (
               <div className="goal" key={o.id}>
                 <span>{o.text}</span><b>{realistic ? '?' : `${inNotes[o.id]}/${state.students.length}`}</b>
