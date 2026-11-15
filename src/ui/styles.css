@@ -199,3 +199,10 @@ table { border-collapse: collapse; width: 100%; } th, td { text-align: left; pad
 .codex-board { background: #2f5d50; border: 8px solid #9a6a3c; border-radius: 6px; color: #f5f7f2; padding: 10px 14px; font-family: "Segoe Print", "Comic Sans MS", cursive; max-width: 420px; }
 @media (max-width: 760px) { .codex-book { grid-template-columns: minmax(0, 1fr); grid-template-rows: 40% 60%; } .codex-nav { border-right: 0; border-bottom: 2px solid var(--edge); } }
 @media (max-width: 1000px) { .play { grid-template-columns: minmax(0, 1fr); } .play > .col:nth-child(2) { order: -1; } }
+
+/* Speech input */
+.mic.on { background: var(--bad); border-color: var(--bad); color: #2a0b06; }
+.mic.on::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; background: #fff; animation: mic-pulse 1s ease-in-out infinite; }
+@keyframes mic-pulse { 50% { opacity: .3; } }
+@media (prefers-reduced-motion: reduce) { .mic.on::before { animation: none; } }
+.speech-error { margin: 0; font-size: 13px; color: var(--bad); }
