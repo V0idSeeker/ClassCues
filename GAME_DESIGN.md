@@ -112,6 +112,14 @@ The older description below (three columns) is kept for history; where it disagr
 - **Speaking to one student.** When the teacher's sentence contains a student's name, that student replies and nobody else. If their hand was up, they say the line they were waiting with.
 - **Memory across lessons.** After a quiz, each student keeps up to 8 of their notes from that lesson, right or wrong, for their next 3 lessons. They can use them when speaking and in quizzes. Teaching the same level again starts fresh, so a replay still measures that day's teaching. Settings has "Make students forget earlier lessons".
 
+### 0.4c Learning aids
+
+- **Study screen.** Pressing Teach opens a study screen first: course and lesson title, the goals, the reference text as study notes, the wrong beliefs some students will bring, a short "how to teach it" checklist and the number of quiz questions (never the questions). "Skip this screen next time" goes straight to class; Settings turns it back on. In class, "Lesson notes" in the ☰ menu opens the same notes as a panel.
+- **Fact check of the teacher.** After the quiz, one call (grader model) compares the teacher's and board lines with the reference and returns only false or misleading statements, each with a correction and a severity. The report lists them under "Your teaching, checked", major first, with a note that the AI can be wrong. Skipped when the teacher said nothing.
+- **Explain it back.** After the quiz, the student whose score is closest to the class average explains the lesson in their own words from their notebook, beliefs and memory only (student model, same knowledge rules as the quiz). The report shows it under "In their own words", with the goals missing from that student's notes computed in code.
+- Both extra calls run after the scores are saved, one after the other, and never block the report. The daily-limit reserve includes them.
+- **Speech input.** A 🎤 button uses the browser's speech recognition (no AI request). Words appear in the typing box and are never sent by themselves. Hidden where the browser has none.
+
 ### 0.5 AI calls and request budget
 
 Flow of one lesson:

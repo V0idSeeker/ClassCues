@@ -35,11 +35,23 @@ export const ENTRIES: Entry[] = [
     intro: 'Every lesson follows the same path: choose a lesson, teach it, ring the bell, and read the report.',
     points: [
       'Choose: on the lessons screen, press Teach next to a lesson. Ten students are drawn from a pool of thirty.',
+      'Study: read the goals and the study notes, and see which wrong beliefs students may bring.',
       'Teach: talk, write on the board, answer questions, check understanding.',
       'Ring the bell: the students take a six-question quiz from their notes.',
       'Report: see the class average, every answer, and three tips for next time. Then try to beat your best score.',
     ],
-    visual: 'flow', see: ['turns', 'quiz', 'report'],
+    visual: 'flow', see: ['prepare', 'turns', 'quiz', 'report'],
+  },
+  {
+    id: 'prepare', category: 'The basics', title: 'Studying before you teach',
+    intro: 'Before each lesson, a study screen shows what you will teach: the goals, the study notes, and the wrong ideas some students will arrive with. Read it first; you cannot teach what you do not understand.',
+    points: [
+      'The quiz questions stay hidden. Each one tests one of the goals.',
+      'Plan how you will correct each wrong belief, not only how to explain the right idea.',
+      'During the lesson, "Lesson notes" in the ☰ menu opens the same notes again.',
+      'Tick "Skip this screen next time" to go straight to class. Turn it back on in Settings.',
+    ],
+    see: ['goals', 'wrong-beliefs'],
   },
   {
     id: 'turns', category: 'The basics', title: 'Turns and the clock',
@@ -111,6 +123,18 @@ export const ENTRIES: Entry[] = [
       '"Big board" shows a larger board with the students\' faces underneath.',
     ],
     visual: 'board', see: ['slides', 'pictures'],
+  },
+  {
+    id: 'speaking', category: 'Teaching', title: 'Speaking instead of typing',
+    intro: 'Press 🎤 next to the typing box and talk. Your words appear in the box as you speak.',
+    points: [
+      'Nothing is sent by itself. Read what was heard, fix any mistakes, then press Say it or Enter.',
+      'Press ■ Stop, or start typing, to stop listening.',
+      'Works in Chrome, Edge and Safari. Firefox has no speech recognition, so the button does not appear there.',
+      'The first time, the browser asks to use the microphone. If you refused, allow it from the icon at the left of the address bar.',
+      'In Chrome and Edge the audio is sent to the browser maker to be turned into text.',
+    ],
+    see: ['talking'],
   },
   {
     id: 'slides', category: 'Teaching', title: 'Several boards, like slides',
@@ -251,9 +275,34 @@ export const ENTRIES: Entry[] = [
       'Class average, and whether this is your first time, a new best, or your best so far.',
       'Three tips: goals nobody had, questions most students missed, wrong beliefs still held, hands left up.',
       'The goals table: how many students had each goal in their notes, and their average on its questions.',
+      '"Your teaching, checked": anything you said or wrote that was wrong.',
+      '"In their own words": one student explains the lesson back to you.',
       'Open a student to see each answer, its mark and why it lost points.',
     ],
-    visual: 'report', see: ['scores'],
+    visual: 'report', see: ['fact-check', 'explain-back', 'scores'],
+  },
+  {
+    id: 'fact-check', category: 'Quiz and scores', title: 'Your teaching, checked',
+    intro: 'After the quiz, the AI compares everything you said and wrote with the lesson\'s reference. Anything false or misleading is listed with what is right.',
+    points: [
+      'This is how you find out what you got wrong yourself: students write down your mistakes as facts.',
+      'Major mistakes are listed first.',
+      'Only wrong statements are listed, not things you left out.',
+      'The check is made by an AI and can be wrong. When in doubt, look it up.',
+      'It uses one extra AI request per lesson.',
+    ],
+    see: ['report', 'talking'],
+  },
+  {
+    id: 'explain-back', category: 'Quiz and scores', title: 'In their own words',
+    intro: 'After the quiz, one student explains the whole lesson back to you, using only their notebook. It shows what your class actually took away.',
+    points: [
+      'The student is the one whose quiz score was closest to the class average: a typical student, not the best one.',
+      'Below the explanation, the goals missing from that student\'s notes are listed.',
+      'Listen for wrong ideas and gaps: they show what to explain better next time.',
+      'It uses one extra AI request per lesson.',
+    ],
+    see: ['report', 'notebooks'],
   },
   {
     id: 'scores', category: 'Quiz and scores', title: 'Scores and courses',
@@ -323,7 +372,7 @@ export const ENTRIES: Entry[] = [
   },
   {
     id: 'limits', category: 'AI and settings', title: 'Free limits',
-    intro: 'Free AI plans limit how much you can ask per minute or per day. A lesson uses about 40 to 50 requests.',
+    intro: 'Free AI plans limit how much you can ask per minute or per day. A lesson uses about 40 to 50 requests, plus two after the quiz for the fact check and the explanation.',
     points: [
       '"AI requests today" in the ☰ menu counts what this browser sent.',
       'When a limit is reached, the game waits a moment and tries again, or switches to another model by itself.',

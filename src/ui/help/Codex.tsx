@@ -93,7 +93,7 @@ function Drawing({ visual }: { visual: Visual }) {
     case 'flow':
       return (
         <div className="row">
-          {['Choose a lesson', 'Teach', 'Ring the bell', 'Quiz', 'Report', 'Try again'].map((s, i) => (
+          {['Choose a lesson', 'Study', 'Teach', 'Ring the bell', 'Quiz', 'Report', 'Try again'].map((s, i) => (
             <span key={s} className="row" style={{ gap: 8 }}>{i > 0 && <span aria-hidden="true">→</span>}<span className="pill">{s}</span></span>
           ))}
         </div>

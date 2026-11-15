@@ -123,14 +123,17 @@ The game has a guide built in: **How to play** on the main menu, **Help** on eve
 
 
 1. **Choose a lesson** and press **Teach**. Ten students are drawn from a pool of thirty.
-2. **Teach.** Type what you say and press Enter. Write key points on the board: students copy what they see. You have 20 turns or 15 minutes.
+1. **Study.** The study screen shows the goals, the study notes and the wrong ideas some students will bring. The quiz stays hidden. During the lesson, **Lesson notes** in the ☰ menu reopens it.
+2. **Teach.** Type what you say and press Enter, or press 🎤 and speak (Chrome, Edge, Safari): your words appear in the box and are sent only when you press Say it. Write key points on the board: students copy what they see. You have 20 turns or 15 minutes.
 3. **Watch the class.** Each student shows a mood. Click a student to read their notebook. Wrong beliefs they have not dropped are marked. The goals panel shows how many students have each goal in their notes.
 4. **Talk with students.**
    - A sentence with a question mark gets an answer from one student.
    - Say a student's name and that student answers.
    - **Call on** and **Ask the class** invite questions when you have typed nothing.
    - Click a desk with a raised hand to hear the student.
-5. **Ring the bell.** Students take the quiz from their notes only. You get the report.
+5. **Ring the bell.** Students take the quiz from their notes only. You get the report, which also includes:
+   - **Your teaching, checked**: anything you said or wrote that was wrong, with the correction (an AI check, it can be wrong).
+   - **In their own words**: a typical student explains the lesson back to you from their notebook, and the goals missing from their notes are listed.
 6. **Try again** to beat your best score.
 
 Things that matter for the score:
@@ -244,6 +247,7 @@ Students cannot use what the AI model already knows:
 ## Privacy
 
 - No game server. The browser talks directly to the AI provider you chose.
-- What you type, your board text, your pictures (with a picture-reading model) and the text of imported PDFs are sent to that provider. Its terms decide what happens to them.
+- What you type, your board text, your pictures (with a picture-reading model) and the text of imported PDFs are sent to that provider.
+- Speaking with 🎤 uses your browser's speech recognition. In Chrome and Edge the audio is sent to Google or Microsoft to be turned into text. Its terms decide what happens to them.
 - Keys, lessons, scores and student memory are stored in your browser. Clearing the site's data removes them.
 - All students are fictional.
