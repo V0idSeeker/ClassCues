@@ -31,18 +31,35 @@ export function drawClass(pool: Persona[], rng: Rng, size = 10): Persona[] {
   return draw(picked, picked.length, rng);
 }
 
-/** What each student (by id) kept from past lessons. Newest lesson last. */
-export type ClassMemory = Record<string, { chapterId: string; title: string; notes: string[] }[]>;
+/**
+ * What each student (by id) kept from past lessons. Newest lesson last.
+ * mistakes: the teacher's wrong claims this student still believes, newest first. Only the newest lesson's list counts;
+ * saved memory from before this field has none.
+ */
+export type ClassMemory = Record<string, { chapterId: string; title: string; notes: string[]; mistakes?: string[] }[]>;
 export const MEMORY_LESSONS = 3;
 export const MEMORY_NOTES = 8;
+export const MEMORY_MISTAKES = 3;
 
-/** After a lesson: every student keeps some of their notes, right or wrong. Only the last few lessons stay. */
-export function rememberLesson(memory: ClassMemory, state: LessonState): ClassMemory {
+/** The teacher's mistakes a student still believes, newest first. */
+export function mistakesFor(memory: ClassMemory, studentId: string): string[] {
+  return (memory[studentId] ?? []).slice(-1)[0]?.mistakes ?? [];
+}
+
+/**
+ * After a lesson: every student keeps some of their notes, right or wrong. Only the last few lessons stay.
+ * mistakes: what the fact check found wrong in this lesson's teaching. Every student in class now believes it,
+ * on top of the earlier mistakes they did not drop during this lesson.
+ */
+export function rememberLesson(memory: ClassMemory, state: LessonState, mistakes: string[] = []): ClassMemory {
   const next: ClassMemory = { ...memory };
   for (const s of state.students) {
     const before = (memory[s.persona.id] ?? []).filter(m => m.chapterId !== state.chapter.id);
     const notes = s.notes.slice(0, MEMORY_NOTES).map(n => n.text);
-    next[s.persona.id] = [...before, { chapterId: state.chapter.id, title: state.chapter.title, notes }].slice(-MEMORY_LESSONS);
+    const kept = mistakesFor(memory, s.persona.id).filter(t => s.beliefs.some(b => b.text === t));
+    const believed = [...new Set([...mistakes, ...kept])].slice(0, MEMORY_MISTAKES);
+    const entry = { chapterId: state.chapter.id, title: state.chapter.title, notes, ...(believed.length ? { mistakes: believed } : {}) };
+    next[s.persona.id] = [...before, entry].slice(-MEMORY_LESSONS);
   }
   return next;
 }
@@ -54,12 +71,29 @@ export function memoryFor(memory: ClassMemory, studentId: string, chapterId: str
     .flatMap(m => m.notes.map(text => `From the lesson "${m.title}": ${text}`));
 }
 
-export function startLesson(chapter: Chapter, personas: Persona[], rng: Rng, now: number, memory: ClassMemory = {}): LessonState {
+/**
+ * held: for a follow-up lesson, the wrong beliefs (texts from chapter.common_misconceptions) each student starts with,
+ * by student id, instead of handing them out by archetype.
+ */
+export function startLesson(chapter: Chapter, personas: Persona[], rng: Rng, now: number, memory: ClassMemory = {}, held?: Record<string, string[]>): LessonState {
   const beliefs: Belief[] = chapter.common_misconceptions.map((text, i) => ({ id: `b${i + 1}`, text }));
   const take = (n: number, from: number): Belief[] =>
     beliefs.length === 0 ? [] : Array.from({ length: Math.min(n, beliefs.length) }, (_, k) => beliefs[(from + k) % beliefs.length]);
 
   const lucky = draw(personas.filter(p => p.archetype !== 'carrier' && p.archetype !== 'struggling'), 2, rng).map(p => p.id);
+
+  const given = (p: Persona): Belief[] =>
+    held ? beliefs.filter(b => held[p.id]?.includes(b.text))
+    : p.archetype === 'carrier' ? take(2, 0)
+    : p.archetype === 'struggling' ? take(1, 2)
+    : lucky.includes(p.id) ? take(1, 3 + lucky.indexOf(p.id))
+    : [];
+  // The teacher's earlier mistakes this student remembers are wrong beliefs too, until the teacher corrects them.
+  const withMistakes = (p: Persona): Belief[] => {
+    const own = given(p);
+    const remembered = mistakesFor(memory, p.id).map((text, k) => ({ id: `m${k + 1}`, text }));
+    return [...own, ...remembered.filter(m => !own.some(b => b.text === m.text))];
+  };
 
   const students: Student[] = personas.map(p => ({
     persona: p,
@@ -68,11 +102,7 @@ export function startLesson(chapter: Chapter, personas: Persona[], rng: Rng, now
     emotion: 'NEUTRAL',
     handUp: false,
     pendingLine: null,
-    beliefs:
-      p.archetype === 'carrier' ? take(2, 0)
-      : p.archetype === 'struggling' ? take(1, 2)
-      : lucky.includes(p.id) ? take(1, 3 + lucky.indexOf(p.id))
-      : [],
+    beliefs: withMistakes(p),
   }));
 
   // Two pre-written opening lines, so class starts without an AI call.

@@ -28,6 +28,8 @@ export interface Chapter {
   /** The course this lesson belongs to, and its position in it. Lessons made one at a time have neither. */
   course?: string;
   part?: number;
+  /** A follow-up lesson: the id of the lesson whose mistakes it corrects. */
+  followUpOf?: string;
 }
 
 export interface Persona {

@@ -5,6 +5,7 @@ import { builtInCourses } from '../content';
 import { MAX_LESSON_CHARS, courseScore, cutAtPages, splitIntoLessons, suggestedLessonCount } from '../game/course';
 import type { Chapter, QuizQuestion } from '../game/types';
 import { normalizeChapter, packLessons, unpackLessons, validateChapter } from '../game/validate';
+import { loadRuns, oftenMissed } from '../progress';
 import { loadLevels, loadScores, saveLevels } from '../storage';
 
 interface Props { deps: AiDeps; lessonRunning: boolean; onPlay(c: Chapter): void; onResume(): void; onSettings(): void; onMenu(): void; onHelp(): void }
@@ -28,6 +29,7 @@ function download(name: string, lessons: Chapter[]) {
 export default function Modules(p: Props) {
   const [levels, setLevels] = useState<Chapter[]>(loadLevels);
   const [scores] = useState(loadScores);
+  const [runs] = useState(loadRuns);
   const [source, setSource] = useState<Source | null>(null);
   const [draft, setDraft] = useState<Chapter | null>(null);
   const [busy, setBusy] = useState('');
@@ -280,11 +282,13 @@ export default function Modules(p: Props) {
             </div>
             {g.lessons.map(c => {
               const s = scores[c.id];
+              const missed = oftenMissed(runs, c.id, c.objectives);
               return (
                 <div className="row" key={c.id} style={{ marginTop: 8 }}>
                   <span className="grow">
                     <b>{c.part ? `${c.part}. ` : ''}{c.title}</b>{' '}
                     <span className="dim">{s ? `Best ${s.best}% · last ${s.last}% · taught ${s.plays}×` : 'Not taught yet'}</span>
+                    {missed.length > 0 && <><br /><span className="dim">Often missed: {missed.map(o => o.text).join(', ')}</span></>}
                   </span>
                   {!builtInIds.has(c.id) && <button onClick={() => { chapterText.current = ''; setProblems([]); setError(''); setDraft(c); }}>Edit</button>}
                   {!builtInIds.has(c.id) && <button onClick={() => download(c.title, [c])}>Export</button>}

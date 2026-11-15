@@ -1,9 +1,12 @@
 import type { AfterQuiz, Report as ReportType } from '../game/report';
 import type { Chapter } from '../game/types';
 
-interface Props { report: ReportType; after: AfterQuiz; chapter: Chapter; best: number; bestBefore: number | null; onAgain(): void; onHelp(): void }
+interface Props { report: ReportType; after: AfterQuiz; chapter: Chapter; best: number; bestBefore: number | null;
+  /** Starts a follow-up lesson on what the class missed; null when there is nothing to fix. */
+  onFollowUp: (() => void) | null;
+  onAgain(): void; onHelp(): void }
 
-export default function Report({ report, after, chapter, best, bestBefore, onAgain, onHelp }: Props) {
+export default function Report({ report, after, chapter, best, bestBefore, onFollowUp, onAgain, onHelp }: Props) {
   const prompt = (id: string) => chapter.quiz.find(q => q.id === id)?.prompt ?? id;
   const { checked, errors } = after.factCheck;
   const sorted = errors && [...errors].sort((a, b) => Number(b.severity === 'major') - Number(a.severity === 'major'));
@@ -40,6 +43,16 @@ export default function Report({ report, after, chapter, best, bestBefore, onAga
             </ul>
           )}
         <p className="dim">This check is made by the AI and can be wrong.</p>
+      </div>
+
+      <div className="panel" style={{ marginTop: 12 }}>
+        <h2>Fix your mistakes</h2>
+        {onFollowUp ? (
+          <>
+            <p>Teach the same class a short lesson on the goals they missed and the wrong beliefs they still hold. Its score is kept apart from the course.</p>
+            <button className="go" onClick={onFollowUp}>Teach a follow-up lesson</button>
+          </>
+        ) : <p>Nothing to fix: well taught.</p>}
       </div>
 
       {explain && (
