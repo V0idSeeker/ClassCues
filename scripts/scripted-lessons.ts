@@ -4,10 +4,14 @@
  *
  *   TS_BASE_URL=http://127.0.0.1:11434/v1/chat/completions TS_MODEL=<model name> npm run lessons
  *
- * Optional: TS_API_KEY, TS_GRADER_MODEL (default: TS_MODEL), TS_RUNS (default 3).
+ * Optional: TS_API_KEY, TS_GRADER_MODEL (default: TS_MODEL), TS_RUNS (default 3),
+ * TS_PAUSE_MS (wait between teacher turns, like a real player; default 0).
+ * Free plans limit requests per minute: a call refused for that is retried after 30, 60 and 90 seconds.
  */
 import { readFileSync } from 'node:fs';
 import { makeAi } from '../src/ai/calls';
+import { AiError } from '../src/ai/provider';
+import type { Ai } from '../src/game/types';
 import { builtInChapter, students } from '../src/content';
 import { startLesson } from '../src/game/lesson';
 import { computeReport } from '../src/game/report';
@@ -22,12 +26,37 @@ if (!env.TS_BASE_URL || !env.TS_MODEL) {
 }
 
 let requests = 0;
-const ai = makeAi({
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const PAUSE_MS = Number(env.TS_PAUSE_MS ?? 0);
+
+/** Retries a call that a free plan refused for its per-minute limit, waiting longer each time. */
+async function patient<T>(call: () => Promise<T>): Promise<T> {
+  for (const wait of [30000, 60000, 90000, 0]) {
+    try {
+      return await call();
+    } catch (e) {
+      const busy = e instanceof AiError && (e.kind === 'rate' || e.kind === 'unavailable');
+      if (!busy || wait === 0) throw e;
+      console.log(`  provider busy, waiting ${wait / 1000} s`);
+      await sleep(wait);
+    }
+  }
+  throw new Error('unreachable');
+}
+
+const raw = makeAi({
   provider: { baseUrl: env.TS_BASE_URL, apiKey: env.TS_API_KEY ?? '', thinkingOff: true },
   studentModel: env.TS_MODEL,
   graderModel: env.TS_GRADER_MODEL ?? env.TS_MODEL,
   onRequest: () => { requests++; },
 });
+const ai: Ai = {
+  noteTaker: (...a) => patient(() => raw.noteTaker(...a)),
+  reaction: (...a) => patient(() => raw.reaction(...a)),
+  answer: (...a) => patient(() => raw.answer(...a)),
+  quizTaker: (...a) => patient(() => raw.quizTaker(...a)),
+  grader: (...a) => patient(() => raw.grader(...a)),
+};
 
 const RUNS = Number(env.TS_RUNS ?? 3);
 const LESSONS = ['good', 'sloppy', 'wrong', 'empty'] as const;
@@ -45,6 +74,7 @@ async function runOnce(turns: Turn[], seed: number): Promise<Score> {
     const out = await teachTurn(state, turn, ai, rng, now, lastReaction);
     state = out.state;
     if (out.reactedAt !== null) lastReaction = out.reactedAt;
+    if (PAUSE_MS) await sleep(PAUSE_MS);
   }
   const { answers, grades } = await runQuiz(state, ai, rng, () => {});
   const typeOf = (qid: string) => builtInChapter.quiz.find(q => q.id === qid)!.type;
