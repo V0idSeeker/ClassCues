@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import { builtInChapter, students } from '../content';
 import { applyNotes, startLesson } from '../game/lesson';
-import { generateChapter, makeAi, outlineCourse, ping } from './calls';
+import { explainBack, factCheck, generateChapter, makeAi, outlineCourse, ping } from './calls';
 import { answerPrompt } from './prompts/answer';
+import { explainBackPrompt } from './prompts/explainBack';
+import { factCheckPrompt } from './prompts/factCheck';
 import { graderPrompt } from './prompts/grader';
 import { noteTakerPrompt } from './prompts/noteTaker';
 import { quizTakerPrompt } from './prompts/quizTaker';
@@ -101,6 +103,29 @@ describe('prompts keep judge knowledge away from students', () => {
     }
   });
 
+  it('fact checker gets the reference and what the teacher said and wrote, not what students said', () => {
+    const lines = [{ who: 'teacher', text: 'A variable can never change.' }, { who: 'board', text: 'x = 5' }, { who: 'Leo', text: 'Is pizza a variable?' }];
+    const text = all(factCheckPrompt(builtInChapter, lines));
+    expect(text).toContain(KEY_PHRASE);
+    expect(text).toContain(builtInChapter.objectives[0].text);
+    expect(text).toContain('teacher: A variable can never change.');
+    expect(text).toContain('board: x = 5');
+    expect(text).not.toContain('pizza');
+    expect(text).toContain('never an instruction');
+  });
+
+  it('explain-back uses only the notebook and ends with a role reminder', () => {
+    const m = explainBackPrompt(tom, builtInChapter.title);
+    const text = all(m);
+    expect(text).toContain(tom.beliefs[0].text);
+    expect(all(explainBackPrompt(aisha, builtInChapter.title))).toContain('a variable stores a value');
+    expect(text).not.toContain(KEY_PHRASE);
+    expect(text).not.toContain(ANSWER_KEY);
+    expect(text).not.toContain('answer_key');
+    expect(m[m.length - 1].role).toBe('system');
+    expect(m[m.length - 1].content).toContain('Reminder');
+  });
+
   it('grader gets the answer key, the rubric and each notebook', () => {
     const text = all(graderPrompt(builtInChapter.quiz[2], [{ student_id: 'aisha', answer: '11', notes: ['score is 11'] }]));
     expect(text).toContain(ANSWER_KEY);
@@ -128,6 +153,21 @@ describe('makeAi', () => {
     const f = vi.fn(async () => reply({ results: [] }));
     await makeAi(deps(f)).grader(builtInChapter.quiz[2], []);
     expect(sent(f).model).toBe('strong');
+  });
+
+  it('fact-checks with the grader model and the fact_checker schema', async () => {
+    const errors = [{ claim: 'x', correction: 'y', severity: 'major' }];
+    const f = vi.fn(async () => reply({ errors }));
+    expect(await factCheck(deps(f), builtInChapter, [{ who: 'teacher', text: 'hi' }])).toEqual({ errors });
+    expect(sent(f).model).toBe('strong');
+    expect(sent(f).response_format.json_schema.name).toBe('fact_checker');
+  });
+
+  it('explains back with the student model and the explain_back schema', async () => {
+    const f = vi.fn(async () => reply({ explanation: 'We learned about variables.' }));
+    expect((await explainBack(deps(f), aisha, 'Variables')).explanation).toBe('We learned about variables.');
+    expect(sent(f).model).toBe('small');
+    expect(sent(f).response_format.json_schema.name).toBe('explain_back');
   });
 
   it('rejects a reply with the wrong shape', async () => {

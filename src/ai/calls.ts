@@ -1,9 +1,11 @@
-import type { Ai, AnswerResult, Chapter, GraderResult, NoteTakerResult, QuizTakerResult, ReactionResult } from '../game/types';
+import type { Ai, AnswerResult, Chapter, ExplainBackResult, FactCheckResult, GraderResult, NoteTakerResult, QuizTakerResult, ReactionResult, Student, TranscriptLine } from '../game/types';
 import { normalizeChapter, validateChapter } from '../game/validate';
 import { answerPrompt } from './prompts/answer';
 import { chapterGeneratorPrompt } from './prompts/chapterGenerator';
 import type { CourseContext } from './prompts/chapterGenerator';
 import chapterSchema from './schemas/chapterGenerator.json';
+import { explainBackPrompt } from './prompts/explainBack';
+import { factCheckPrompt } from './prompts/factCheck';
 import { graderPrompt } from './prompts/grader';
 import { noteTakerPrompt } from './prompts/noteTaker';
 import { outlinePrompt } from './prompts/outline';
@@ -12,6 +14,8 @@ import { reactionPrompt } from './prompts/reaction';
 import { callJson, preferModel } from './provider';
 import type { ChatMessage, LogEntry, ProviderSettings } from './provider';
 import answerSchema from './schemas/answer.json';
+import explainBackSchema from './schemas/explainBack.json';
+import factCheckSchema from './schemas/factCheck.json';
 import graderSchema from './schemas/grader.json';
 import noteTakerSchema from './schemas/noteTaker.json';
 import outlineSchema from './schemas/outline.json';
@@ -77,6 +81,22 @@ const isOutline = (v: unknown): v is { lessons: { title: string; first_page: num
 export async function outlineCourse(d: AiDeps, pages: string[]): Promise<number[]> {
   const plan = await caller(d)(d.graderModel, 'course_outline', outlineSchema, outlinePrompt(pages), isOutline);
   return plan.lessons.map(l => l.first_page);
+}
+
+const isFactCheck = (v: unknown): v is FactCheckResult =>
+  rec(v) && list(v.errors, e =>
+    rec(e) && typeof e.claim === 'string' && typeof e.correction === 'string' && (e.severity === 'minor' || e.severity === 'major'));
+
+/** After the quiz: finds what the teacher said or wrote that was false or misleading, compared with the reference. */
+export async function factCheck(d: AiDeps, chapter: Chapter, transcript: TranscriptLine[]): Promise<FactCheckResult> {
+  return caller(d)(d.graderModel, 'fact_checker', factCheckSchema, factCheckPrompt(chapter, transcript), isFactCheck);
+}
+
+const isExplainBack = (v: unknown): v is ExplainBackResult => rec(v) && typeof v.explanation === 'string';
+
+/** After the quiz: one student explains the lesson in their own words, from their notebook only. */
+export async function explainBack(d: AiDeps, student: Student, lessonTitle: string): Promise<ExplainBackResult> {
+  return caller(d)(d.studentModel, 'explain_back', explainBackSchema, explainBackPrompt(student, lessonTitle), isExplainBack);
 }
 
 const isChapter = (v: unknown): v is Chapter => validateChapter(v).length === 0;

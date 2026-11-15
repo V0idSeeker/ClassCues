@@ -1,10 +1,13 @@
-import type { Report as ReportType } from '../game/report';
+import type { AfterQuiz, Report as ReportType } from '../game/report';
 import type { Chapter } from '../game/types';
 
-interface Props { report: ReportType; chapter: Chapter; best: number; bestBefore: number | null; onAgain(): void; onHelp(): void }
+interface Props { report: ReportType; after: AfterQuiz; chapter: Chapter; best: number; bestBefore: number | null; onAgain(): void; onHelp(): void }
 
-export default function Report({ report, chapter, best, bestBefore, onAgain, onHelp }: Props) {
+export default function Report({ report, after, chapter, best, bestBefore, onAgain, onHelp }: Props) {
   const prompt = (id: string) => chapter.quiz.find(q => q.id === id)?.prompt ?? id;
+  const { checked, errors } = after.factCheck;
+  const sorted = errors && [...errors].sort((a, b) => Number(b.severity === 'major') - Number(a.severity === 'major'));
+  const explain = after.explain;
   return (
     <div className="page">
       <div className="row">
@@ -21,6 +24,32 @@ export default function Report({ report, chapter, best, bestBefore, onAgain, onH
         <h2>Three tips for next time</h2>
         <ol>{report.tips.map((t, i) => <li key={i}>{t}</li>)}</ol>
       </div>
+
+      <div className="panel" style={{ marginTop: 12 }}>
+        <h2>Your teaching, checked</h2>
+        {!checked ? <p>You did not say or write anything, so there was nothing to check.</p>
+          : sorted === null ? <p className="error">The check of what you said could not be made this time.</p>
+          : sorted.length === 0 ? <p>No mistakes found in what you said and wrote.</p>
+          : (
+            <ul>
+              {sorted.map((e, i) => (
+                <li key={i}>
+                  {e.severity === 'major' && <span className="pill">Major</span>} “{e.claim}” → {e.correction}
+                </li>
+              ))}
+            </ul>
+          )}
+        <p className="dim">This check is made by the AI and can be wrong.</p>
+      </div>
+
+      {explain && (
+        <div className="panel" style={{ marginTop: 12 }}>
+          <h2>In {explain.name}'s own words</h2>
+          {explain.text === null ? <p className="error">{explain.name}'s explanation could not be made this time.</p> : <p>{explain.text}</p>}
+          <p>Goals missing from {explain.name}'s notes: {explain.missingGoals.length === 0 ? 'None' : ''}</p>
+          {explain.missingGoals.length > 0 && <ul>{explain.missingGoals.map(g => <li key={g}>{g}</li>)}</ul>}
+        </div>
+      )}
 
       <div className="panel" style={{ marginTop: 12 }}>
         <h2>Goals</h2>
