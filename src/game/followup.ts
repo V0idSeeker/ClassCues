@@ -1,5 +1,6 @@
 // A short correction lesson after the report: the goals the class missed and the wrong beliefs it is left with.
 
+import { DICTS, t } from '../i18n';
 import type { Report } from './report';
 import type { Chapter, FactError, LessonState } from './types';
 
@@ -21,6 +22,15 @@ export function heldAtBell(state: LessonState, errors: FactError[]): Record<stri
   ]));
 }
 
+/** A follow-up's title without its follow-up suffix, in whichever language it was made. */
+function baseTitle(title: string): string {
+  for (const dict of Object.values(DICTS)) {
+    const [before, after] = String(dict['followup.title']).split('{title}');
+    if (title.startsWith(before) && title.endsWith(after) && title.length > before.length + after.length) return title.slice(before.length, title.length - after.length);
+  }
+  return title;
+}
+
 /**
  * The follow-up lesson, or null when there is nothing to fix.
  * Goals: the missed ones; all of them if none was missed but the teaching had mistakes. Quiz: the questions on those goals.
@@ -33,11 +43,11 @@ export function followUpChapter(chapter: Chapter, objectives: Report['objectives
   let quiz = chapter.quiz.filter(q => goals.some(o => o.id === q.objective));
   // ponytail: the missed goals have no quiz question; teach and test the whole lesson rather than an empty quiz.
   if (quiz.length === 0) { goals = chapter.objectives; quiz = chapter.quiz; }
-  const base = chapter.followUpOf ? chapter.title.replace(/: follow-up$/, '') : chapter.title;
+  const base = chapter.followUpOf ? baseTitle(chapter.title) : chapter.title;
   return {
     ...chapter,
     id: `${chapter.id}-followup`,
-    title: `${base}: follow-up`,
+    title: t('followup.title', { title: base }),
     objectives: goals,
     quiz,
     common_misconceptions: [...new Set(Object.values(held).flat())],

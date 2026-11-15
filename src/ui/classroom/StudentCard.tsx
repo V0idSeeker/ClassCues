@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { Student } from '../../game/types';
 import { HAND, STATE, portraitSvg } from '../scene';
+import { t } from '../../i18n';
 
 interface Props {
   student: Student;
@@ -23,15 +24,15 @@ export default function StudentCard({ student, handsUp, notebookOpen, newNotes, 
         <div className="row" style={{ gap: 6 }}>
           <b className="who">{student.persona.name}</b>
           {chips.map(c => <span key={c.label} className="chip" style={{ borderColor: c.color }}>{c.icon} {c.label}</span>)}
-          {help('moods', 'a student\'s mood')}
+          {help('moods', t('class.whatMood'))}
         </div>
-        <p className="line">{student.pendingLine ? `“${student.pendingLine}”` : 'Not asking anything right now.'}</p>
+        <p className="line">{student.pendingLine ? `“${student.pendingLine}”` : t('card.notAsking')}</p>
       </div>
       <div className="card-buttons">
-        <button onClick={onHearAgain} aria-label={`Hear ${student.persona.name} again`} title="Hear it again">🔊</button>
-        <button onClick={onNextHand} disabled={handsUp === 0} title="Select the next student with a raised hand">✋ {handsUp}</button>
-        <button className={`show-phone${notebookOpen ? ' on' : ''}`} onClick={onNotebook} aria-pressed={notebookOpen} aria-label="Notebook" title="Notebook">
-          📓{newNotes && <span className="mark" aria-label="new notes">●</span>}
+        <button onClick={onHearAgain} aria-label={t('card.hearAgain', { name: student.persona.name })} title={t('card.hearIt')}>🔊</button>
+        <button onClick={onNextHand} disabled={handsUp === 0} title={t('card.nextHand')}>✋ {handsUp}</button>
+        <button className={`show-phone${notebookOpen ? ' on' : ''}`} onClick={onNotebook} aria-pressed={notebookOpen} aria-label={t('class.notebook')} title={t('class.notebook')}>
+          📓{newNotes && <span className="mark" aria-label={t('class.newNotes')}>●</span>}
         </button>
       </div>
     </div>

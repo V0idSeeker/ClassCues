@@ -1,4 +1,5 @@
 // Draws the classroom and the students as SVG markup. Pure functions: same input, same string.
+import { t } from '../i18n';
 import type { Emotion, Look, Student } from '../game/types';
 
 const INK = '#2a2233';
@@ -10,13 +11,13 @@ const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt
 
 /** One icon and colour per student state. A raised hand wins over the emotion. */
 export const STATE: Record<Emotion, { icon: string; color: string; label: string }> = {
-  CONFUSED: { icon: '?', color: '#ffb98a', label: 'Confused' },
-  CURIOUS: { icon: '!', color: '#bfe0ff', label: 'Curious' },
-  BORED: { icon: 'z', color: '#d5d9e2', label: 'Bored' },
-  HAPPY: { icon: '♪', color: '#bff0c8', label: 'Happy' },
-  NEUTRAL: { icon: '…', color: '#ffffff', label: 'Listening' },
+  CONFUSED: { icon: '?', color: '#ffb98a', get label() { return t('emotion.CONFUSED'); } },
+  CURIOUS: { icon: '!', color: '#bfe0ff', get label() { return t('emotion.CURIOUS'); } },
+  BORED: { icon: 'z', color: '#d5d9e2', get label() { return t('emotion.BORED'); } },
+  HAPPY: { icon: '♪', color: '#bff0c8', get label() { return t('emotion.HAPPY'); } },
+  NEUTRAL: { icon: '…', color: '#ffffff', get label() { return t('emotion.NEUTRAL'); } },
 };
-export const HAND = { icon: '✋', color: '#ffc533', bubble: '#24304f', label: 'Hand raised' };
+export const HAND = { icon: '✋', color: '#ffc533', bubble: '#24304f', get label() { return t('emotion.hand'); } };
 
 /** [behind the head, in front of the head] */
 function hair(l: Look): [string, string] {
@@ -121,7 +122,7 @@ const ROOM = `<rect width="1200" height="580" fill="#cfe0ea"/><rect y="580" widt
   + `<rect x="${BOARD.x - 14}" y="${BOARD.y - 14}" width="${BOARD.w + 28}" height="${BOARD.h + 28}" rx="6" fill="#9a6a3c" ${O}/><rect x="${BOARD.x}" y="${BOARD.y}" width="${BOARD.w}" height="${BOARD.h}" fill="#2f5d50" ${O}/>`
   + `<rect x="220" y="430" width="760" height="12" fill="#b98852" ${O}/><rect x="270" y="424" width="34" height="7" rx="3" fill="#fff"/><rect x="314" y="424" width="22" height="7" rx="3" fill="#ffd95a"/>`
   + `<circle cx="1095" cy="110" r="38" fill="#fff" ${O} stroke-width="4"/><path d="M1095,110 V84 M1095,110 L1115,122" stroke="${INK}" stroke-width="4" stroke-linecap="round"/><circle cx="1095" cy="110" r="3" fill="${INK}"/>`
-  + `<rect x="1016" y="180" width="158" height="96" rx="4" fill="#ffe08a" ${O}/><text x="1095" y="236" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="800" font-size="20" fill="${INK}">Be curious</text>`;
+  + `<rect x="1016" y="180" width="158" height="96" rx="4" fill="#ffe08a" ${O}/><text x="1095" y="236" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="800" font-size="20" fill="${INK}">${esc(t('scene.poster'))}</text>`;
 
 export const SCENE_VIEWBOX = '0 0 1200 850';
 const BACK_X = [160, 380, 600, 820, 1040];

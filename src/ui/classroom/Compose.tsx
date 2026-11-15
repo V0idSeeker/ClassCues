@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { mergeSpeech } from './speechText';
 import { useSpeech } from './useSpeech';
+import { t } from '../../i18n';
 
 interface Props {
   studentName: string;
@@ -30,23 +31,23 @@ export default function Compose(p: Props) {
 
   return (
     <div className="compose">
-      <textarea aria-label="What you say to the class" placeholder="Type what you say… End with ? and a student answers." value={text}
+      <textarea dir="auto" aria-label={t('compose.label')} placeholder={t('compose.placeholder')} value={text}
         // Editing by hand stops listening, so recognition never overwrites the edit.
         onChange={e => { speech.stop(); setText(e.target.value); }}
         onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (typed) send(p.onSay); } }} />
       <div className="actions">
         {speech.supported && (
           <button className={speech.listening ? 'mic on' : 'mic'} onClick={toggleMic} aria-pressed={speech.listening}
-            aria-label={speech.listening ? 'Stop listening' : 'Speak instead of typing'}
-            title="Speak instead of typing. Your words appear in the box; nothing is sent until you press Say it. In Chrome and Edge, speech recognition sends the audio to the browser maker's servers.">
-            {speech.listening ? '■ Stop' : '🎤'}
+            aria-label={speech.listening ? t('compose.stop') : t('compose.speak')}
+            title={t('compose.micTitle')}>
+            {speech.listening ? t('compose.stopButton') : '🎤'}
           </button>
         )}
-        <button className="go" onClick={() => send(p.onSay)} disabled={!typed}>Say it</button>
-        <button onClick={() => send(p.onWrite)} disabled={!typed}>Write on board</button>
+        <button className="go" onClick={() => send(p.onSay)} disabled={!typed}>{t('compose.say')}</button>
+        <button onClick={() => send(p.onWrite)} disabled={!typed}>{t('compose.write')}</button>
         <button onClick={() => send(p.onCallOn)} disabled={p.busy}
-          title={p.studentHandUp ? 'Hear what they want to say' : 'Asks them what you typed. With nothing typed, invites them to speak.'}>Call on {p.studentName}</button>
-        <button onClick={() => send(p.onAskClass)} disabled={p.busy} title="Asks the class what you typed. With nothing typed, asks if anyone has a question.">Ask the class</button>
+          title={p.studentHandUp ? t('compose.hear') : t('compose.callTitle')}>{t('compose.callOn', { name: p.studentName })}</button>
+        <button onClick={() => send(p.onAskClass)} disabled={p.busy} title={t('compose.askTitle')}>{t('compose.ask')}</button>
       </div>
       {speech.error && <p className="speech-error" role="status">{speech.error}</p>}
     </div>

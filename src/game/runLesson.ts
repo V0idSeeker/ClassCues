@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { EMOTIONS, applyNotes, atmosphere, coverage, boardAdded, patchStudent, pickReactor, pictureKey, shouldReact } from './lesson';
 import { gradeMcq, gradeWritten, planQuiz } from './quiz';
 import type { Answer, Grade } from './quiz';
@@ -61,7 +62,7 @@ async function runTurn(
   const lines: TranscriptLine[] = [];
   if (say) lines.push({ who: 'teacher', text: say });
   if (added) lines.push({ who: 'board', text: added });
-  if (picture) lines.push({ who: 'board', text: '(a new picture)' });
+  if (picture) lines.push({ who: 'board', text: t('class.newPicture') });
   let next: LessonState = {
     ...state, transcript: [...state.transcript, ...lines], ...boards, turns: state.turns + 1,
     seenPictures: picture ? [...state.seenPictures, pictureKey(picture)] : state.seenPictures,
@@ -97,6 +98,12 @@ async function runTurn(
   return { state: await react(next, student, ai), reactedAt: now };
 }
 
+/**
+ * The note added after a student's name when they raise a hand. Kept in English in the saved lesson
+ * (students read the transcript too); the conversation shows it translated.
+ */
+export const RAISED_HAND = 'raised a hand. Click their desk to hear them.';
+
 /** How often a classmate gets the chance to react after a student answered aloud. */
 export const PEER_REACT_CHANCE = 0.5;
 
@@ -112,7 +119,7 @@ async function react(state: LessonState, student: Student, ai: Ai): Promise<Less
   });
   // 'note' lines tell the player what happened; they are not speech.
   return speaks
-    ? { ...next, transcript: [...next.transcript, { who: 'note', text: `${student.persona.name} raised a hand. Click their desk to hear them.` }] }
+    ? { ...next, transcript: [...next.transcript, { who: 'note', text: `${student.persona.name} ${RAISED_HAND}` }] }
     : next;
 }
 
@@ -193,9 +200,14 @@ export async function runQuiz(
     })));
     for (const st of state.students) {
       const row = r.results.find(x => x.student_id === st.persona.id);
-      grades.push(row ? gradeWritten(q, row, state.difficulty === 'inspection') : { student_id: st.persona.id, question_id: q.id, fraction: 0, feedback: 'Not graded.' });
+      grades.push(row ? gradeWritten(q, row, state.difficulty === 'inspection') : { student_id: st.persona.id, question_id: q.id, fraction: 0, feedback: t('report.notGraded') });
     }
     onProgress(++done, total);
   }
   return { answers, grades };
+}
+
+/** A 'note' line as the player reads it, in the current language. */
+export function noteText(text: string): string {
+  return text.endsWith(` ${RAISED_HAND}`) ? t('class.raisedHand', { name: text.slice(0, -RAISED_HAND.length - 1) }) : text;
 }

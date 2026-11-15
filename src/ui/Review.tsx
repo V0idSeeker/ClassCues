@@ -1,9 +1,14 @@
 import { groupTurns, matchClaims, turnMarkers } from '../game/review';
+import { noteText } from '../game/runLesson';
 import type { FactError, LessonState, TranscriptLine, TurnSnapshot } from '../game/types';
+import { t } from '../i18n';
 
 interface Props { lesson: LessonState; errors: FactError[]; onBack(): void }
 
 const MOODS: TurnSnapshot['mood'][] = ['lost', 'restless', 'calm', 'engaged'];
+const moodName = (m: TurnSnapshot['mood']) => t(`mood.${m}`);
+/** turnMarkers gives 'class drifted' or '+N goal(s)' in English; shown translated. */
+const markerText = (m: string) => (m === 'class drifted' ? t('review.drifted') : t('review.gained', { count: parseInt(m.slice(1), 10) }));
 const goTo = (turn: number) => document.getElementById(`review-turn-${turn}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
 function Chart({ timeline, goals }: { timeline: TurnSnapshot[]; goals: number }) {
@@ -16,23 +21,23 @@ function Chart({ timeline, goals }: { timeline: TurnSnapshot[]; goals: number })
   const path = (y: (s: TurnSnapshot) => number) => timeline.map((s, i) => `${i ? 'L' : 'M'}${x(i)},${y(s)}`).join(' ');
   const step = Math.max(1, Math.ceil(n / 12));
   return (
-    <svg className="rv-chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Goals covered and class mood after each turn">
+    <svg className="rv-chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={t('review.chartLabel')}>
       {/* Goals: 0..N */}
-      <text className="rv-text" x={4} y={top + gh / 2} dominantBaseline="middle">Goals</text>
+      <text className="rv-text" x={4} y={top + gh / 2} dominantBaseline="middle">{t('review.goals')}</text>
       {[0, goals].map(g => (
         <g key={g}><line className="rv-grid" x1={L} x2={W - R} y1={gy(g)} y2={gy(g)} /><text className="rv-text" x={L - 6} y={gy(g)} textAnchor="end" dominantBaseline="middle">{g}</text></g>
       ))}
       <path className="rv-goals" d={path(s => gy(s.goals))} />
       {/* Mood as four levels */}
-      <text className="rv-text" x={4} y={mTop - 12}>Mood</text>
+      <text className="rv-text" x={4} y={mTop - 12}>{t('review.mood')}</text>
       {MOODS.map(m => (
-        <g key={m}><line className="rv-grid" x1={L} x2={W - R} y1={my(m)} y2={my(m)} /><text className="rv-text" x={L - 6} y={my(m)} textAnchor="end" dominantBaseline="middle">{m}</text></g>
+        <g key={m}><line className="rv-grid" x1={L} x2={W - R} y1={my(m)} y2={my(m)} /><text className="rv-text" x={L - 6} y={my(m)} textAnchor="end" dominantBaseline="middle">{moodName(m)}</text></g>
       ))}
       <path className="rv-mood" d={path(s => my(s.mood))} />
       {timeline.map((s, i) => (
-        <g key={s.turn} className="rv-point" role="button" tabIndex={0} aria-label={`Turn ${s.turn}: ${s.goals} of ${goals} goals, ${s.mood}${s.hands ? `, ${s.hands} hands up` : ''}`}
+        <g key={s.turn} className="rv-point" role="button" tabIndex={0} aria-label={`${t('review.turnLabel', { turn: s.turn, goals: s.goals, total: goals, mood: moodName(s.mood) })}${s.hands ? t('review.handsUp', { count: s.hands }) : ''}`}
           onClick={() => goTo(s.turn)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goTo(s.turn); } }}>
-          <title>Turn {s.turn}</title>
+          <title>{t('review.turnN', { n: s.turn })}</title>
           <rect x={x(i) - 8} y={top - 16} width={16} height={H - top - 18} fill="transparent" />
           {s.hands > 0 && <text className="rv-hand" x={x(i)} y={top - 6} textAnchor="middle">✋</text>}
           <circle className="rv-goals-dot" cx={x(i)} cy={gy(s.goals)} r={4} />
@@ -40,14 +45,14 @@ function Chart({ timeline, goals }: { timeline: TurnSnapshot[]; goals: number })
           {(i % step === 0 || i === n - 1) && <text className="rv-text" x={x(i)} y={H - 18} textAnchor="middle">{s.turn}</text>}
         </g>
       ))}
-      <text className="rv-text" x={(L + W - R) / 2} y={H - 2} textAnchor="middle">Turn</text>
+      <text className="rv-text" x={(L + W - R) / 2} y={H - 2} textAnchor="middle">{t('review.turn')}</text>
     </svg>
   );
 }
 
-const speaker = (l: TranscriptLine) => (l.who === 'teacher' ? 'You' : l.who === 'board' ? 'On the board' : l.who);
+const speaker = (l: TranscriptLine) => (l.who === 'teacher' ? t('class.you') : l.who === 'board' ? t('class.onBoard') : l.who);
 const Mistake = ({ e }: { e: FactError }) => (
-  <div className="rv-fact">{e.severity === 'major' && <span className="pill">Major</span>} ✗ “{e.claim}” → {e.correction}</div>
+  <div className="rv-fact">{e.severity === 'major' && <span className="pill">{t('report.major')}</span>} ✗ “{e.claim}” → {e.correction}</div>
 );
 
 export default function Review({ lesson, errors, onBack }: Props) {
@@ -59,16 +64,16 @@ export default function Review({ lesson, errors, onBack }: Props) {
   return (
     <div className="page narrow rv">
       <div className="row">
-        <h1 className="grow">Lesson review · {lesson.chapter.title}</h1>
-        <button onClick={onBack}>Back to the report</button>
+        <h1 className="grow">{t('review.title', { title: lesson.chapter.title })}</h1>
+        <button onClick={onBack}>{t('review.back')}</button>
       </div>
 
       <div className="panel" style={{ marginTop: 12 }}>
-        <h2>Turn by turn</h2>
-        {timeline.length === 0 ? <p>No turns were recorded for this lesson.</p> : (
+        <h2>{t('review.byTurn')}</h2>
+        {timeline.length === 0 ? <p>{t('review.noTurns')}</p> : (
           <>
             <Chart timeline={timeline} goals={goals} />
-            <p className="dim">Goals: how many lesson goals at least one student has in their notes. ✋: hands were up. Click a turn to jump to it.</p>
+            <p className="dim">{t('review.legend')}</p>
           </>
         )}
       </div>
@@ -76,12 +81,12 @@ export default function Review({ lesson, errors, onBack }: Props) {
       {groups.map(g => (
         <div key={g.turn} id={`review-turn-${g.turn}`} className="panel rv-turn" style={{ marginTop: 12 }}>
           <div className="row">
-            <h2 className="grow">{g.turn === 0 ? 'Before the first turn' : `Turn ${g.turn}`}</h2>
-            {(marks.get(g.turn) ?? []).map(m => <span key={m} className={`pill ${m === 'class drifted' ? 'rv-drift' : 'rv-gain'}`}>{m}</span>)}
+            <h2 className="grow">{g.turn === 0 ? t('review.before') : t('review.turnN', { n: g.turn })}</h2>
+            {(marks.get(g.turn) ?? []).map(m => <span key={m} className={`pill ${m === 'class drifted' ? 'rv-drift' : 'rv-gain'}`}>{markerText(m)}</span>)}
           </div>
           <div className="log rv-log">
             {g.lines.map(({ line, index }) => line.who === 'note'
-              ? <div key={index} className="dim">{line.text}</div>
+              ? <div key={index} className="dim">{noteText(line.text)}</div>
               : (
                 <div key={index}>
                   <b>{speaker(line)}:</b> {line.text}
@@ -91,7 +96,7 @@ export default function Review({ lesson, errors, onBack }: Props) {
           </div>
           {g.snapshot && (
             <p className="dim">
-              After this turn: class {g.snapshot.mood} · {g.snapshot.hands} {g.snapshot.hands === 1 ? 'hand' : 'hands'} up · {g.snapshot.goals} of {goals} goals covered
+              {t('review.after', { mood: moodName(g.snapshot.mood), count: g.snapshot.hands, goals: g.snapshot.goals, total: goals })}
             </p>
           )}
         </div>
@@ -99,7 +104,7 @@ export default function Review({ lesson, errors, onBack }: Props) {
 
       {unmatched.length > 0 && (
         <div className="panel" style={{ marginTop: 12 }}>
-          <h2>Mistakes not matched to a line</h2>
+          <h2>{t('review.unmatched')}</h2>
           {unmatched.map((e, k) => <Mistake key={k} e={e} />)}
         </div>
       )}

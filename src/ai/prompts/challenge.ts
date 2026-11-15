@@ -1,9 +1,10 @@
 import type { TranscriptLine } from '../../game/types';
 import type { ChatMessage } from '../provider';
-import { QUOTED_RULE, facts } from './shared';
+import type { Lang } from '../../i18n';
+import { QUOTED_RULE, facts, languageRule } from './shared';
 
 /** After the quiz: did the teacher meet the lesson's challenge? Judged from the whole lesson. */
-export function challengePrompt(title: string, detection: string, transcript: TranscriptLine[]): ChatMessage[] {
+export function challengePrompt(title: string, detection: string, transcript: TranscriptLine[], lang: Lang = 'en'): ChatMessage[] {
   return [
     {
       role: 'system',
@@ -12,6 +13,7 @@ export function challengePrompt(title: string, detection: string, transcript: Tr
         'lesson lists every line of the lesson in order: "teacher:" is what the teacher said, "board:" what the teacher wrote on the board, any other name is a student speaking.',
         'met is true only if the lesson clearly shows what the rule describes. When in doubt, met is false.',
         'reason is one short sentence to the teacher, saying what they did or what was missing. Quote the lesson briefly if it helps.',
+        `${languageRule(lang, 'reason')} The lesson may be in any language: judge what was done, not the language.`,
         QUOTED_RULE,
       ].join('\n'),
     },

@@ -1,8 +1,9 @@
 import type { LessonState, Student } from '../../game/types';
 import type { ChatMessage } from '../provider';
-import { CONTENT_RULE, QUOTED_RULE, facts, knowledge, lastLines, reminder, visibleBoard, who, withPicture } from './shared';
+import type { Lang } from '../../i18n';
+import { CONTENT_RULE, QUOTED_RULE, facts, knowledge, languageRule, lastLines, reminder, visibleBoard, who, withPicture } from './shared';
 
-export function reactionPrompt(state: LessonState, student: Student): ChatMessage[] {
+export function reactionPrompt(state: LessonState, student: Student, lang: Lang = 'en'): ChatMessage[] {
   return [
     {
       role: 'system',
@@ -22,6 +23,7 @@ export function reactionPrompt(state: LessonState, student: Student): ChatMessag
         'If the last line of recent_class_transcript is a classmate speaking, you may react to them: agree, disagree, correct them from your notebook, or ask about what they said.',
         'Speak like a real student: one or two short sentences. Never lecture. Never act as the teacher.',
         'If you have nothing to say, set wants_to_speak to false and message to an empty text.',
+        languageRule(lang, 'message'),
         QUOTED_RULE,
       ].join('\n'),
     },

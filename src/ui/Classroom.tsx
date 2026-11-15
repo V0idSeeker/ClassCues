@@ -12,6 +12,8 @@ import TopBar from './classroom/TopBar';
 import { useBoards } from './classroom/useBoards';
 import { useVisibleHeight } from './classroom/useVisibleHeight';
 import { nextTip } from './help/tips';
+import { t } from '../i18n';
+import type { Key } from '../i18n';
 
 interface Props {
   state: LessonState;
@@ -65,7 +67,7 @@ export default function Classroom(p: Props) {
   const tip = tips.off ? null : nextTip(state, tips.seen);
   const keepTips = (next: { off: boolean; seen: string[] }) => { setTips(next); saveTips(next); };
   const help = (entry: string, what: string) => (
-    <button className="q" onClick={() => p.onHelp(entry)} aria-label={`Help: ${what}`} title={`What is ${what}?`}>?</button>
+    <button className="q" onClick={() => p.onHelp(entry)} aria-label={t('common.helpAbout', { what })} title={t('common.helpAbout', { what })}>?</button>
   );
 
   // The Notebook button is marked when students wrote something new since the notebook was last opened.
@@ -116,13 +118,13 @@ export default function Classroom(p: Props) {
 
           {(tip || p.busy || p.error) && (
             <div className="status" role="status">
-              {p.error ? <><span className="error grow" role="alert">{p.error}</span><button onClick={p.onRetry}>Retry</button></>
-                : p.busy ? <span className="dim">Students are thinking…</span>
+              {p.error ? <><span className="error grow" role="alert">{p.error}</span><button onClick={p.onRetry}>{t('common.retry')}</button></>
+                : p.busy ? <span className="dim">{t('class.thinking')}</span>
                 : tip && <>
-                  <span className="grow"><b>Tip:</b> {tip.text}</span>
-                  <button onClick={() => p.onHelp(tip.entry)}>More</button>
-                  <button onClick={() => keepTips({ ...tips, seen: [...tips.seen, tip.id] })}>Got it</button>
-                  <button className="linkish" onClick={() => keepTips({ ...tips, off: true })}>Tips off</button>
+                  <span className="grow"><b>{t('class.tip')}</b> {t(`tip.${tip.id}` as Key)}</span>
+                  <button onClick={() => p.onHelp(tip.entry)}>{t('class.more')}</button>
+                  <button onClick={() => keepTips({ ...tips, seen: [...tips.seen, tip.id] })}>{t('class.gotIt')}</button>
+                  <button className="linkish" onClick={() => keepTips({ ...tips, off: true })}>{t('class.tipsOff')}</button>
                 </>}
             </div>
           )}
@@ -131,17 +133,17 @@ export default function Classroom(p: Props) {
             studentName={student.persona.name} studentHandUp={student.handUp} busy={p.busy}
             onSay={t => p.onTurn(boards.turnWith(t))}
             onWrite={boards.write}
-            onCallOn={t => (student.handUp ? p.onHear(sel) : p.onAsk(sel, t || `${student.persona.name}, what are you thinking? Do you have a question?`))}
-            onAskClass={t => p.onAskClass(t || 'Does anyone have a question about this?')}
+            onCallOn={said => (student.handUp ? p.onHear(sel) : p.onAsk(sel, said || t('class.callOnDefault', { name: student.persona.name })))}
+            onAskClass={said => p.onAskClass(said || t('class.askDefault'))}
           />
 
-          <nav className="tabs hide-phone" aria-label="Panels">
-            <button className={panel === 'talk' ? 'on' : ''} aria-pressed={panel === 'talk'} onClick={() => setPanel('talk')}>Talk</button>
+          <nav className="tabs hide-phone" aria-label={t('class.panels')}>
+            <button className={panel === 'talk' ? 'on' : ''} aria-pressed={panel === 'talk'} onClick={() => setPanel('talk')}>{t('class.talk')}</button>
             <button className={panel === 'notebook' ? 'on' : ''} aria-pressed={panel === 'notebook'} onClick={() => toggle('notebook')}>
-              Notebook{newNotes && <span className="mark" aria-label="new notes">●</span>}
+              {t('class.notebook')}{newNotes && <span className="mark" aria-label={t('class.newNotes')}>●</span>}
             </button>
             <button className={panel === 'goals' ? 'on' : ''} aria-pressed={panel === 'goals'} onClick={() => toggle('goals')}>
-              Goals {realistic ? '?' : goalsReached}/{state.chapter.objectives.length}
+              {t('class.goals', { have: realistic ? '?' : goalsReached, total: state.chapter.objectives.length })}
             </button>
           </nav>
         </aside>

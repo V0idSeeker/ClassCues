@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { coverage, hasObjective } from './lesson';
 import type { Answer, Grade } from './quiz';
 import type { FactError, LessonState, Objective, Student } from './types';
@@ -36,11 +37,7 @@ export function missingGoals(student: Student, objectives: Objective[]): string[
 const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
 const pct = (x: number) => Math.round(x * 100);
 
-const GENERAL_TIPS = [
-  'Ask the class a question mid-lesson to check what they understood.',
-  'Write key points on the board: students copy what they see.',
-  'Call on a quiet student: silence does not mean understanding.',
-];
+const generalTips = () => [t('tips.general1'), t('tips.general2'), t('tips.general3')];
 
 export function computeReport(state: LessonState, answers: Record<string, Answer[]>, grades: Grade[]): Report {
   const quiz = state.chapter.quiz;
@@ -51,7 +48,7 @@ export function computeReport(state: LessonState, answers: Record<string, Answer
       question_id: q.id,
       answer: answers[s.persona.id]?.find(a => a.question_id === q.id)?.answer ?? '',
       fraction: gradeOf(s.persona.id, q.id)?.fraction ?? 0,
-      feedback: gradeOf(s.persona.id, q.id)?.feedback ?? 'Not graded.',
+      feedback: gradeOf(s.persona.id, q.id)?.feedback ?? t('report.notGraded'),
     }));
     return { id: s.persona.id, name: s.persona.name, percent: pct(mean(rows.map(r => r.fraction))), answers: rows };
   });
@@ -67,26 +64,26 @@ export function computeReport(state: LessonState, answers: Record<string, Answer
   const tips: string[] = [];
 
   for (const o of objectives) {
-    if (o.inNotes === 0) tips.push(`No student has "${o.text}" in their notes. You did not teach it, or nobody caught it.`);
+    if (o.inNotes === 0) tips.push(t('tips.noGoal', { goal: o.text }));
   }
 
   const hardest = quiz
     .map(q => ({ q, full: students.filter(s => (s.answers.find(a => a.question_id === q.id)?.fraction ?? 0) >= 0.99).length }))
     .sort((a, b) => a.full - b.full)[0];
-  if (hardest && hardest.full < n / 2) tips.push(`Only ${hardest.full}/${n} students got full marks on: "${hardest.q.prompt}"`);
+  if (hardest && hardest.full < n / 2) tips.push(t('tips.hardest', { full: hardest.full, total: n, question: hardest.q.prompt }));
 
   const held = new Map<string, number>();
   for (const s of state.students) for (const b of s.beliefs) held.set(b.text, (held.get(b.text) ?? 0) + 1);
-  for (const [text, k] of held) tips.push(`${k} student${k > 1 ? 's still believe' : ' still believes'}: "${text}". Say clearly why it is wrong.`);
+  for (const [text, k] of held) tips.push(t('tips.belief', { count: k, belief: text }));
 
   // The note-taker marks hearsay as a distorted note that starts with "<name> said:".
   const hearsay = state.students.filter(s => s.notes.some(n => n.distorted && /\bsaid:/i.test(n.text))).length;
-  if (hearsay) tips.push(`${hearsay} student${hearsay > 1 ? 's' : ''} wrote down what a classmate said without knowing if it was right. Confirm or correct answers out loud.`);
+  if (hearsay) tips.push(t('tips.hearsay', { count: hearsay }));
 
   const hands = state.students.filter(s => s.handUp).map(s => s.persona.name);
-  if (hands.length) tips.push(`${hands.join(', ')} still had a hand up at the bell.`);
+  if (hands.length) tips.push(t('tips.hands', { names: hands.join(', ') }));
 
-  tips.push(...GENERAL_TIPS);
+  tips.push(...generalTips());
 
   return { classAverage: pct(mean(students.map(s => s.percent / 100))), students, objectives, tips: tips.slice(0, 3) };
 }

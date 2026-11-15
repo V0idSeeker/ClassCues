@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import type { Rng } from './rng';
 import type { Archetype, Belief, Chapter, Difficulty, Emotion, LessonState, NoteTakerResult, Persona, Student, TranscriptLine, Turn } from './types';
 
@@ -68,7 +69,7 @@ export function rememberLesson(memory: ClassMemory, state: LessonState, mistakes
 export function memoryFor(memory: ClassMemory, studentId: string, chapterId: string): string[] {
   return (memory[studentId] ?? [])
     .filter(m => m.chapterId !== chapterId)
-    .flatMap(m => m.notes.map(text => `From the lesson "${m.title}": ${text}`));
+    .flatMap(m => m.notes.map(text => t('class.fromLesson', { title: m.title, text })));
 }
 
 /**

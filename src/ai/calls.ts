@@ -25,10 +25,14 @@ import pingSchema from './schemas/ping.json';
 import quizTakerSchema from './schemas/quizTaker.json';
 import reactionSchema from './schemas/reaction.json';
 
+import type { Lang } from '../i18n';
+
 export interface AiDeps {
   provider: ProviderSettings;
   studentModel: string;
   graderModel: string;
+  /** The language students speak and the AI writes feedback in. Default English. */
+  lang?: Lang;
   /** Models to try, best first, when the player chose no model. A function lets calls wait until the provider's model list has loaded. */
   autoModels?: string[] | (() => Promise<string[]>);
   /** Told which automatically chosen model answered. */
@@ -68,11 +72,11 @@ function caller(d: AiDeps) {
 export function makeAi(d: AiDeps): Ai {
   const call = caller(d);
   return {
-    noteTaker: (state, boardAdded, say, picture) => call(d.studentModel, 'note_taker', noteTakerSchema, noteTakerPrompt(state, boardAdded, say, picture), isNoteTaker),
-    reaction: (state, student) => call(d.studentModel, 'student_reaction', reactionSchema, reactionPrompt(state, student), isReaction),
-    answer: (state, student, question) => call(d.studentModel, 'student_answer', answerSchema, answerPrompt(state, student, question), isAnswer),
-    quizTaker: (student, questions) => call(d.studentModel, 'quiz_taker', quizTakerSchema, quizTakerPrompt(student, questions), isQuizTaker),
-    grader: (question, rows) => call(d.graderModel, 'grader', graderSchema, graderPrompt(question, rows), isGrader),
+    noteTaker: (state, boardAdded, say, picture) => call(d.studentModel, 'note_taker', noteTakerSchema, noteTakerPrompt(state, boardAdded, say, picture, d.lang), isNoteTaker),
+    reaction: (state, student) => call(d.studentModel, 'student_reaction', reactionSchema, reactionPrompt(state, student, d.lang), isReaction),
+    answer: (state, student, question) => call(d.studentModel, 'student_answer', answerSchema, answerPrompt(state, student, question, d.lang), isAnswer),
+    quizTaker: (student, questions) => call(d.studentModel, 'quiz_taker', quizTakerSchema, quizTakerPrompt(student, questions, d.lang), isQuizTaker),
+    grader: (question, rows) => call(d.graderModel, 'grader', graderSchema, graderPrompt(question, rows, d.lang), isGrader),
   };
 }
 
@@ -91,21 +95,21 @@ const isFactCheck = (v: unknown): v is FactCheckResult =>
 
 /** After the quiz: finds what the teacher said or wrote that was false or misleading, compared with the reference. */
 export async function factCheck(d: AiDeps, chapter: Chapter, transcript: TranscriptLine[]): Promise<FactCheckResult> {
-  return caller(d)(d.graderModel, 'fact_checker', factCheckSchema, factCheckPrompt(chapter, transcript), isFactCheck);
+  return caller(d)(d.graderModel, 'fact_checker', factCheckSchema, factCheckPrompt(chapter, transcript, d.lang), isFactCheck);
 }
 
 const isExplainBack = (v: unknown): v is ExplainBackResult => rec(v) && typeof v.explanation === 'string';
 
 /** After the quiz: one student explains the lesson in their own words, from their notebook only. */
 export async function explainBack(d: AiDeps, student: Student, lessonTitle: string): Promise<ExplainBackResult> {
-  return caller(d)(d.studentModel, 'explain_back', explainBackSchema, explainBackPrompt(student, lessonTitle), isExplainBack);
+  return caller(d)(d.studentModel, 'explain_back', explainBackSchema, explainBackPrompt(student, lessonTitle, d.lang), isExplainBack);
 }
 
 const isChallenge = (v: unknown): v is ChallengeResult => rec(v) && typeof v.met === 'boolean' && typeof v.reason === 'string';
 
 /** After the quiz: judges a challenge that code cannot check, from the whole lesson. */
 export async function judgeChallenge(d: AiDeps, title: string, detection: string, transcript: TranscriptLine[]): Promise<ChallengeResult> {
-  return caller(d)(d.graderModel, 'challenge_judge', challengeSchema, challengePrompt(title, detection, transcript), isChallenge);
+  return caller(d)(d.graderModel, 'challenge_judge', challengeSchema, challengePrompt(title, detection, transcript, d.lang), isChallenge);
 }
 
 const isChapter = (v: unknown): v is Chapter => validateChapter(v).length === 0;

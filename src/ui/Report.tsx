@@ -3,6 +3,7 @@ import type { Badge, Rank } from '../game/rank';
 import type { AfterQuiz, Report as ReportType } from '../game/report';
 import type { Chapter, Difficulty } from '../game/types';
 import { shareCard } from './shareCard';
+import { t } from '../i18n';
 
 interface Props {
   report: ReportType; after: AfterQuiz; chapter: Chapter; best: number; bestBefore: number | null;
@@ -12,7 +13,6 @@ interface Props {
   onAgain(): void; onReview(): void; onHelp(): void;
 }
 
-const LEVEL: Record<Difficulty, string> = { easy: 'Easy', normal: 'Normal', hard: 'Hard', inspection: 'Inspection' };
 
 export default function Report({ report, after, chapter, best, bestBefore, difficulty, rank, badges, onFollowUp, onAgain, onReview, onHelp }: Props) {
   const [shared, setShared] = useState('');
@@ -20,12 +20,12 @@ export default function Report({ report, after, chapter, best, bestBefore, diffi
   async function share() {
     try {
       const how = await shareCard({
-        lesson: chapter.title, course: chapter.course, average: report.classAverage, best, rank: rank.name, difficulty: LEVEL[difficulty],
+        lesson: chapter.title, course: chapter.course, average: report.classAverage, best, rank: rank.name, difficulty: t(`difficulty.${difficulty}`),
         challenge: challenge && { title: challenge.title, met: challenge.met }, date: new Date().toLocaleDateString(), version: __APP_VERSION__,
       });
-      setShared(how === 'downloaded' ? 'The report card picture was downloaded.' : '');
+      setShared(how === 'downloaded' ? t('report.downloaded') : '');
     } catch (e) {
-      setShared(`Could not make the picture: ${String(e)}`);
+      setShared(t('report.noPicture', { error: String(e) }));
     }
   }
   const prompt = (id: string) => chapter.quiz.find(q => q.id === id)?.prompt ?? id;
@@ -35,97 +35,97 @@ export default function Report({ report, after, chapter, best, bestBefore, diffi
   return (
     <div className="page">
       <div className="row">
-        <h1 className="grow">Report card · {chapter.course ? `${chapter.course} · ` : ''}{chapter.title}</h1>
-        <span className="pill">Class average {report.classAverage}%</span>
+        <h1 className="grow">{t('report.title')} · {chapter.course ? `${chapter.course} · ` : ''}{chapter.title}</h1>
+        <span className="pill">{t('report.average', { average: report.classAverage })}</span>
         <span className="pill">
-          {bestBefore === null ? 'First time teaching this lesson' : report.classAverage > bestBefore ? `New best! Before: ${bestBefore}%` : `Your best: ${best}%`}
+          {bestBefore === null ? t('report.first') : report.classAverage > bestBefore ? t('report.newBest', { before: bestBefore }) : t('report.best', { best })}
         </span>
-        <span className="pill">{LEVEL[difficulty]} class</span>
-        {difficulty === 'inspection' && <span className="stamp">Inspection</span>}
-        <button className="go" onClick={onAgain}>Back to the lessons</button>
-        <button onClick={onReview}>Review the lesson</button>
-        <button onClick={() => void share()}>Share</button>
-        <button onClick={onHelp}>What does this mean?</button>
+        <span className="pill">{t('report.level', { level: t(`difficulty.${difficulty}`) })}</span>
+        {difficulty === 'inspection' && <span className="stamp">{t('difficulty.inspection')}</span>}
+        <button className="go" onClick={onAgain}>{t('report.again')}</button>
+        <button onClick={onReview}>{t('report.review')}</button>
+        <button onClick={() => void share()}>{t('report.share')}</button>
+        <button onClick={onHelp}>{t('report.meaning')}</button>
       </div>
       {shared && <p className="dim" role="status">{shared}</p>}
 
       <div className="panel" style={{ marginTop: 12 }}>
-        <h2>Your rank: {rank.name}</h2>
-        <p>{rank.lessons} lesson{rank.lessons === 1 ? '' : 's'} taught, average best {rank.average}% (harder classes count more).
-          {rank.next ? ` Next: ${rank.next.name} at ${rank.next.lessons} lessons and ${rank.next.average}%.` : ' This is the highest rank.'}</p>
-        {badges.map(b => <p key={b.id} className="ok">New badge: <b>{b.name}</b> · {b.how}</p>)}
+        <h2>{t('report.rank', { rank: rank.name })}</h2>
+        <p>{t('report.rankLine', { count: rank.lessons, average: rank.average })}
+          {rank.next ? t('report.next', { name: rank.next.name, lessons: rank.next.lessons, average: rank.next.average }) : t('report.top')}</p>
+        {badges.map(b => <p key={b.id} className="ok">{t('report.newBadge')} <b>{b.name}</b> · {b.how}</p>)}
         {challenge && (
           <p>
-            <b>{challenge.met === null ? 'Challenge not judged' : challenge.met ? 'Challenge met' : 'Challenge not met'}</b>: {challenge.title}. {challenge.reason}
+            <b>{challenge.met === null ? t('report.challengeNone') : challenge.met ? t('report.challengeMet') : t('report.challengeNot')}</b>: {challenge.title}. {challenge.reason}
           </p>
         )}
       </div>
 
       <div className="panel" style={{ marginTop: 12 }}>
-        <h2>Three tips for next time</h2>
+        <h2>{t('report.tips')}</h2>
         <ol>{report.tips.map((t, i) => <li key={i}>{t}</li>)}</ol>
       </div>
 
       <div className="panel" style={{ marginTop: 12 }}>
-        <h2>Your teaching, checked</h2>
-        {!checked ? <p>You did not say or write anything, so there was nothing to check.</p>
-          : sorted === null ? <p className="error">The check of what you said could not be made this time.</p>
-          : sorted.length === 0 ? <p>No mistakes found in what you said and wrote.</p>
+        <h2>{t('report.checked')}</h2>
+        {!checked ? <p>{t('report.nothingSaid')}</p>
+          : sorted === null ? <p className="error">{t('report.checkFailed')}</p>
+          : sorted.length === 0 ? <p>{t('report.noMistakes')}</p>
           : (
             <ul>
               {sorted.map((e, i) => (
                 <li key={i}>
-                  {e.severity === 'major' && <span className="pill">Major</span>} “{e.claim}” → {e.correction}
+                  {e.severity === 'major' && <span className="pill">{t('report.major')}</span>} “{e.claim}” → {e.correction}
                 </li>
               ))}
             </ul>
           )}
-        <p className="dim">This check is made by the AI and can be wrong.</p>
+        <p className="dim">{t('report.aiWarning')}</p>
       </div>
 
       <div className="panel" style={{ marginTop: 12 }}>
-        <h2>Fix your mistakes</h2>
+        <h2>{t('report.fix')}</h2>
         {onFollowUp ? (
           <>
-            <p>Teach the same class a short lesson on the goals they missed and the wrong beliefs they still hold. Its score is kept apart from the course.</p>
-            <button className="go" onClick={onFollowUp}>Teach a follow-up lesson</button>
+            <p>{t('report.fixLine')}</p>
+            <button className="go" onClick={onFollowUp}>{t('report.followUp')}</button>
           </>
         ) : after.factCheck.checked && after.factCheck.errors === null
-          ? <p>The class got every goal, but your teaching could not be checked for mistakes this time.</p>
-          : <p>Nothing to fix: well taught.</p>}
+          ? <p>{t('report.uncheckedGoals')}</p>
+          : <p>{t('report.wellTaught')}</p>}
       </div>
 
       {explain && (
         <div className="panel" style={{ marginTop: 12 }}>
-          <h2>In {explain.name}'s own words</h2>
-          {explain.text === null ? <p className="error">{explain.name}'s explanation could not be made this time.</p> : <p>{explain.text}</p>}
-          <p>Goals missing from {explain.name}'s notes: {explain.missingGoals.length === 0 ? 'None' : ''}</p>
+          <h2>{t('report.ownWords', { name: explain.name })}</h2>
+          {explain.text === null ? <p className="error">{t('report.noExplain', { name: explain.name })}</p> : <p>{explain.text}</p>}
+          <p>{t('report.missing', { name: explain.name })} {explain.missingGoals.length === 0 ? t('report.none') : ''}</p>
           {explain.missingGoals.length > 0 && <ul>{explain.missingGoals.map(g => <li key={g}>{g}</li>)}</ul>}
         </div>
       )}
 
       <div className="panel" style={{ marginTop: 12 }}>
-        <h2>Goals</h2>
+        <h2>{t('report.goals')}</h2>
         <table>
-          <thead><tr><th>Goal</th><th>In notes</th><th>Quiz average</th></tr></thead>
+          <thead><tr><th>{t('report.goal')}</th><th>{t('report.inNotes')}</th><th>{t('report.quizAverage')}</th></tr></thead>
           <tbody>
             {report.objectives.map(o => (
-              <tr key={o.id}><td>{o.text}</td><td>{o.inNotes}/{report.students.length}</td><td>{o.quizAverage === null ? 'not in quiz' : `${o.quizAverage}%`}</td></tr>
+              <tr key={o.id}><td>{o.text}</td><td>{o.inNotes}/{report.students.length}</td><td>{o.quizAverage === null ? t('report.notInQuiz') : `${o.quizAverage}%`}</td></tr>
             ))}
           </tbody>
         </table>
       </div>
 
       <div className="panel" style={{ marginTop: 12 }}>
-        <h2>Students</h2>
+        <h2>{t('report.students')}</h2>
         {report.students.map(s => (
           <details key={s.id}>
             <summary><b>{s.name}</b> · {s.percent}%</summary>
             <table>
-              <thead><tr><th>Question</th><th>Answer</th><th>Score</th><th>Why</th></tr></thead>
+              <thead><tr><th>{t('report.question')}</th><th>{t('report.answer')}</th><th>{t('report.score')}</th><th>{t('report.why')}</th></tr></thead>
               <tbody>
                 {s.answers.map(a => (
-                  <tr key={a.question_id}><td>{prompt(a.question_id)}</td><td>{a.answer || '(no answer)'}</td><td>{Math.round(a.fraction * 100)}%</td><td>{a.feedback}</td></tr>
+                  <tr key={a.question_id}><td>{prompt(a.question_id)}</td><td>{a.answer || t('report.noAnswer')}</td><td>{Math.round(a.fraction * 100)}%</td><td>{a.feedback}</td></tr>
                 ))}
               </tbody>
             </table>

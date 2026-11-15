@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { getLang, localeOf } from '../../i18n';
 import { speechErrorMessage } from './speechText';
 
 // The Web Speech API recognition interface is not in TypeScript's DOM types: just what is used here.
@@ -40,7 +41,7 @@ export function useSpeech(onHeard: (finals: string[], interim: string) => void) 
     const r = new Ctor();
     r.continuous = true;
     r.interimResults = true;
-    r.lang = navigator.language || 'en-US';
+    r.lang = localeOf(getLang());
     r.onresult = e => {
       const finals: string[] = [];
       let interim = '';

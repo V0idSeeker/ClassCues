@@ -1,3 +1,5 @@
+import { t } from '../i18n';
+
 export type AiErrorKind = 'network' | 'auth' | 'model' | 'rate' | 'quota' | 'badjson' | 'timeout' | 'unavailable' | 'http';
 
 export class AiError extends Error {
@@ -36,7 +38,6 @@ export interface CallOptions<T> {
   log?: (e: LogEntry) => void;
 }
 
-const BAD_JSON_MESSAGE = 'The AI answered in a format the game cannot read, twice. Try again, or pick a stronger model.';
 /** Waits before asking again when the provider says "too many requests" or "overloaded". */
 const BUSY_WAITS_MS = [5000, 15000];
 export const OPENROUTER_DEFAULT_MODEL = 'openrouter/free';
@@ -155,8 +156,8 @@ async function callModel<T>(p: ProviderSettings, o: CallOptions<T>, model: strin
       res = await doFetch(p.baseUrl, { method: 'POST', headers, body: makeBody(), signal: abort.signal });
       text = await res.text();
     } catch {
-      if (abort.signal.aborted) throw new AiError('timeout', 'The AI took too long to answer. Try again, or pick another model in Settings.');
-      throw new AiError('network', 'Could not reach the AI address. Check the URL. For a local model, the browser or the model server may be blocking this page: see the setup steps in Settings.');
+      if (abort.signal.aborted) throw new AiError('timeout', t('ai.timeout'));
+      throw new AiError('network', t('ai.network'));
     } finally {
       clearTimeout(timer);
     }
@@ -183,22 +184,22 @@ async function callModel<T>(p: ProviderSettings, o: CallOptions<T>, model: strin
       continue;
     }
     if (res.status === 429) {
-      throw new AiError('rate', 'The AI provider says: too many requests. Wait a minute, or check your daily limit.');
+      throw new AiError('rate', t('ai.rate'));
     }
     // Some providers check the JSON themselves and answer 400 when the model wrote something invalid. Same as a bad answer.
     if (res.status === 400 && /json_validate_failed|failed to generate json/i.test(text)) {
       if (badAnswers++ < 1) continue;
-      throw new AiError('badjson', BAD_JSON_MESSAGE);
+      throw new AiError('badjson', t('ai.badjson'));
     }
-    if (res.status === 401 || res.status === 403) throw new AiError('auth', 'The AI provider rejected the key. Check the API key in Settings.');
-    if (res.status === 402) throw new AiError('quota', 'This model needs credit and the account has none (or has reached its limit). Pick a model ending in :free, leave the model empty, or add credit at your provider.');
-    if (res.status === 404 || (res.status === 400 && /model/i.test(text))) throw new AiError('model', 'The AI provider does not know this model, or no model could be picked automatically. Choose a model from the list in Settings.');
-    if (res.status >= 500) throw new AiError('unavailable', 'The AI provider is overloaded or down right now. Try again in a moment, or pick another model in Settings.');
-    if (!res.ok) throw new AiError('http', `The AI provider answered with error ${res.status}.`);
+    if (res.status === 401 || res.status === 403) throw new AiError('auth', t('ai.auth'));
+    if (res.status === 402) throw new AiError('quota', t('ai.quota'));
+    if (res.status === 404 || (res.status === 400 && /model/i.test(text))) throw new AiError('model', t('ai.model'));
+    if (res.status >= 500) throw new AiError('unavailable', t('ai.unavailable'));
+    if (!res.ok) throw new AiError('http', t('ai.http', { status: res.status }));
 
     const value = parseContent(text);
     if (value !== undefined && o.guard(value)) return value;
     if (badAnswers++ < 1) continue;
-    throw new AiError('badjson', BAD_JSON_MESSAGE);
+    throw new AiError('badjson', t('ai.badjson'));
   }
 }

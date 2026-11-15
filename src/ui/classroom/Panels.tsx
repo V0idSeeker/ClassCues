@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import type { LessonState, Student } from '../../game/types';
 import StudyNotes from '../StudyNotes';
+import { noteText } from '../../game/runLesson';
+import { t } from '../../i18n';
 
 /** What the middle of the right-hand column shows: the conversation, or one of the panels over it. */
 export type Panel = 'talk' | 'notebook' | 'goals' | 'notes';
@@ -23,20 +25,20 @@ export default function Panels({ panel, state, student, inNotes, realistic, help
   return (
     <div className="rail-mid">
       {panel === 'talk' && (
-        <div className="log" ref={logRef} aria-label="Class so far">
+        <div className="log" ref={logRef} aria-label={t('class.soFar')}>
           {state.transcript.map((l, i) => l.who === 'note'
-            ? <div key={i} className="dim">{l.text}</div>
-            : <div key={i}><b>{l.who === 'teacher' ? 'You' : l.who === 'board' ? 'On the board' : l.who}:</b> {l.text}</div>)}
+            ? <div key={i} className="dim">{noteText(l.text)}</div>
+            : <div key={i}><b>{l.who === 'teacher' ? t('class.you') : l.who === 'board' ? t('class.onBoard') : l.who}:</b> {l.text}</div>)}
         </div>
       )}
       {panel === 'notebook' && (
         <div className="sheet paper">
-          <div className="row"><h2 className="grow">{student.persona.name}'s notebook {help('notebooks', 'the notebook')}</h2><button onClick={onClose}>Close</button></div>
-          {realistic ? <p>Hidden in realistic mode.</p> : (
+          <div className="row"><h2 className="grow">{t('class.notebookOf', { name: student.persona.name })} {help('notebooks', t('class.whatNotebook'))}</h2><button onClick={onClose}>{t('common.close')}</button></div>
+          {realistic ? <p>{t('class.hidden')}</p> : (
             <ul>
               {student.notes.map((n, i) => <li key={i} className={n.distorted ? 'bent' : ''}>{n.text}</li>)}
               {student.beliefs.map(b => <li key={b.id} className="wrong">{b.text}</li>)}
-              {student.notes.length + student.beliefs.length === 0 && <li>(empty)</li>}
+              {student.notes.length + student.beliefs.length === 0 && <li>{t('class.empty')}</li>}
               {student.memory.map((m, i) => <li key={`m${i}`} className="old">{m}</li>)}
             </ul>
           )}
@@ -44,7 +46,7 @@ export default function Panels({ panel, state, student, inNotes, realistic, help
       )}
       {panel === 'goals' && (
         <div className="sheet">
-          <div className="row"><h2 className="grow">Lesson goals · students who have it in their notes {help('goals', 'lesson goals')}</h2><button onClick={onClose}>Close</button></div>
+          <div className="row"><h2 className="grow">{t('class.goalsTitle')} {help('goals', t('class.whatGoals'))}</h2><button onClick={onClose}>{t('common.close')}</button></div>
           {state.chapter.objectives.map(o => (
             <div className="goal" key={o.id}>
               <span>{o.text}</span><b>{realistic ? '?' : `${inNotes[o.id]}/${state.students.length}`}</b>
@@ -55,7 +57,7 @@ export default function Panels({ panel, state, student, inNotes, realistic, help
       )}
       {panel === 'notes' && (
         <div className="sheet">
-          <div className="row"><h2 className="grow">Lesson notes</h2><button onClick={onClose}>Close</button></div>
+          <div className="row"><h2 className="grow">{t('class.lessonNotes')}</h2><button onClick={onClose}>{t('common.close')}</button></div>
           <StudyNotes chapter={state.chapter} />
         </div>
       )}

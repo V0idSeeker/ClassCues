@@ -1,4 +1,6 @@
 // Teacher rank and badges, computed from every lesson played. Pure functions.
+import { t } from '../i18n';
+import type { Key } from '../i18n';
 import type { Scores } from './course';
 import type { Difficulty } from './types';
 
@@ -19,12 +21,14 @@ export interface Play {
 export const DIFFICULTY_WEIGHT: Record<Difficulty, number> = { easy: 0.8, normal: 1, hard: 1.2, inspection: 1.3 };
 
 export const RANKS = [
-  { name: 'Student Teacher', lessons: 0, average: 0 },
-  { name: 'Substitute', lessons: 1, average: 40 },
-  { name: 'Teacher', lessons: 3, average: 55 },
-  { name: 'Senior Teacher', lessons: 6, average: 70 },
-  { name: 'Head of Department', lessons: 10, average: 80 },
+  { lessons: 0, average: 0 },
+  { lessons: 1, average: 40 },
+  { lessons: 3, average: 55 },
+  { lessons: 6, average: 70 },
+  { lessons: 10, average: 80 },
 ] as const;
+
+const rankName = (i: number) => t(`rank.${i}` as Key);
 
 export interface Rank {
   name: string;
@@ -51,21 +55,15 @@ export function rankOf(plays: Play[], scores: Scores = {}): Rank {
   let at = 0;
   RANKS.forEach((r, i) => { if (lessons >= r.lessons && average >= r.average) at = i; });
   const next = RANKS[at + 1] ?? null;
-  return { name: RANKS[at].name, lessons, average, next: next && { ...next } };
+  return { name: rankName(at), lessons, average, next: next && { name: rankName(at + 1), ...next } };
 }
 
 export interface Badge { id: string; name: string; how: string }
 
-export const BADGES: Badge[] = [
-  { id: 'first-lesson', name: 'First Bell', how: 'Teach your first lesson.' },
-  { id: 'eighty', name: 'Top of the Class', how: 'Reach a class average of 80% or more.' },
-  { id: 'full-course', name: 'Whole Course', how: 'Teach every lesson of a course.' },
-  { id: 'challenge', name: 'Challenger', how: 'Meet a lesson challenge.' },
-  { id: 'five-challenges', name: 'Five Challenges', how: 'Meet five lesson challenges.' },
-  { id: 'no-mistakes', name: 'Spotless', how: 'Teach a lesson in which the fact check finds no mistakes.' },
-  { id: 'tough-class', name: 'Tough Crowd', how: 'Get 60% or more with a Hard or Inspection class.' },
-  { id: 'improver', name: 'Always Improving', how: 'Teach the same lesson three times in a row, scoring better each time.' },
-];
+/** Name and how-to are read in the current language each time. */
+const badge = (id: string): Badge => ({ id, get name() { return t(`badge.${id}` as Key); }, get how() { return t(`badge.${id}.how` as Key); } });
+
+export const BADGES: Badge[] = ['first-lesson', 'eighty', 'full-course', 'challenge', 'five-challenges', 'no-mistakes', 'tough-class', 'improver'].map(badge);
 
 /** Ids of the badges earned. courses: the lesson ids of each course. */
 export function earnedBadges(plays: Play[], courses: string[][], scores: Scores = {}): Set<string> {

@@ -1,4 +1,5 @@
 /** Pure rules for speech input (no browser APIs here, so they can be tested in node). */
+import { t } from '../../i18n';
 
 /** What the typing box shows while listening: what was typed before, then the final words, then the interim guess. */
 export function mergeSpeech(typed: string, finals: string[], interim: string): string {
@@ -14,11 +15,11 @@ export function speechErrorMessage(code: string): string {
     case 'aborted': return '';
     case 'not-allowed':
     case 'service-not-allowed':
-      return 'Microphone blocked. Allow it from the icon at the left of the address bar, then press 🎤 again.';
-    case 'no-speech': return 'No speech heard. Press 🎤 and speak.';
-    case 'audio-capture': return 'No microphone found.';
-    case 'network': return 'Speech recognition needs an internet connection.';
-    case 'language-not-supported': return 'Speech recognition does not support your language here.';
-    default: return 'Speech recognition stopped. Typing still works.';
+      return t('speech.blocked');
+    case 'no-speech': return t('speech.noSpeech');
+    case 'audio-capture': return t('speech.noMic');
+    case 'network': return t('speech.network');
+    case 'language-not-supported': return t('speech.language');
+    default: return t('speech.stopped');
   }
 }
