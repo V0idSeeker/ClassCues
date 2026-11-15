@@ -207,3 +207,17 @@ table { border-collapse: collapse; width: 100%; } th, td { text-align: left; pad
 @keyframes mic-pulse { 50% { opacity: .3; } }
 @media (prefers-reduced-motion: reduce) { .mic.on::before { animation: none; } }
 .speech-error { margin: 0; font-size: 13px; color: var(--bad); }
+
+/* Lesson review */
+.rv-chart { display: block; width: 100%; height: auto; font-size: 12px; }
+.rv-text { fill: var(--dim); }
+.rv-grid { stroke: var(--edge); stroke-width: 1; }
+.rv-goals, .rv-mood { fill: none; stroke-width: 2.5; stroke-linejoin: round; }
+.rv-goals { stroke: var(--go); } .rv-goals-dot { fill: var(--go); }
+.rv-mood { stroke: var(--gold); } .rv-mood-dot { fill: var(--gold); }
+.rv-point { cursor: pointer; outline: none; }
+.rv-point:hover rect, .rv-point:focus-visible rect { fill: var(--edge); fill-opacity: .5; }
+.rv-log { max-height: none; overflow: visible; margin-top: 6px; }
+.rv-fact { margin: 4px 0 2px 12px; padding: 4px 8px; border-left: 3px solid var(--bad); color: var(--bad); font-size: 13px; }
+.rv-drift { border-color: var(--bad); color: var(--bad); } .rv-gain { border-color: var(--go); color: var(--go); }
+.rv-turn { scroll-margin-top: 12px; }

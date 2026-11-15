@@ -86,6 +86,21 @@ describe('teachTurn', () => {
     expect(ai.noteTaker).not.toHaveBeenCalled();
   });
 
+  it('records one snapshot per turn: where its lines are, mood, hands and goals covered', async () => {
+    const ai = fakeAi();
+    const s0 = start();
+    const first = await teachTurn(s0, { say: 'A variable stores a value.', board: 'x = 5' }, ai, () => 0, 1000, 0);
+    expect(first.state.timeline).toEqual([{
+      turn: 1, start: s0.transcript.length, end: s0.transcript.length + 2, mood: 'engaged', bored: 0, confused: 0, hands: 0, goals: 1,
+    }]);
+    const second = await teachTurn(first.state, { say: 'More.', board: 'x = 5' }, ai, () => 0, 10000, 0);
+    expect(second.state.timeline).toHaveLength(2);
+    // On the second turn one student reacts: the hand-up note is part of the turn's lines.
+    expect(second.state.timeline[1]).toMatchObject({ turn: 2, start: first.state.transcript.length, end: second.state.transcript.length, hands: 1, goals: 1 });
+    const same = await teachTurn(second.state, { say: ' ', board: 'x = 5' }, ai, () => 0, 20000, 0);
+    expect(same.state.timeline).toHaveLength(2);
+  });
+
   it('lets one student raise a hand on every second turn', async () => {
     const ai = fakeAi();
     const out = await teachTurn({ ...start(), turns: 1 }, { say: 'More.', board: '' }, ai, () => 0, 10000, 0);

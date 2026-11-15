@@ -79,6 +79,23 @@ export interface LessonState {
   seenPictures: string[];
   turns: number;
   startedAt: number;
+  /** One snapshot per teacher turn, for the lesson review. Lessons saved before it existed load with an empty list. */
+  timeline: TurnSnapshot[];
+}
+
+/** How the class stood right after one teacher turn. */
+export interface TurnSnapshot {
+  turn: number;
+  /** Positions in transcript where this turn's lines start, and end (exclusive). */
+  start: number;
+  end: number;
+  mood: 'engaged' | 'calm' | 'restless' | 'lost';
+  /** Shares of the class, 0 to 1. */
+  bored: number;
+  confused: number;
+  hands: number;
+  /** Goals that at least one student has in their notes. */
+  goals: number;
 }
 
 /**
