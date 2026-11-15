@@ -69,6 +69,8 @@ jobs:
           npx --yes $VERCEL_CLI build --prod --token="$VERCEL_TOKEN"
           URL=$(npx --yes $VERCEL_CLI deploy --prebuilt --prod --token="$VERCEL_TOKEN")
           echo "::notice::Released ${{ steps.version.outputs.tag }} at $URL"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag -a "${{ steps.version.outputs.tag }}" -m "Deployed ${{ steps.version.outputs.tag }}"
           git push origin "${{ steps.version.outputs.tag }}"
 
