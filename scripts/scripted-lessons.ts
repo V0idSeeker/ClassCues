@@ -6,10 +6,12 @@
  *
  * Optional: TS_API_KEY, TS_GRADER_MODEL (default: TS_MODEL), TS_RUNS (default 3),
  * TS_PAUSE_MS (wait between teacher turns, like a real player; default 0).
+ * TS_MODEL=auto picks models from the provider's list and falls back between them, as the game does.
  * Free plans limit requests per minute: a call refused for that is retried after 30, 60 and 90 seconds.
  */
 import { readFileSync } from 'node:fs';
 import { makeAi } from '../src/ai/calls';
+import { autoModels, listModelInfo } from '../src/ai/models';
 import { AiError } from '../src/ai/provider';
 import type { Ai } from '../src/game/types';
 import { builtInChapter, students } from '../src/content';
@@ -35,7 +37,7 @@ async function patient<T>(call: () => Promise<T>): Promise<T> {
     try {
       return await call();
     } catch (e) {
-      const busy = e instanceof AiError && (e.kind === 'rate' || e.kind === 'unavailable');
+      const busy = e instanceof AiError && (e.kind === 'rate' || e.kind === 'unavailable' || e.kind === 'badjson');
       if (!busy || wait === 0) throw e;
       console.log(`  provider busy, waiting ${wait / 1000} s`);
       await sleep(wait);
@@ -44,10 +46,14 @@ async function patient<T>(call: () => Promise<T>): Promise<T> {
   throw new Error('unreachable');
 }
 
+const auto = env.TS_MODEL === 'auto';
+const candidates = auto ? autoModels(env.TS_BASE_URL, await listModelInfo(env.TS_BASE_URL, env.TS_API_KEY ?? '')) : [];
+if (auto) console.log('models:', candidates.join(', '));
 const raw = makeAi({
   provider: { baseUrl: env.TS_BASE_URL, apiKey: env.TS_API_KEY ?? '', thinkingOff: true },
-  studentModel: env.TS_MODEL,
-  graderModel: env.TS_GRADER_MODEL ?? env.TS_MODEL,
+  studentModel: auto ? '' : env.TS_MODEL,
+  graderModel: auto ? '' : env.TS_GRADER_MODEL ?? env.TS_MODEL,
+  autoModels: candidates,
   onRequest: () => { requests++; },
 });
 const ai: Ai = {
