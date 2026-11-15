@@ -37,7 +37,8 @@ Optional:
 "voice": 12
 ```
 
-- `hair`: `short`, `long`, `bob`, `spiky`, `curly`, `pigtails`, `bun`, `cap`, `hijab`.
+- `hair`: `short`, `long`, `bob`, `spiky`, `curly`, `pigtails`, `bun`, `cap`, `hijab`, `wavy`.
+- `"graduate": true` adds a graduation cap, a white sash and a floral collar.
 - Colours are web colours such as `#4fa66a`.
 - `voice` is a number that picks a browser voice. Leave it out and the student's position in the file is used.
 - A student with no `look` gets short dark hair and a blue shirt.

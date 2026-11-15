@@ -31,6 +31,11 @@ function hair(l: Look): [string, string] {
     case 'bun': return [`<circle cx="0" cy="-160" r="13" ${f}/>`, `<path d="${FRINGE}" ${f}/>`];
     case 'cap': return [`<path d="M-32,-110 C-34,-140 34,-140 32,-110Z" ${f}/>`, `<path d="M-33,-126 C-33,-164 33,-164 33,-126Z" fill="${l.shirt}" ${O}/><path d="M-33,-126 L46,-126 Q54,-121 44,-119 L-33,-120Z" fill="${l.shirt}" ${O}/>`];
     case 'hijab': return ['', `<path fill-rule="evenodd" d="M-38,-116 C-42,-168 42,-168 38,-116 C42,-84 34,-58 0,-52 C-34,-58 -42,-84 -38,-116Z M-23,-112 a23,28 0 1,0 46,0 a23,28 0 1,0 -46,0Z" ${f}/>`];
+    case 'wavy': return [
+      `<path d="M-34,-122 C-40,-166 40,-166 34,-122 C40,-108 36,-98 42,-88 C46,-80 40,-72 44,-64 C36,-60 30,-64 26,-70 L-26,-70 C-30,-64 -36,-60 -44,-64 C-40,-72 -46,-80 -42,-88 C-36,-98 -40,-108 -34,-122Z" ${f}/>`,
+      `<path d="M-31,-116 C-36,-160 36,-160 31,-108 C24,-120 6,-128 -10,-140 C-18,-134 -26,-126 -31,-116Z" ${f}/>`
+      + `<path d="M-31,-118 C-36,-100 -34,-90 -28,-80 C-30,-94 -28,-106 -25,-118Z M31,-112 C36,-98 34,-88 28,-80 C30,-92 28,-102 25,-112Z" ${f}/>`,
+    ];
     default: return ['', `<path d="M-31,-116 C-36,-158 36,-158 31,-116 C26,-134 6,-140 -10,-136 C-20,-134 -27,-126 -31,-116Z" ${f}/>`];
   }
 }
@@ -64,9 +69,11 @@ function face(l: Look, e: Emotion, blinkDelay: number): string {
 export function bust(l: Look, e: Emotion, blinkDelay = 0): string {
   const [back, front] = hair(l);
   const skin = `fill="${l.skin}" ${O}`;
-  return `${back}<path d="M-42,0 Q-46,-52 -22,-60 L22,-60 Q46,-52 42,0Z" fill="${l.shirt}" ${O}/>`
+  const sash = l.graduate ? `<path d="M-9,-60 L0,-46 L9,-60Z" fill="#f4c2cf" ${O}/><path d="M12,-60 L24,-58 L22,0 L10,0Z" fill="#f7f5ee" ${O}/>` : '';
+  const cap = l.graduate ? `<path d="M-24,-158 L24,-158 L23,-145 Q0,-141 -23,-145Z" fill="#1d2440" ${O}/><path d="M-44,-160 L0,-171 L44,-160 L0,-150Z" fill="#1d2440" ${O}/><path d="M0,-160 L32,-156 L34,-136" fill="none" stroke="#e8c46a" stroke-width="2.5"/><rect x="31" y="-138" width="6" height="9" rx="2" fill="#e8c46a"/>` : '';
+  return `${back}<path d="M-42,0 Q-46,-52 -22,-60 L22,-60 Q46,-52 42,0Z" fill="${l.shirt}" ${O}/>${sash}`
     + `<rect x="-9" y="-76" width="18" height="20" ${skin}/><ellipse cx="-30" cy="-112" rx="5" ry="7" ${skin}/><ellipse cx="30" cy="-112" rx="5" ry="7" ${skin}/>`
-    + `<path d="M-30,-118 C-30,-152 30,-152 30,-118 C30,-94 16,-74 0,-74 C-16,-74 -30,-94 -30,-118Z" ${skin}/>${face(l, e, blinkDelay)}${front}`;
+    + `<path d="M-30,-118 C-30,-152 30,-152 30,-118 C30,-94 16,-74 0,-74 C-16,-74 -30,-94 -30,-118Z" ${skin}/>${face(l, e, blinkDelay)}${front}${cap}`;
 }
 
 export function portraitSvg(s: Student): string {

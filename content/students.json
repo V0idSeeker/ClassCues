@@ -767,11 +767,12 @@
       "Can I sit at the front?"
     ],
     "look": {
-      "hair": "bob",
+      "hair": "wavy",
       "hairColor": "#3a2418",
       "skin": "#f3cfae",
       "shirt": "#25306e",
-      "glasses": false
+      "glasses": false,
+      "graduate": true
     },
     "voice": 30
   }
