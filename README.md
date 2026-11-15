@@ -13,7 +13,7 @@ The point of the game is to learn a subject by teaching it. Students ask why thi
 - Teach built-in courses: **Intro to Python** (variables, if, loops), **Data Structures** (linked lists, stacks, queues, binary trees), **SQL Basics** (SELECT and WHERE, joins, grouping).
 - Turn your own **PDFs into courses**: one PDF or several, cut into lessons at chapter starts or into equal parts. The game writes goals and a quiz for each lesson, and you can edit all of it.
 - Teach by typing, writing on boards (several, like slides), and, with a model that reads pictures, drawing on them.
-- Call on students, ask the class, hear raised hands. Students have different personalities, moods and wrong beliefs. They hear each other, react to each other and remember earlier lessons.
+- Call on students, ask the class, hear raised hands. Students have different personalities, moods and wrong beliefs. They hear each other, react to each other and remember earlier lessons, including the mistakes you taught them.
 - Get a report after each quiz: class average, each student's answers and why they lost points, and three tips.
 - Keep a best score per lesson and a score per course. Export and share lessons or whole courses as files.
 
@@ -134,7 +134,15 @@ The game has a guide built in: **How to play** on the main menu, **Help** on eve
 5. **Ring the bell.** Students take the quiz from their notes only. You get the report, which also includes:
    - **Your teaching, checked**: anything you said or wrote that was wrong, with the correction (an AI check, it can be wrong).
    - **In their own words**: a typical student explains the lesson back to you from their notebook, and the goals missing from their notes are listed.
-6. **Try again** to beat your best score.
+   - **Challenge**: whether you met this lesson's teaching challenge (shown in the top bar during class).
+   - **Review the lesson**: a turn-by-turn replay with a chart of goals and class mood, and your mistakes pinned to the line where you said them.
+   - **Teach a follow-up lesson**: the same class, only the goals they missed, and they now believe the mistakes you made. Correct them.
+   - **Share**: a picture of your report card.
+6. **Try again** to beat your best score. Lessons where your classes keep missing a goal show it as "Often missed" on the lessons and study screens.
+
+Your **rank** (Student Teacher up to Head of Department) and **badges** grow with lessons taught, scores, challenges met and difficulty. They show on the main menu.
+
+**Difficulty** (Settings): Easy, Normal, Hard, or Inspection, where a correct answer the student's notes do not support gets no marks.
 
 Things that matter for the score:
 

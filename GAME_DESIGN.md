@@ -120,6 +120,17 @@ The older description below (three columns) is kept for history; where it disagr
 - Both extra calls run after the scores are saved, one after the other, and never block the report. The daily-limit reserve includes them.
 - **Speech input.** A 🎤 button uses the browser's speech recognition (no AI request). Words appear in the typing box and are never sent by themselves. Hidden where the browser has none.
 
+### 0.4d Learning from mistakes, review and progression
+
+- **Follow-up lesson.** When the class missed goals (no student had them in notes, or a quiz average under 50%) or the fact check found mistakes, the report offers a follow-up: id `<id>-followup`, the same ten students, only the missed goals and their questions (all goals if only mistakes were found), and each student starts with the chapter's wrong beliefs they still held plus every fact-check claim. Its score is recorded under its own id, outside the course score.
+- **Mistakes remembered.** Class memory keeps the fact-check claims of each lesson. In later lessons, students who were present start with up to three of them as wrong beliefs, newest first; a belief a student dropped is forgotten for that student.
+- **Often missed.** Each run's goal results are kept per lesson (last 10). Goals averaging under 50% over the last three runs show as "Often missed" on the lessons screen and the study screen.
+- **Review.** Each teacher turn records a snapshot (mood, bored and confused shares, hands up, goals covered). "Review the lesson" shows a chart of goals and mood over turns, the conversation grouped by turn, fact-check mistakes matched to the teacher line sharing the most words (at least three), and "class drifted" / "+N goals" markers.
+- **Challenges.** One of 15 teaching challenges is picked per lesson and shown in the top bar. Seven are checked in code from the transcript; eight by one AI call after the quiz (grader model). The daily-limit reserve includes it.
+- **Difficulty.** Easy (attention +0.15, only the carrier has wrong beliefs), Normal, Hard (attention −0.15, every student but the eager one has a wrong belief, the carrier three), Inspection (as Hard, and unsupported correct written answers score 0).
+- **Rank and badges.** Every finished lesson is recorded with its difficulty. Rank uses lessons taught and the average of each lesson's best score weighted by difficulty: Student Teacher, Substitute (1 lesson, 40%), Teacher (3, 55%), Senior Teacher (6, 70%), Head of Department (10, 80%). Eight badges mark milestones. Both show on the main menu and the report.
+- **Share.** The report draws a report-card picture (lesson, course, scores, rank, difficulty, challenge, date, version) and shares it, or downloads it where sharing files is not supported. No answers, keys or typed text other than the lesson and course names.
+
 ### 0.5 AI calls and request budget
 
 Flow of one lesson:
