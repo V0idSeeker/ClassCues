@@ -1,12 +1,34 @@
-import { coverage } from './lesson';
+import { coverage, hasObjective } from './lesson';
 import type { Answer, Grade } from './quiz';
-import type { LessonState } from './types';
+import type { FactError, LessonState, Objective, Student } from './types';
 
 export interface Report {
   classAverage: number;
   students: { id: string; name: string; percent: number; answers: { question_id: string; answer: string; fraction: number; feedback: string }[] }[];
   objectives: { id: string; text: string; inNotes: number; quizAverage: number | null }[];
   tips: string[];
+}
+
+/** What the AI added after the quiz. A null error list or text: that part could not be made. */
+export interface AfterQuiz {
+  /** null with checked false: the teacher said nothing, so there was nothing to check. */
+  factCheck: { checked: boolean; errors: FactError[] | null };
+  /** One student's explanation of the lesson, and the goals missing from their notes (computed in code). */
+  explain: { name: string; text: string | null; missingGoals: string[] } | null;
+}
+
+/** The student whose quiz percentage is closest to the class average; ties go to the first in class order. */
+export function closestToAverage(report: Report): string | null {
+  let best: Report['students'][number] | null = null;
+  for (const s of report.students) {
+    if (!best || Math.abs(s.percent - report.classAverage) < Math.abs(best.percent - report.classAverage)) best = s;
+  }
+  return best?.id ?? null;
+}
+
+/** The goals a student has no undistorted note on. */
+export function missingGoals(student: Student, objectives: Objective[]): string[] {
+  return objectives.filter(o => !hasObjective(student, o.id)).map(o => o.text);
 }
 
 const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);

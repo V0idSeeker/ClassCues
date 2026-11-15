@@ -1,0 +1,20 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["errors"],
+  "properties": {
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["claim", "correction", "severity"],
+        "properties": {
+          "claim": { "type": "string" },
+          "correction": { "type": "string" },
+          "severity": { "type": "string", "enum": ["minor", "major"] }
+        }
+      }
+    }
+  }
+}

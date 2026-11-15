@@ -106,3 +106,8 @@ export interface Ai {
   quizTaker(student: Student, questions: QuizQuestion[]): Promise<QuizTakerResult>;
   grader(question: QuizQuestion, rows: GraderInputRow[]): Promise<GraderResult>;
 }
+
+/** A false or misleading statement the teacher made, found after the quiz. */
+export interface FactError { claim: string; correction: string; severity: 'minor' | 'major' }
+export interface FactCheckResult { errors: FactError[] }
+export interface ExplainBackResult { explanation: string }

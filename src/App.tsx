@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { makeAi, ping } from './ai/calls';
+import { explainBack, factCheck, makeAi, ping } from './ai/calls';
+import { teacherLines } from './ai/prompts/factCheck';
 import type { AiDeps } from './ai/calls';
 import { autoModels, canReadPictures, listModelInfo } from './ai/models';
 import { preferModel } from './ai/provider';
 import { AiError } from './ai/provider';
 import { studentPool } from './content';
-import { mustRingBell, quizReserve } from './game/budget';
+import { AFTER_QUIZ_REQUESTS, mustRingBell, quizReserve } from './game/budget';
 import { recordScore } from './game/course';
 import { drawClass, lessonOver, mergeTurns, rememberLesson, startLesson } from './game/lesson';
-import { computeReport } from './game/report';
-import type { Report as ReportType } from './game/report';
+import { closestToAverage, computeReport, missingGoals } from './game/report';
+import type { AfterQuiz, Report as ReportType } from './game/report';
 import { askStudent, hearStudent, pickForClassQuestion, runQuiz, teachTurn } from './game/runLesson';
 import type { Chapter, LessonState, Turn } from './game/types';
 import { addLog, bumpUsed, clearLesson, hasSettings, helpSeen, markHelpSeen, loadGoodModel, loadLesson, loadMemory, loadScores, saveScores, saveGoodModel, loadSettings, loadSkipPrepare, saveMemory, loadUsed, saveLesson, saveSettings } from './storage';
@@ -36,7 +37,7 @@ export default function App() {
   const [lesson, setLesson] = useState<LessonState | null>(null);
   // The lesson being studied on the prepare screen, before it starts.
   const [studying, setStudying] = useState<Chapter | null>(null);
-  const [report, setReport] = useState<{ report: ReportType; chapter: Chapter; best: number; bestBefore: number | null } | null>(null);
+  const [report, setReport] = useState<{ report: ReportType; after: AfterQuiz; chapter: Chapter; best: number; bestBefore: number | null } | null>(null);
   const [used, setUsed] = useState(loadUsed);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -160,17 +161,32 @@ export default function App() {
     setProgress({ done: 0, total: 1 });
     setScreen('quiz');
     try {
-      const out = await runQuiz(s, ai, Math.random, (done, total) => setProgress({ done, total }));
+      const out = await runQuiz(s, ai, Math.random, (done, total) => setProgress({ done, total: total + AFTER_QUIZ_REQUESTS }));
       const result = computeReport(s, out.answers, out.grades);
       const before = loadScores();
       const scores = recordScore(before, s.chapter.id, result.classAverage, new Date().toISOString());
       saveScores(scores);
-      setReport({ report: result, chapter: s.chapter, best: scores[s.chapter.id].best, bestBefore: before[s.chapter.id]?.best ?? null });
       saveMemory(rememberLesson(loadMemory(), s));
       clearLesson();
       lessonRef.current = null;
       queue.current = [];
       setLesson(null);
+
+      // After the quiz, one call at a time (free tiers limit requests per minute). A failure never blocks the report.
+      let done = s.students.length + s.chapter.quiz.filter(q => q.type === 'short').length;
+      const total = done + AFTER_QUIZ_REQUESTS;
+      const said = teacherLines(s.transcript).length > 0;
+      const after: AfterQuiz = { factCheck: { checked: said, errors: [] }, explain: null };
+      if (said) after.factCheck.errors = await factCheck(deps, s.chapter, s.transcript).then(r => r.errors, () => null);
+      setProgress({ done: ++done, total });
+      const student = s.students.find(st => st.persona.id === closestToAverage(result));
+      if (student) {
+        const text = await explainBack(deps, student, s.chapter.title).then(r => r.explanation, () => null);
+        after.explain = { name: student.persona.name, text, missingGoals: missingGoals(student, s.chapter.objectives) };
+      }
+      setProgress({ done: ++done, total });
+
+      setReport({ report: result, after, chapter: s.chapter, best: scores[s.chapter.id].best, bestBefore: before[s.chapter.id]?.best ?? null });
       setScreen('report');
     } catch (e) {
       setError(explain(e));
@@ -246,7 +262,7 @@ export default function App() {
         </div>
       )}
 
-      {screen === 'report' && report && <Report report={report.report} chapter={report.chapter} best={report.best} bestBefore={report.bestBefore} onAgain={() => setScreen('modules')} onHelp={() => openHelp('report')} />}
+      {screen === 'report' && report && <Report report={report.report} after={report.after} chapter={report.chapter} best={report.best} bestBefore={report.bestBefore} onAgain={() => setScreen('modules')} onHelp={() => openHelp('report')} />}
 
       {help && <Codex entry={help} onOpen={setHelp} onClose={() => setHelp(null)} />}
 

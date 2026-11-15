@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { builtInChapter, students } from '../content';
 import { startLesson } from './lesson';
 import type { Grade } from './quiz';
-import { computeReport } from './report';
+import { closestToAverage, computeReport, missingGoals } from './report';
+import type { Report } from './report';
 
 const state = startLesson(builtInChapter, students, () => 0.5, 0);
 
@@ -38,5 +39,25 @@ describe('computeReport', () => {
     expect(r.students.find(s => s.id === 'aisha')!.percent).toBe(100);
     expect(r.classAverage).toBe(10);
     expect(r.objectives.find(o => o.id === 'obj-2')!.quizAverage).toBe(10);
+  });
+});
+
+describe('after the quiz', () => {
+  const row = (id: string, percent: number) => ({ id, name: id, percent, answers: [] });
+  const report = (classAverage: number, ...students: Report['students']): Report => ({ classAverage, students, objectives: [], tips: [] });
+
+  it('picks the student closest to the class average, the first one on a tie', () => {
+    expect(closestToAverage(report(50, row('a', 90), row('b', 45), row('c', 60)))).toBe('b');
+    expect(closestToAverage(report(50, row('a', 40), row('b', 60), row('c', 40)))).toBe('a');
+    expect(closestToAverage(report(0))).toBeNull();
+  });
+
+  it('lists the goals a student has no undistorted note on', () => {
+    const [o1, o2] = builtInChapter.objectives;
+    const s = { ...state.students[0], notes: [{ text: 'a', objective: o1.id, distorted: false }, { text: 'b', objective: o2.id, distorted: true }] };
+    const missing = missingGoals(s, builtInChapter.objectives);
+    expect(missing).not.toContain(o1.text);
+    expect(missing).toContain(o2.text);
+    expect(missing).toHaveLength(builtInChapter.objectives.length - 1);
   });
 });
