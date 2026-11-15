@@ -3,9 +3,9 @@ import type { Dict } from './index';
 
 export const fr: Dict = {
   // ---------- Shared
-  'app.title': 'En classe !',
+  'app.title': 'Class Is In Session',
   'app.version': 'Version {version}',
-  'app.footer': 'En classe ! · v{version}',
+  'app.footer': 'Class Is In Session · v{version}',
   'common.help': 'Aide',
   'common.settings': 'Réglages',
   'common.mainMenu': 'Menu principal',
