@@ -30,4 +30,5 @@ export const openingEs: Record<string, string[]> = {
   diego: ['¿Esto entra en el examen?', '¿Lo vas a escribir en la pizarra?', 'Buenas.'],
   hana: ['¿Lo puedes dibujar?', 'Buenos días.', 'Me gusta cuando hay un dibujo.'],
   luca: ['¡A que no sabes qué me ha pasado esta mañana!', '¿Podemos trabajar por parejas?', 'Tengo una historia sobre esto.'],
+  celina: ['¡Buenos días a todos!', 'Traje flores para la clase.', 'Hoy es un buen día para aprender algo.', '¿Me puedo sentar delante?'],
 };

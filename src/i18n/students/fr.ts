@@ -30,4 +30,5 @@ export const openingFr: Record<string, string[]> = {
   diego: ['C’est dans le contrôle ?', 'Vous allez l’écrire au tableau ?', 'Bonjour.'],
   hana: ['Vous pouvez le dessiner ?', 'Bonjour.', 'J’aime bien quand il y a une image.'],
   luca: ['Devinez ce qui m’est arrivé ce matin !', 'On peut travailler à deux ?', 'J’ai une histoire là-dessus.'],
+  celina: ['Bonjour tout le monde !', 'J’ai apporté des fleurs pour la classe.', 'Aujourd’hui,  c’est un bon jour pour apprendre quelque chose.', 'Je peux m’asseoir devant ?'],
 };
