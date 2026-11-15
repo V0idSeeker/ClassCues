@@ -113,7 +113,7 @@ export function boardArea(inset: number): { left: string; top: string; width: st
 }
 
 /** Wall, floor, window, empty board, clock and poster. The board text is an HTML layer on top. */
-const ROOM = `<rect width="1200" height="580" fill="#cfe0ea"/><rect y="580" width="1200" height="270" fill="#d9a56b"/>`
+const ROOM = () => `<rect width="1200" height="580" fill="#cfe0ea"/><rect y="580" width="1200" height="270" fill="#d9a56b"/>`
   + `<path d="M0,650 H1200 M0,740 H1200 M150,580 V650 M520,580 V650 M900,580 V650 M330,650 V740 M720,650 V740 M1080,650 V740 M120,740 V850 M560,740 V850 M960,740 V850" stroke="#bd8850" stroke-width="2" fill="none"/>`
   + `<rect y="568" width="1200" height="14" fill="#8fa9b8" ${O}/>`
   + `<rect x="30" y="70" width="156" height="200" rx="6" fill="#fff" ${O}/><rect x="42" y="82" width="132" height="176" fill="#9fd4f5" ${O}/>`
@@ -133,7 +133,7 @@ const FRONT_X = [140, 370, 600, 830, 1060];
  * still = true leaves out the arm-waving animation (for people who prefer reduced motion).
  */
 export function sceneSvg(students: Student[], selectedId: string, talkingId: string | null, still: boolean): string {
-  return ROOM + students.slice(0, 10).map((s, i) => {
+  return ROOM() + students.slice(0, 10).map((s, i) => {
     const sel = s.persona.id === selectedId;
     const talk = s.persona.id === talkingId;
     return i < 5 ? kid(s, BACK_X[i], 606, 0.8, sel, talk, still) : kid(s, FRONT_X[i - 5], 798, 1, sel, talk, still);
