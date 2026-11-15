@@ -40,6 +40,7 @@ export default function MainMenu(p: Props) {
         <button className={p.lessonTitle ? '' : 'go'} onClick={p.onStart}>{p.lessonTitle ? 'Choose another lesson' : 'Start teaching'}</button>
         <button className={p.firstVisit ? 'gold' : ''} onClick={p.onHelp}>How to play{p.firstVisit ? ' (start here)' : ''}</button>
         <button onClick={p.onSettings}>Settings</button>
+        <p className="dim version">Version {__APP_VERSION__}</p>
       </nav>
     </div>
   );

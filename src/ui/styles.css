@@ -173,6 +173,7 @@ table { border-collapse: collapse; width: 100%; } th, td { text-align: left; pad
 .menu-title p { font-size: 1.8cqw; margin: 1cqw 0 0; }
 .menu-buttons { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 420px; margin: 0 auto; }
 .menu-buttons button { font-size: 17px; padding: 10px 14px; }
+.menu-buttons .version { text-align: center; margin: 4px 0 0; }
 
 /* In-lesson help */
 .q { width: 22px; height: 22px; padding: 0; border-radius: 50%; font-size: 12px; line-height: 1; vertical-align: middle; margin-left: 4px; }

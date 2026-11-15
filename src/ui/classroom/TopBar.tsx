@@ -43,7 +43,7 @@ export default function TopBar(p: Props) {
       <details className="menu-pop">
         <summary aria-label="More">☰</summary>
         <div className="menu-pop-list">
-          <span className="dim">AI requests today: {p.used}</span>
+          <span className="dim">Version {__APP_VERSION__} · AI requests today: {p.used}</span>
           <label className="check"><input type="checkbox" checked={p.voiceOn} onChange={e => { if (!e.target.checked) stopSpeaking(); p.onVoice(e.target.checked); }} />Voices</label>
           <label className="check"><input type="checkbox" checked={p.realistic} onChange={e => p.onRealistic(e.target.checked)} />Realistic mode</label>
           <button onClick={p.onNotes}>Lesson notes</button>
