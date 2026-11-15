@@ -2,6 +2,8 @@
 
 # ClassCues
 
+**Play it:** https://classcues.vercel.app
+
 A free teaching game. You are the teacher. Your ten students are played by AI, and they only know what you taught them. At the end of the lesson they take a quiz from their own notes, so their scores show how well you taught.
 
 The point of the game is to learn a subject by teaching it. Students ask why things work and what would happen if; to answer them you have to understand the topic yourself.
