@@ -4,9 +4,9 @@ import type { Msg } from './index';
 
 export const en = {
   // ---------- Shared
-  'app.title': 'Class Is In Session',
+  'app.title': 'ClassCues',
   'app.version': 'Version {version}',
-  'app.footer': 'Class Is In Session · v{version}',
+  'app.footer': 'ClassCues · v{version}',
   'common.help': 'Help',
   'common.settings': 'Settings',
   'common.mainMenu': 'Main menu',

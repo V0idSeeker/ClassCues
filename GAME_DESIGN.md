@@ -1,6 +1,6 @@
-# Teacher Simulator — Game Design & Build Guide
+# ClassCues — Game Design & Build Guide
 
-> Working title: **"Class Is In Session"** (rename freely)
+> Name: **ClassCues**
 >
 > One-line pitch: *You are the teacher. Your AI students only know what you taught them today — and tomorrow, the quiz shows exactly how well you taught.*
 

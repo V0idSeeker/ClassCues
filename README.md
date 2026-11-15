@@ -1,6 +1,6 @@
-<p align="center"><img src="public/icon-512.png" alt="Class Is In Session icon: an open book under a desk lamp" width="160" /></p>
+<p align="center"><img src="public/icon-512.png" alt="ClassCues icon: an open book under a desk lamp" width="160" /></p>
 
-# Class Is In Session
+# ClassCues
 
 A free teaching game. You are the teacher. Your ten students are played by AI, and they only know what you taught them. At the end of the lesson they take a quiz from their own notes, so their scores show how well you taught.
 
@@ -24,7 +24,7 @@ The point of the game is to learn a subject by teaching it. Students ask why thi
 
 The hosted game can be installed like an app, with its own icon and window:
 
-- **Chrome or Edge on a computer**: the install icon at the right of the address bar, or menu, **Install Class Is In Session**.
+- **Chrome or Edge on a computer**: the install icon at the right of the address bar, or menu, **Install ClassCues**.
 - **Android**: menu, **Add to Home screen** or **Install app**.
 - **iPhone or iPad (Safari)**: Share, **Add to Home Screen**.
 
@@ -36,7 +36,7 @@ You need [Node.js](https://nodejs.org) 20 or newer.
 
 ```bash
 git clone <this repository>
-cd TeacherSim
+cd ClassCues
 npm install
 npm run dev
 ```

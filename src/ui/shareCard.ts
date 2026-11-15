@@ -67,7 +67,7 @@ export function drawCard(d: CardData): HTMLCanvasElement {
 export async function shareCard(d: CardData): Promise<'shared' | 'downloaded'> {
   const blob = await new Promise<Blob | null>(resolve => drawCard(d).toBlob(resolve, 'image/png'));
   if (!blob) throw new Error(t('card.failed'));
-  const file = new File([blob], 'class-is-in-session-report.png', { type: 'image/png' });
+  const file = new File([blob], 'classcues-report.png', { type: 'image/png' });
   if (navigator.canShare?.({ files: [file] })) {
     try {
       await navigator.share({ files: [file], title: t('app.title'), text: t('card.shareText', { lesson: d.lesson, average: d.average }) });

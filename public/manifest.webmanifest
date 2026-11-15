@@ -1,6 +1,6 @@
 {
-  "name": "Class Is In Session",
-  "short_name": "Class",
+  "name": "ClassCues",
+  "short_name": "ClassCues",
   "description": "Teach a class of AI students. They only know what you taught them, and their quiz shows how well you taught.",
   "start_url": "/",
   "scope": "/",
