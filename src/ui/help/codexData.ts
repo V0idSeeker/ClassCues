@@ -93,10 +93,10 @@ export const ENTRIES: Entry[] = [
     intro: 'Students raise their hands when they want to ask or say something. A raised hand is an arm waving in the classroom and a ✋ bubble.',
     points: [
       'Click a student\'s desk with a raised hand to hear what they want to say.',
-      '"Next raised hand" jumps to the next student waiting.',
+      'The ✋ button next to the selected student shows how many hands are up and jumps to the next one.',
       '"Call on" a student: if their hand is up they speak; if you typed a question they answer it; if you typed nothing they are invited to ask a question.',
       'Students ask real questions about the lesson: why, what if, where does the rule stop working. Answering them well is the heart of the game.',
-      '"🔊 Hear it" repeats what the selected student said.',
+      '🔊 under the typing box repeats what the selected student said.',
     ],
     visual: 'states', see: ['asking', 'moods'],
   },
@@ -108,7 +108,7 @@ export const ENTRIES: Entry[] = [
       'Select words on the board to erase or retype them. "Erase selected words" does the same with a button.',
       '"Wipe the board" clears it; "Undo wipe" brings it back.',
       'Erasing only stops students copying from now on. Notes they already took stay in their notebooks.',
-      '"Go to the board" shows a larger board with the students\' faces underneath.',
+      '"Big board" shows a larger board with the students\' faces underneath.',
     ],
     visual: 'board', see: ['slides', 'pictures'],
   },
@@ -128,8 +128,8 @@ export const ENTRIES: Entry[] = [
     intro: 'With an AI model that can read pictures, you can draw on the board in chalk or add an image, and the students see it.',
     points: [
       'Gemini models can read pictures. OpenRouter marks which of its models can. For a local model that can, tick "My model can read pictures" in Settings.',
-      'With any other model the drawing tools are hidden, and a line under the board says why.',
-      '"Draw on the board" turns the mouse or finger into chalk, in four colours. Press it again to type.',
+      'With any other model the drawing tools are hidden.',
+      '"Draw" turns the mouse or finger into chalk, in four colours. Press "Stop drawing" to type again.',
       'A new picture counts as a turn. You can add a few words saying what it shows.',
     ],
     see: ['providers', 'board'],
@@ -171,7 +171,7 @@ export const ENTRIES: Entry[] = [
   },
   {
     id: 'notebooks', category: 'Your students', title: 'Notebooks',
-    intro: 'Click any student to see their notebook on the left. It is everything they will have for the quiz.',
+    intro: 'Click a student in the class, then open Notebook (next to Talk, under the typing box). It is everything they will have for the quiz. A dot on Notebook means students wrote something new since you last looked.',
     points: [
       'Students write notes in their own words. Attentive students catch almost everything; others miss some.',
       'Orange: a note bent by a wrong belief. It does not count for the goals.',
@@ -183,7 +183,7 @@ export const ENTRIES: Entry[] = [
   },
   {
     id: 'goals', category: 'Your students', title: 'Lesson goals',
-    intro: 'The panel on the right lists what students should understand by the end. The number shows how many students have a correct note on each goal.',
+    intro: 'The Goals counter at the top ("Goals 2/5") shows how many goals at least one student has in their notes. Open it to see every goal with the number of students who have a correct note on it.',
     points: [
       'Each green mark is one student. 0/10 means you have not taught it yet, or nobody caught it.',
       'Every quiz question tests one goal. A goal with no notes means that question is lost.',
@@ -228,7 +228,7 @@ export const ENTRIES: Entry[] = [
     intro: 'Students read their lines aloud with your browser\'s built-in voices, and their mouth moves while they speak.',
     points: [
       'Edge has the most natural voices. Chrome and Firefox work too.',
-      'Turn voices on or off with "Voices" in the top bar or in Settings. Text is always shown.',
+      'Turn voices on or off with "Voices" in the ☰ menu or in Settings. Text is always shown.',
     ],
   },
 
@@ -325,7 +325,7 @@ export const ENTRIES: Entry[] = [
     id: 'limits', category: 'AI and settings', title: 'Free limits',
     intro: 'Free AI plans limit how much you can ask per minute or per day. A lesson uses about 40 to 50 requests.',
     points: [
-      '"AI requests today" in the top bar counts what this browser sent.',
+      '"AI requests today" in the ☰ menu counts what this browser sent.',
       'When a limit is reached, the game waits a moment and tries again, or switches to another model by itself.',
       'With a daily limit set in Settings, the bell rings early so the quiz always has enough requests.',
     ],
@@ -345,7 +345,7 @@ export const ENTRIES: Entry[] = [
   },
   {
     id: 'realistic', category: 'AI and settings', title: 'Realistic mode',
-    intro: 'Tick "Realistic mode" in the top bar to hide notebooks and goal counts. Like a real teacher, you only know what students understood by asking them.',
+    intro: 'Tick "Realistic mode" in the ☰ menu to hide notebooks and goal counts. Like a real teacher, you only know what students understood by asking them.',
     points: ['Turn it off at any time to look again.'],
     see: ['asking', 'goals'],
   },

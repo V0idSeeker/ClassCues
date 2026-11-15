@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { studentPool } from '../content';
 import type { Emotion, Student } from '../game/types';
-import { SCENE_VIEWBOX, sceneSvg } from './scene';
+import { SCENE_VIEWBOX, boardArea, sceneSvg } from './scene';
 
 interface Props {
   lessonTitle: string | null;
@@ -29,7 +29,7 @@ export default function MainMenu(p: Props) {
       <div className="stage menu-stage">
         <div className="stage-in">
           <svg viewBox={SCENE_VIEWBOX} aria-hidden="true" dangerouslySetInnerHTML={{ __html: scene }} />
-          <div className="menu-title">
+          <div className="menu-title" style={boardArea(16)}>
             <h1>Class Is In Session</h1>
             <p>Teach a class of AI students. They only know what you taught them.</p>
           </div>

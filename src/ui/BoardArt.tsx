@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import type { PointerEvent } from 'react';
+import type { CSSProperties, PointerEvent } from 'react';
 
 /** The picture layer of a board: freehand chalk drawing and pasted images. Drawn at a fixed size and stretched to fit. */
 export const ART_W = 760;
@@ -11,6 +11,8 @@ interface Props {
   /** true: the mouse or finger draws. false: the layer lets clicks through to the text. */
   drawing: boolean;
   color: string;
+  /** Where the picture sits, when it is laid over the board in the classroom drawing. */
+  style?: CSSProperties;
   onChange(art: string): void;
 }
 
@@ -55,7 +57,7 @@ export async function pictureForStudents(art: string): Promise<string> {
   return canvas.toDataURL('image/jpeg', 0.7);
 }
 
-export default function BoardArt({ art, drawing, color, onChange }: Props) {
+export default function BoardArt({ art, drawing, color, style, onChange }: Props) {
   const ref = useRef<HTMLCanvasElement>(null);
   const last = useRef<{ x: number; y: number } | null>(null);
   const shown = useRef<string | null | undefined>(undefined);
@@ -102,7 +104,7 @@ export default function BoardArt({ art, drawing, color, onChange }: Props) {
   }
 
   return (
-    <canvas ref={ref} width={ART_W} height={ART_H} className={`art${drawing ? ' drawing' : ''}`}
+    <canvas ref={ref} width={ART_W} height={ART_H} className={`art${drawing ? ' drawing' : ''}`} style={style}
       aria-label="Picture on the board. Students cannot see it; describe it in the box below."
       onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} />
   );

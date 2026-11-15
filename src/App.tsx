@@ -243,7 +243,7 @@ export default function App() {
 
       {help && <Codex entry={help} onOpen={setHelp} onClose={() => setHelp(null)} />}
 
-      <p className="dim footer">Class Is In Session · v{__APP_VERSION__}</p>
+      {screen !== 'classroom' && <p className="dim footer">Class Is In Session · v{__APP_VERSION__}</p>}
     </>
   );
 }

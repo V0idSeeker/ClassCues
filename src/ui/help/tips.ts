@@ -24,12 +24,12 @@ export const TIPS: Tip[] = [
   },
   {
     id: 'notebook', entry: 'notebooks',
-    text: 'Click any student to read their notebook on the left. It is all they will have in the quiz.',
+    text: 'Click a student, then open Notebook to read what they wrote. It is all they will have in the quiz. A dot on Notebook means new notes.',
     when: s => s.turns >= 2,
   },
   {
     id: 'goals', entry: 'goals',
-    text: 'The lesson goals on the right show how many students have each goal in their notes. Aim to get every goal above zero.',
+    text: '"Goals 2/5" at the top counts the goals at least one student has in their notes. Open it to see each goal; aim to get every one above zero.',
     when: s => s.turns >= 3,
   },
   {

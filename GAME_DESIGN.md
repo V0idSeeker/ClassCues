@@ -77,6 +77,10 @@ The player sees the room from the teacher's position. Reference mockup: `docs/mo
 - Buttons: "Erase selected words" and "Wipe the board" (with undo).
 - Erasing only changes what students can copy from now on. Notes they already took stay in their notebooks.
 
+**Layout (no page scrolling).** The screen always fits the visible window: at 1280×720 in a browser and on a phone held upright, also with the phone keyboard open. Only the conversation and open panels scroll inside themselves. On a computer, the drawn class (with the board tools under it) fills the left and is as tall as the window allows; a column on the right holds the selected student, the conversation, the typing box with all its actions, and Talk / Notebook / Goals buttons. Notebook and Goals open over the conversation, never over the typing box. The top bar is one row: lesson, clock, turn, class mood, an always-visible "Goals 2/5" counter, Help, a ☰ menu (requests today, voices, realistic mode, lessons, settings, main menu) and the bell. A dot on Notebook means new notes since it was last opened. On a phone the same pieces stack (class, board tools, student, conversation, typing box); Notebook sits on the student card. With the keyboard open, only the class (smaller), the conversation and the typing box stay. Board text is never smaller than 14 pixels.
+
+The older description below (three columns) is kept for history; where it disagrees, the paragraph above wins.
+
 **Around the stage**, all on one screen without scrolling:
 
 - **Left, student card**: portrait of the selected student, their state labels, their line if they have one, and buttons: next raised hand, hear it, call on this student, ask the class. The last two always work: with a question typed they ask it; with nothing typed they invite the student (or the class) to ask a question.
