@@ -1,0 +1,81 @@
+# Deploys the game to Vercel when master is pushed.
+#
+# Every production deploy is a named version (the "version" in package.json):
+# - A version that has no git tag yet is deployed to production and tagged web-vX.Y.Z on the deployed commit.
+# - A version that is already tagged is not deployed to production again; the push gets a preview deploy instead,
+#   and the run says to raise the version in package.json to release it.
+# Roll back: run this workflow by hand ("Run workflow") on the previous tag, or `git checkout web-vX.Y.Z && bash scripts/deploy.sh`.
+#
+# Needs one repository secret, VERCEL_TOKEN (vercel.com/account/tokens), and the variables
+# VERCEL_ORG_ID and VERCEL_PROJECT_ID (from .vercel/project.json).
+name: Deploy
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+env:
+  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+  VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+  VERCEL_CLI: vercel@64.2.0
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+
+      - name: Is this version already released?
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="web-v$VERSION"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "release=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::$TAG is already released. This push gets a preview deploy only. Raise \"version\" in package.json to release it."
+          else
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check the Vercel token is set
+        if: env.VERCEL_TOKEN == ''
+        run: echo "::warning::No VERCEL_TOKEN secret, so nothing was deployed. Add it under Settings > Secrets and variables > Actions."
+
+      - name: Deploy to production and tag the version
+        if: env.VERCEL_TOKEN != '' && steps.version.outputs.release == 'true'
+        run: |
+          npx --yes $VERCEL_CLI pull --yes --environment=production --token="$VERCEL_TOKEN"
+          npx --yes $VERCEL_CLI build --prod --token="$VERCEL_TOKEN"
+          URL=$(npx --yes $VERCEL_CLI deploy --prebuilt --prod --token="$VERCEL_TOKEN")
+          echo "::notice::Released ${{ steps.version.outputs.tag }} at $URL"
+          git tag -a "${{ steps.version.outputs.tag }}" -m "Deployed ${{ steps.version.outputs.tag }}"
+          git push origin "${{ steps.version.outputs.tag }}"
+
+      - name: Preview deploy
+        if: env.VERCEL_TOKEN != '' && steps.version.outputs.release == 'false'
+        run: |
+          npx --yes $VERCEL_CLI pull --yes --environment=preview --token="$VERCEL_TOKEN"
+          npx --yes $VERCEL_CLI build --token="$VERCEL_TOKEN"
+          URL=$(npx --yes $VERCEL_CLI deploy --prebuilt --token="$VERCEL_TOKEN")
+          echo "::notice::Preview at $URL"

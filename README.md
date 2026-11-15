@@ -202,13 +202,20 @@ Optional: `TS_API_KEY`, `TS_GRADER_MODEL`, `TS_RUNS`. This check has not yet bee
 
 ## Putting it online
 
-The game is a static site: any static host works. The repository is set up for Vercel.
+The game is a static site: any static host works. This repository deploys to Vercel by itself through GitHub Actions (`.github/workflows/deploy.yml`):
 
 1. Raise `"version"` in `package.json` and commit.
-2. `npx vercel login` (once).
-3. `bash scripts/deploy.sh`
+2. Push to `master`.
 
-The script refuses to run with uncommitted changes, runs the tests, builds, deploys, and creates the git tag `web-vX.Y.Z` on the deployed commit. The version is shown in the page footer. To roll back, check out the previous tag and deploy it.
+The workflow runs the tests, builds, deploys to production and creates the git tag `web-vX.Y.Z` on the deployed commit. A push that does not change the version gets a preview deploy only, so every production deploy is a named version. The version is shown in the page footer.
+
+One-time setup on GitHub (Settings > Secrets and variables > Actions):
+- Secret `VERCEL_TOKEN`: a token from vercel.com/account/tokens.
+- Variables `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID`: from `.vercel/project.json` after `npx vercel link`.
+
+Deploying from your own computer still works: `npx vercel login` once, then `bash scripts/deploy.sh` (same checks, same tag).
+
+To roll back: check out the previous tag and run `bash scripts/deploy.sh`, or run the workflow by hand on that tag from the Actions tab.
 
 Host the game on its own address. A host that shares one address between many sites would let those sites read the keys stored by the game.
 
