@@ -53,7 +53,9 @@ export default function Report({ report, after, chapter, best, bestBefore, onFol
             <p>Teach the same class a short lesson on the goals they missed and the wrong beliefs they still hold. Its score is kept apart from the course.</p>
             <button className="go" onClick={onFollowUp}>Teach a follow-up lesson</button>
           </>
-        ) : <p>Nothing to fix: well taught.</p>}
+        ) : after.factCheck.checked && after.factCheck.errors === null
+          ? <p>The class got every goal, but your teaching could not be checked for mistakes this time.</p>
+          : <p>Nothing to fix: well taught.</p>}
       </div>
 
       {explain && (
