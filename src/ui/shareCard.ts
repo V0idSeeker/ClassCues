@@ -29,12 +29,12 @@ export function drawCard(d: CardData): HTMLCanvasElement {
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
-  const chalk = '"Segoe Print", "Comic Sans MS", "Bradley Hand", cursive';
+  const chalk = '"Cormorant Garamond", Georgia, serif';
 
   // A chalkboard in a wooden frame.
-  ctx.fillStyle = '#7a4f2a';
+  ctx.fillStyle = '#6b4a2e';
   ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = '#2f4a3a';
+  ctx.fillStyle = '#27443a';
   ctx.fillRect(40, 40, W - 80, H - 80);
   ctx.fillStyle = '#f5f7f2';
   ctx.textAlign = 'center';
@@ -51,7 +51,7 @@ export function drawCard(d: CardData): HTMLCanvasElement {
   line(t('card.reportCard'), 220, 38, '#c9d6cc');
   if (d.course) line(d.course, 320, 36, '#c9d6cc');
   line(d.lesson, 380, 48);
-  line(t('card.average', { average: d.average }), 500, 72, '#ffd866');
+  line(t('card.average', { average: d.average }), 500, 72, '#d9b46a');
   line(t('card.best', { best: d.best, level: d.difficulty }), 580, 38);
   line(d.rank, 680, 50);
   if (d.challenge) {

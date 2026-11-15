@@ -94,7 +94,7 @@ function kid(s: Student, x: number, y: number, scale: number, selected: boolean,
   const blink = (s.persona.name.length * 0.7) % 4;
   return `<g class="kid${selected ? ' sel' : ''}${talking ? ' talking' : ''}" transform="translate(${x} ${y}) scale(${scale})" data-id="${esc(s.persona.id)}" role="button" tabindex="0" aria-pressed="${selected}" aria-label="${name}, ${st.label}">`
     + `${bust(l, s.emotion, blink)}<path d="M-36,-46 Q-46,-28 -34,-20" ${sleeve}/>${rightArm}`
-    + `<rect x="-64" y="-16" width="128" height="14" rx="3" fill="#e8c084" ${O}/><rect x="-58" y="-2" width="116" height="48" fill="#c9955c" ${O}/>`
+    + `<rect x="-64" y="-16" width="128" height="14" rx="3" fill="#c79a6a" ${O}/><rect x="-58" y="-2" width="116" height="48" fill="#9b6b43" ${O}/>`
     + `<rect x="-16" y="-24" width="32" height="9" fill="#fff" ${O} stroke-width="1.5" transform="rotate(-4)"/>`
     + `<circle cx="-34" cy="-18" r="8" ${skin}/>${s.handUp ? '' : `<circle cx="34" cy="-18" r="8" ${skin}/>`}`
     + `<rect class="plate" x="-32" y="10" width="64" height="22" rx="5" ${O}/><text x="0" y="26" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="800" font-size="15" fill="${INK}">${name}</text>${bubble}</g>`;
@@ -120,16 +120,16 @@ export function boardArea(inset: number): { left: string; top: string; width: st
 }
 
 /** Wall, floor, window, empty board, clock and poster. The board text is an HTML layer on top. */
-const ROOM = () => `<rect width="1200" height="580" fill="#cfe0ea"/><rect y="580" width="1200" height="270" fill="#d9a56b"/>`
-  + `<path d="M0,650 H1200 M0,740 H1200 M150,580 V650 M520,580 V650 M900,580 V650 M330,650 V740 M720,650 V740 M1080,650 V740 M120,740 V850 M560,740 V850 M960,740 V850" stroke="#bd8850" stroke-width="2" fill="none"/>`
-  + `<rect y="568" width="1200" height="14" fill="#8fa9b8" ${O}/>`
+const ROOM = () => `<rect width="1200" height="580" fill="#e9e1cf"/><rect y="580" width="1200" height="270" fill="#b9895a"/>`
+  + `<path d="M0,650 H1200 M0,740 H1200 M150,580 V650 M520,580 V650 M900,580 V650 M330,650 V740 M720,650 V740 M1080,650 V740 M120,740 V850 M560,740 V850 M960,740 V850" stroke="#9c6f45" stroke-width="2" fill="none"/>`
+  + `<rect y="568" width="1200" height="14" fill="#2f4a3e" ${O}/>`
   + `<rect x="30" y="70" width="156" height="200" rx="6" fill="#fff" ${O}/><rect x="42" y="82" width="132" height="176" fill="#9fd4f5" ${O}/>`
   + `<circle cx="148" cy="112" r="16" fill="#ffd95a"/><path transform="translate(-30 20) scale(.8)" d="M96,170 q14,-22 34,-8 q12,-18 32,-4 q22,-4 20,14 q-2,10 -16,10 h-62 q-14,-2 -8,-12Z" fill="#fff"/>`
   + `<path d="M108,82 V258 M42,170 H174" stroke="#fff" stroke-width="8"/><path d="M108,82 V258 M42,170 H174" stroke="${INK}" stroke-width="1" opacity=".35"/>`
-  + `<rect x="${BOARD.x - 14}" y="${BOARD.y - 14}" width="${BOARD.w + 28}" height="${BOARD.h + 28}" rx="6" fill="#9a6a3c" ${O}/><rect x="${BOARD.x}" y="${BOARD.y}" width="${BOARD.w}" height="${BOARD.h}" fill="#2f5d50" ${O}/>`
-  + `<rect x="220" y="430" width="760" height="12" fill="#b98852" ${O}/><rect x="270" y="424" width="34" height="7" rx="3" fill="#fff"/><rect x="314" y="424" width="22" height="7" rx="3" fill="#ffd95a"/>`
+  + `<rect x="${BOARD.x - 14}" y="${BOARD.y - 14}" width="${BOARD.w + 28}" height="${BOARD.h + 28}" rx="6" fill="#6b4a2e" ${O}/><rect x="${BOARD.x}" y="${BOARD.y}" width="${BOARD.w}" height="${BOARD.h}" fill="#27443a" ${O}/>`
+  + `<rect x="220" y="430" width="760" height="12" fill="#7a5534" ${O}/><rect x="270" y="424" width="34" height="7" rx="3" fill="#fff"/><rect x="314" y="424" width="22" height="7" rx="3" fill="#ffd95a"/>`
   + `<circle cx="1095" cy="110" r="38" fill="#fff" ${O} stroke-width="4"/><path d="M1095,110 V84 M1095,110 L1115,122" stroke="${INK}" stroke-width="4" stroke-linecap="round"/><circle cx="1095" cy="110" r="3" fill="${INK}"/>`
-  + `<rect x="1016" y="180" width="158" height="96" rx="4" fill="#ffe08a" ${O}/><text x="1095" y="236" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="800" font-size="20" fill="${INK}">${esc(t('scene.poster'))}</text>`;
+  + `<rect x="1016" y="180" width="158" height="96" rx="4" fill="#f4ecd8" ${O}/><text x="1095" y="236" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="800" font-size="20" fill="${INK}">${esc(t('scene.poster'))}</text>`;
 
 export const SCENE_VIEWBOX = '0 0 1200 850';
 const BACK_X = [160, 380, 600, 820, 1040];
