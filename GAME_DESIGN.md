@@ -32,7 +32,7 @@ This section is what gets built first.
 | Teacher input | Typing. Microphone input comes later. |
 | Players | Single-player. |
 | Tone | Light comedy. |
-| Language | English UI first. |
+| Language | English, French, Spanish and Arabic (right to left). The AI students speak, take notes and answer in the chosen language; built-in course content stays English. |
 | Notebooks | Visible during the lesson, with a toggle for realistic mode, which hides the notebooks and the goal counters. |
 
 The reasons, and what was rejected, are in §0.13.
@@ -875,8 +875,7 @@ The questions that stood here (platform, first module, class size, single-player
 
 Still open:
 
-1. Second UI language after English.
-2. After version 1: who makes illustrated character art?
+1. After version 1: who makes illustrated character art?
 
 Checked on 2026-11-13 with a new OpenRouter account: it had no credit. Paid models and the `openrouter/auto` router answered "requires more credits". What a new account does get is 50 requests a day on models whose name ends in `:free` (13 of 470 models that day), about one lesson. So the zero-cost path is free models, and with no model chosen the game uses the `openrouter/free` router. Free models were slow in that check: about 40 seconds per call. Some models refuse to have thinking turned off; the game then resends without those flags and remembers it.
 

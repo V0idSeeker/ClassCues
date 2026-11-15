@@ -7,6 +7,7 @@ The point of the game is to learn a subject by teaching it. Students ask why thi
 - Runs in a web browser. Nothing to install to play a hosted copy.
 - You bring your own AI: a free key from Groq, Google Gemini or OpenRouter, or a model running on your own computer.
 - No account, no server. Your key, lessons and scores stay in your browser.
+- In English, French, Spanish or Arabic (Settings). Students speak, write and answer in that language; built-in courses are in English.
 
 ## What you can do
 
