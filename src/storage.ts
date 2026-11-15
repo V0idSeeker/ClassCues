@@ -115,7 +115,7 @@ export function saveLesson(state: LessonState, now: number): void {
 
 export function loadLesson(now: number): LessonState | null {
   const saved = read<{ state: LessonState; elapsed: number }>(localStorage, K.lesson);
-  return saved ? { ...saved.state, startedAt: now - saved.elapsed } : null;
+  return saved ? { ...saved.state, timeline: saved.state.timeline ?? [], startedAt: now - saved.elapsed } : null;
 }
 
 /** The automatically chosen model that last answered for this provider address. */

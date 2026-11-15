@@ -1,9 +1,9 @@
-import { EMOTIONS, applyNotes, boardAdded, patchStudent, pickReactor, pictureKey, shouldReact } from './lesson';
+import { EMOTIONS, applyNotes, atmosphere, coverage, boardAdded, patchStudent, pickReactor, pictureKey, shouldReact } from './lesson';
 import { gradeMcq, gradeWritten, planQuiz } from './quiz';
 import type { Answer, Grade } from './quiz';
 import { pick } from './rng';
 import type { Rng } from './rng';
-import type { Ai, Emotion, LessonState, Student, TranscriptLine, Turn } from './types';
+import type { Ai, Emotion, LessonState, Student, TranscriptLine, Turn, TurnSnapshot } from './types';
 
 const feeling = (e: Emotion, fallback: Emotion): Emotion => (EMOTIONS.includes(e) ? e : fallback);
 const byId = (state: LessonState, id: string): Student => {
@@ -17,6 +17,30 @@ const byId = (state: LessonState, id: string): Student => {
  * so a failed AI call loses nothing and the same turn can be sent again.
  */
 export async function teachTurn(
+  state: LessonState, turn: Turn, ai: Ai, rng: Rng, now: number, lastReactionAt: number,
+): Promise<{ state: LessonState; reactedAt: number | null }> {
+  const out = await runTurn(state, turn, ai, rng, now, lastReactionAt);
+  // A turn that changed nothing gets no snapshot, just as it costs no turn.
+  return out.state.turns === state.turns ? out : { ...out, state: withSnapshot(out.state, state.transcript.length) };
+}
+
+/** Records how the class stands after the turn just taught. */
+function withSnapshot(state: LessonState, start: number): LessonState {
+  const a = atmosphere(state);
+  const snap: TurnSnapshot = {
+    turn: state.turns,
+    start,
+    end: state.transcript.length,
+    mood: a.mood,
+    bored: a.bored,
+    confused: a.confused,
+    hands: state.students.filter(s => s.handUp).length,
+    goals: Object.values(coverage(state)).filter(n => n > 0).length,
+  };
+  return { ...state, timeline: [...state.timeline, snap] };
+}
+
+async function runTurn(
   state: LessonState, turn: Turn, ai: Ai, rng: Rng, now: number, lastReactionAt: number,
 ): Promise<{ state: LessonState; reactedAt: number | null }> {
   const say = turn.say.trim();

@@ -21,9 +21,10 @@ import MainMenu from './ui/MainMenu';
 import Modules from './ui/Modules';
 import Prepare from './ui/Prepare';
 import Report from './ui/Report';
+import Review from './ui/Review';
 import Settings from './ui/Settings';
 
-type Screen = 'menu' | 'settings' | 'modules' | 'prepare' | 'classroom' | 'quiz' | 'report';
+type Screen = 'menu' | 'settings' | 'modules' | 'prepare' | 'classroom' | 'quiz' | 'report' | 'review';
 
 const explain = (e: unknown) => (e instanceof AiError ? e.message : `Something went wrong: ${String(e)}`);
 
@@ -37,7 +38,7 @@ export default function App() {
   const [lesson, setLesson] = useState<LessonState | null>(null);
   // The lesson being studied on the prepare screen, before it starts.
   const [studying, setStudying] = useState<Chapter | null>(null);
-  const [report, setReport] = useState<{ report: ReportType; after: AfterQuiz; chapter: Chapter; best: number; bestBefore: number | null } | null>(null);
+  const [report, setReport] = useState<{ report: ReportType; after: AfterQuiz; chapter: Chapter; best: number; bestBefore: number | null; lesson: LessonState } | null>(null);
   const [used, setUsed] = useState(loadUsed);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -186,7 +187,7 @@ export default function App() {
       }
       setProgress({ done: ++done, total });
 
-      setReport({ report: result, after, chapter: s.chapter, best: scores[s.chapter.id].best, bestBefore: before[s.chapter.id]?.best ?? null });
+      setReport({ report: result, after, chapter: s.chapter, best: scores[s.chapter.id].best, bestBefore: before[s.chapter.id]?.best ?? null, lesson: s });
       setScreen('report');
     } catch (e) {
       setError(explain(e));
@@ -262,7 +263,9 @@ export default function App() {
         </div>
       )}
 
-      {screen === 'report' && report && <Report report={report.report} after={report.after} chapter={report.chapter} best={report.best} bestBefore={report.bestBefore} onAgain={() => setScreen('modules')} onHelp={() => openHelp('report')} />}
+      {screen === 'report' && report && <Report report={report.report} after={report.after} chapter={report.chapter} best={report.best} bestBefore={report.bestBefore} onAgain={() => setScreen('modules')} onReview={() => setScreen('review')} onHelp={() => openHelp('report')} />}
+
+      {screen === 'review' && report && <Review lesson={report.lesson} errors={report.after.factCheck.errors ?? []} onBack={() => setScreen('report')} />}
 
       {help && <Codex entry={help} onOpen={setHelp} onClose={() => setHelp(null)} />}
 
