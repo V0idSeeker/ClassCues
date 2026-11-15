@@ -101,7 +101,7 @@ export default function Classroom(p: Props) {
       <TopBar
         state={state} now={now} used={p.used} busy={p.busy} goalsReached={goalsReached} goalsOpen={panel === 'goals'}
         realistic={realistic} voiceOn={p.voiceOn} help={help}
-        onGoals={() => toggle('goals')} onRealistic={setRealistic} onVoice={p.onVoice}
+        onGoals={() => toggle('goals')} onNotes={() => toggle('notes')} onRealistic={setRealistic} onVoice={p.onVoice}
         onHelp={() => p.onHelp()} onLevels={p.onLevels} onSettings={p.onSettings} onMenu={p.onMenu} onBell={p.onBell}
       />
 

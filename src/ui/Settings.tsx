@@ -3,7 +3,7 @@ import { ping } from '../ai/calls';
 import { autoModels, listModelInfo } from '../ai/models';
 import type { ModelInfo } from '../ai/models';
 import { AiError } from '../ai/provider';
-import { PRESETS, addLog, clearMemory, loadGoodModel, loadTips, logText, saveGoodModel, saveTips } from '../storage';
+import { PRESETS, addLog, clearMemory, loadGoodModel, loadSkipPrepare, loadTips, logText, saveSkipPrepare, saveGoodModel, saveTips } from '../storage';
 import type { Settings as SettingsType } from '../storage';
 
 interface Props { settings: SettingsType; used: number; onSave(s: SettingsType): void; onPlay(): void; onMenu(): void; onHelp(): void }
@@ -13,6 +13,7 @@ export default function Settings({ settings, used, onSave, onPlay, onMenu, onHel
   const [test, setTest] = useState<{ ok: boolean; text: string } | null>(null);
   const [testing, setTesting] = useState(false);
   const [tipsOff, setTipsOff] = useState(() => loadTips().off);
+  const [skipPrepare, setSkipPrepare] = useState(loadSkipPrepare);
   const set = (patch: Partial<SettingsType>) => { setS({ ...s, ...patch }); setTest(null); };
   const preset = Object.values(PRESETS).find(p => p.baseUrl === s.baseUrl);
   const [models, setModels] = useState<ModelInfo[]>([]);
@@ -86,6 +87,7 @@ export default function Settings({ settings, used, onSave, onPlay, onMenu, onHel
 
         <label className="check"><input type="checkbox" checked={s.thinkingOff} onChange={e => set({ thinkingOff: e.target.checked })} />Ask the model not to "think" first (turn off if the provider rejects requests)</label>
         <label className="check"><input type="checkbox" checked={!tipsOff} onChange={e => { const off = !e.target.checked; setTipsOff(off); saveTips({ off, seen: off ? loadTips().seen : [] }); }} />Show tips during lessons (turning this back on shows every tip again)</label>
+        <label className="check"><input type="checkbox" checked={!skipPrepare} onChange={e => { setSkipPrepare(!e.target.checked); saveSkipPrepare(!e.target.checked); }} />Show the study screen before each lesson</label>
         <label className="check"><input type="checkbox" checked={s.forceVision} onChange={e => set({ forceVision: e.target.checked })} />My model can read pictures (drawing on the board is offered only for models that can; Gemini and marked OpenRouter models are detected by themselves)</label>
         <label className="check"><input type="checkbox" checked={s.voiceOn} onChange={e => set({ voiceOn: e.target.checked })} />Students speak aloud (uses your browser's voices; text is always shown)</label>
         <label className="check"><input type="checkbox" checked={s.debugLog} onChange={e => set({ debugLog: e.target.checked })} />Keep a debug log of AI requests (never includes the key)</label>

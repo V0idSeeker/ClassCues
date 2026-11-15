@@ -12,16 +12,17 @@ import { computeReport } from './game/report';
 import type { Report as ReportType } from './game/report';
 import { askStudent, hearStudent, pickForClassQuestion, runQuiz, teachTurn } from './game/runLesson';
 import type { Chapter, LessonState, Turn } from './game/types';
-import { addLog, bumpUsed, clearLesson, hasSettings, helpSeen, markHelpSeen, loadGoodModel, loadLesson, loadMemory, loadScores, saveScores, saveGoodModel, loadSettings, saveMemory, loadUsed, saveLesson, saveSettings } from './storage';
+import { addLog, bumpUsed, clearLesson, hasSettings, helpSeen, markHelpSeen, loadGoodModel, loadLesson, loadMemory, loadScores, saveScores, saveGoodModel, loadSettings, loadSkipPrepare, saveMemory, loadUsed, saveLesson, saveSettings } from './storage';
 import type { Settings as SettingsType } from './storage';
 import Classroom from './ui/Classroom';
 import Codex from './ui/help/Codex';
 import MainMenu from './ui/MainMenu';
 import Modules from './ui/Modules';
+import Prepare from './ui/Prepare';
 import Report from './ui/Report';
 import Settings from './ui/Settings';
 
-type Screen = 'menu' | 'settings' | 'modules' | 'classroom' | 'quiz' | 'report';
+type Screen = 'menu' | 'settings' | 'modules' | 'prepare' | 'classroom' | 'quiz' | 'report';
 
 const explain = (e: unknown) => (e instanceof AiError ? e.message : `Something went wrong: ${String(e)}`);
 
@@ -33,6 +34,8 @@ export default function App() {
   const [firstVisit, setFirstVisit] = useState(() => !helpSeen());
   const openHelp = (entry = 'goal') => { setHelp(entry); markHelpSeen(); setFirstVisit(false); };
   const [lesson, setLesson] = useState<LessonState | null>(null);
+  // The lesson being studied on the prepare screen, before it starts.
+  const [studying, setStudying] = useState<Chapter | null>(null);
   const [report, setReport] = useState<{ report: ReportType; chapter: Chapter; best: number; bestBefore: number | null } | null>(null);
   const [used, setUsed] = useState(loadUsed);
   const [busy, setBusy] = useState(false);
@@ -206,8 +209,12 @@ export default function App() {
       )}
 
       {screen === 'modules' && (
-        <Modules deps={deps} lessonRunning={lesson !== null} onResume={() => setScreen('classroom')} onPlay={play} onSettings={() => setScreen('settings')}
+        <Modules deps={deps} lessonRunning={lesson !== null} onResume={() => setScreen('classroom')} onPlay={c => { if (loadSkipPrepare()) play(c); else { setStudying(c); setScreen('prepare'); } }} onSettings={() => setScreen('settings')}
           onMenu={() => setScreen('menu')} onHelp={() => openHelp('courses')} />
+      )}
+
+      {screen === 'prepare' && studying && (
+        <Prepare chapter={studying} onStart={() => play(studying)} onBack={() => setScreen('modules')} onHelp={() => openHelp('lesson')} />
       )}
 
       {screen === 'classroom' && lesson && (

@@ -191,3 +191,14 @@ export function addLog(e: LogEntry): void {
 export function logText(): string {
   return JSON.stringify(log, null, 2);
 }
+
+/** True when the player chose to go straight from Teach to the classroom, without the study screen. */
+export function loadSkipPrepare(): boolean {
+  return read<boolean>(localStorage, 'ts.skipPrepare') ?? false;
+}
+
+export function saveSkipPrepare(skip: boolean): void {
+  try {
+    localStorage.setItem('ts.skipPrepare', JSON.stringify(skip));
+  } catch { /* storage unavailable: the choice lasts for this visit only */ }
+}

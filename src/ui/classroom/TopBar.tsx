@@ -14,6 +14,7 @@ interface Props {
   voiceOn: boolean;
   help(entry: string, what: string): ReactNode;
   onGoals(): void;
+  onNotes(): void;
   onRealistic(on: boolean): void;
   onVoice(on: boolean): void;
   onHelp(): void;
@@ -45,6 +46,7 @@ export default function TopBar(p: Props) {
           <span className="dim">AI requests today: {p.used}</span>
           <label className="check"><input type="checkbox" checked={p.voiceOn} onChange={e => { if (!e.target.checked) stopSpeaking(); p.onVoice(e.target.checked); }} />Voices</label>
           <label className="check"><input type="checkbox" checked={p.realistic} onChange={e => p.onRealistic(e.target.checked)} />Realistic mode</label>
+          <button onClick={p.onNotes}>Lesson notes</button>
           <button onClick={p.onHelp}>Help</button>
           <button onClick={p.onLevels}>Lessons and PDF import</button>
           <button onClick={p.onSettings}>Settings</button>

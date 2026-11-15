@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import type { LessonState, Student } from '../../game/types';
+import StudyNotes from '../StudyNotes';
 
 /** What the middle of the right-hand column shows: the conversation, or one of the panels over it. */
-export type Panel = 'talk' | 'notebook' | 'goals';
+export type Panel = 'talk' | 'notebook' | 'goals' | 'notes';
 
 interface Props {
   panel: Panel;
@@ -50,6 +51,12 @@ export default function Panels({ panel, state, student, inNotes, realistic, help
               {!realistic && <span className="pips">{state.students.map((_, i) => <i key={i} className={i < inNotes[o.id] ? 'on' : ''} />)}</span>}
             </div>
           ))}
+        </div>
+      )}
+      {panel === 'notes' && (
+        <div className="sheet">
+          <div className="row"><h2 className="grow">Lesson notes</h2><button onClick={onClose}>Close</button></div>
+          <StudyNotes chapter={state.chapter} />
         </div>
       )}
     </div>
