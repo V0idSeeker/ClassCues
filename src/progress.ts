@@ -1,13 +1,18 @@
-// Goal results of every lesson run, to find the goals classes keep missing.
-
+// What the game keeps about finished lessons: goal results per run (for often-missed goals),
+// and every play (for teacher rank and badges).
+import { builtInCourses } from './content';
+import type { Play } from './game/rank';
+import { loadLevels } from './storage';
 import type { Report } from './game/report';
 import type { Objective } from './game/types';
+
+// ---------- Goal results of every lesson run, to find the goals classes keep missing.
 
 export interface GoalResult { id: string; inNotes: number; quizAverage: number | null }
 /** Per lesson id: each run's goal results, oldest first. */
 export type RunHistory = Record<string, GoalResult[][]>;
 
-const KEY = 'ts.runs';
+const RUNS_KEY = 'ts.runs';
 const KEEP_RUNS = 10;
 const RECENT_RUNS = 3;
 
@@ -27,7 +32,7 @@ export function oftenMissed(history: RunHistory, lessonId: string, objectives: O
 
 export function loadRuns(): RunHistory {
   try {
-    return JSON.parse(localStorage.getItem(KEY) ?? '{}') as RunHistory;
+    return JSON.parse(localStorage.getItem(RUNS_KEY) ?? '{}') as RunHistory;
   } catch {
     return {};
   }
@@ -35,6 +40,37 @@ export function loadRuns(): RunHistory {
 
 export function saveRuns(history: RunHistory): void {
   try {
-    localStorage.setItem(KEY, JSON.stringify(history));
+    localStorage.setItem(RUNS_KEY, JSON.stringify(history));
   } catch { /* storage full or unavailable: this run is not kept */ }
+}
+
+// ---------- Every finished lesson, for teacher rank and badges.
+
+const PLAYS_KEY = 'ts.plays';
+/** ponytail: keeps the last 500 plays (about 100 KB). Older plays drop out of the "always improving" check only; best scores stay in ts.scores. */
+const MAX_PLAYS = 500;
+
+export function loadPlays(): Play[] {
+  try {
+    const raw = localStorage.getItem(PLAYS_KEY);
+    const v: unknown = raw ? JSON.parse(raw) : [];
+    return Array.isArray(v) ? (v as Play[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function addPlay(play: Play): Play[] {
+  const plays = [...loadPlays(), play].slice(-MAX_PLAYS);
+  try {
+    localStorage.setItem(PLAYS_KEY, JSON.stringify(plays));
+  } catch { /* storage full or unavailable: rank and badges miss this lesson */ }
+  return plays;
+}
+
+/** The lesson ids of every course: the built-in ones and those imported from PDFs. */
+export function courseLessonIds(): string[][] {
+  const byCourse = new Map<string, string[]>();
+  for (const l of loadLevels()) if (l.course) byCourse.set(l.course, [...(byCourse.get(l.course) ?? []), l.id]);
+  return [...builtInCourses.map(c => c.lessons.map(l => l.id)), ...byCourse.values()];
 }

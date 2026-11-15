@@ -1,7 +1,7 @@
 import type { LogEntry } from './ai/provider';
 import type { Scores } from './game/course';
 import type { ClassMemory } from './game/lesson';
-import type { Chapter, LessonState } from './game/types';
+import type { Chapter, Difficulty, LessonState } from './game/types';
 
 export interface Settings {
   baseUrl: string;
@@ -17,6 +17,8 @@ export interface Settings {
   voiceOn: boolean;
   /** The player says the model reads pictures. For local or unlisted models, where the game cannot tell. */
   forceVision: boolean;
+  /** How hard the class is: Normal is the game as designed. */
+  difficulty: Difficulty;
 }
 
 export const PRESETS: Record<string, { label: string; baseUrl: string; setup: string }> = {
@@ -54,7 +56,7 @@ export const PRESETS: Record<string, { label: string; baseUrl: string; setup: st
 
 const DEFAULTS: Settings = {
   baseUrl: PRESETS.openrouter.baseUrl, apiKey: '', studentModel: '', graderModel: '',
-  thinkingOff: true, rememberKey: true, dailyLimit: 0, debugLog: false, voiceOn: true, forceVision: false,
+  thinkingOff: true, rememberKey: true, dailyLimit: 0, debugLog: false, voiceOn: true, forceVision: false, difficulty: 'normal',
 };
 
 const K = { settings: 'ts.settings', key: 'ts.key', used: 'ts.used', lesson: 'ts.lesson6', art: 'ts.art', memory: 'ts.memory', scores: 'ts.scores', levels: 'ts.levels' };

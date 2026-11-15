@@ -33,6 +33,36 @@ describe('startLesson', () => {
   });
 });
 
+describe('difficulty', () => {
+  const at = (d?: 'easy' | 'normal' | 'hard' | 'inspection') => startLesson(builtInChapter, students, () => 0.5, 0, {}, d ? { difficulty: d } : {});
+  const base = (id: string) => find(start(), id).persona.traits.attention;
+
+  it('Normal is exactly the game as before', () => {
+    expect(at('normal').students).toEqual(start().students);
+    expect(at('normal').transcript).toEqual(start().transcript);
+    expect(at().difficulty).toBeUndefined();
+  });
+
+  it('Easy: only the carrier holds wrong beliefs, and attention goes up', () => {
+    const s = at('easy');
+    expect(s.students.filter(x => x.beliefs.length > 0).map(x => x.persona.archetype)).toEqual(['carrier']);
+    expect(find(s, 'tom').beliefs).toHaveLength(2);
+    for (const x of s.students) expect(x.persona.traits.attention).toBeCloseTo(Math.min(1, base(x.persona.id) + 0.15));
+  });
+
+  it('Hard and Inspection: everyone but the eager student holds a belief, the carrier three, attention down', () => {
+    for (const d of ['hard', 'inspection'] as const) {
+      const s = at(d);
+      expect(s.difficulty).toBe(d);
+      for (const x of s.students) {
+        const want = x.persona.archetype === 'eager' ? 0 : x.persona.archetype === 'carrier' ? 3 : 1;
+        expect(x.beliefs).toHaveLength(Math.min(want, builtInChapter.common_misconceptions.length));
+        expect(x.persona.traits.attention).toBeCloseTo(Math.max(0, base(x.persona.id) - 0.15));
+      }
+    }
+  });
+});
+
 describe('drawClass', () => {
   it('draws ten different students with every core archetype', () => {
     for (const seed of [0, 0.3, 0.77, 0.999]) {

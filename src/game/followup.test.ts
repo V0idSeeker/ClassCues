@@ -60,7 +60,7 @@ describe('follow-up chapter', () => {
     expect(new Set(c.common_misconceptions)).toEqual(new Set([...heldBefore, error.claim]));
 
     // The same class starts the follow-up with exactly those beliefs.
-    const next = startLesson(c, state.students.map(s => s.persona), () => 0.5, 0, {}, held);
+    const next = startLesson(c, state.students.map(s => s.persona), () => 0.5, 0, {}, { held });
     for (const s of next.students) expect(new Set(s.beliefs.map(b => b.text))).toEqual(new Set(held[s.persona.id]));
   });
 });

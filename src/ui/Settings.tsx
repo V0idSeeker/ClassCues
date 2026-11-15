@@ -5,6 +5,14 @@ import type { ModelInfo } from '../ai/models';
 import { AiError } from '../ai/provider';
 import { PRESETS, addLog, clearMemory, loadGoodModel, loadSkipPrepare, loadTips, logText, saveSkipPrepare, saveGoodModel, saveTips } from '../storage';
 import type { Settings as SettingsType } from '../storage';
+import type { Difficulty } from '../game/types';
+
+const DIFFICULTIES: { id: Difficulty; label: string; line: string }[] = [
+  { id: 'easy', label: 'Easy', line: 'Students pay a little more attention, and only one student starts with wrong ideas.' },
+  { id: 'normal', label: 'Normal', line: 'The class as designed: a few students start with wrong ideas.' },
+  { id: 'hard', label: 'Hard', line: 'Students pay less attention, and all but the eager one start with a wrong idea (one with three).' },
+  { id: 'inspection', label: 'Inspection', line: 'As Hard, and a right written answer that is not in the notes gets no marks. Your report is stamped.' },
+];
 
 interface Props { settings: SettingsType; used: number; onSave(s: SettingsType): void; onPlay(): void; onMenu(): void; onHelp(): void }
 
@@ -84,6 +92,13 @@ export default function Settings({ settings, used, onSave, onPlay, onMenu, onHel
 
         <label htmlFor="limit">Daily request limit for free models (0 = no limit). Used today: {used}</label>
         <input id="limit" type="number" min={0} value={s.dailyLimit} onChange={e => set({ dailyLimit: Math.max(0, Number(e.target.value) || 0) })} />
+
+        <fieldset className="difficulty">
+          <legend>Class difficulty</legend>
+          {DIFFICULTIES.map(d => (
+            <label key={d.id} className="check"><input type="radio" name="difficulty" checked={s.difficulty === d.id} onChange={() => set({ difficulty: d.id })} /><b>{d.label}</b>: {d.line}</label>
+          ))}
+        </fieldset>
 
         <label className="check"><input type="checkbox" checked={s.thinkingOff} onChange={e => set({ thinkingOff: e.target.checked })} />Ask the model not to "think" first (turn off if the provider rejects requests)</label>
         <label className="check"><input type="checkbox" checked={!tipsOff} onChange={e => { const off = !e.target.checked; setTipsOff(off); saveTips({ off, seen: off ? loadTips().seen : [] }); }} />Show tips during lessons (turning this back on shows every tip again)</label>

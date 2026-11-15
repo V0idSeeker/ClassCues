@@ -1,6 +1,7 @@
-import type { Ai, AnswerResult, Chapter, ExplainBackResult, FactCheckResult, GraderResult, NoteTakerResult, QuizTakerResult, ReactionResult, Student, TranscriptLine } from '../game/types';
+import type { Ai, AnswerResult, Chapter, ChallengeResult, ExplainBackResult, FactCheckResult, GraderResult, NoteTakerResult, QuizTakerResult, ReactionResult, Student, TranscriptLine } from '../game/types';
 import { normalizeChapter, validateChapter } from '../game/validate';
 import { answerPrompt } from './prompts/answer';
+import { challengePrompt } from './prompts/challenge';
 import { chapterGeneratorPrompt } from './prompts/chapterGenerator';
 import type { CourseContext } from './prompts/chapterGenerator';
 import chapterSchema from './schemas/chapterGenerator.json';
@@ -14,6 +15,7 @@ import { reactionPrompt } from './prompts/reaction';
 import { callJson, preferModel } from './provider';
 import type { ChatMessage, LogEntry, ProviderSettings } from './provider';
 import answerSchema from './schemas/answer.json';
+import challengeSchema from './schemas/challenge.json';
 import explainBackSchema from './schemas/explainBack.json';
 import factCheckSchema from './schemas/factCheck.json';
 import graderSchema from './schemas/grader.json';
@@ -97,6 +99,13 @@ const isExplainBack = (v: unknown): v is ExplainBackResult => rec(v) && typeof v
 /** After the quiz: one student explains the lesson in their own words, from their notebook only. */
 export async function explainBack(d: AiDeps, student: Student, lessonTitle: string): Promise<ExplainBackResult> {
   return caller(d)(d.studentModel, 'explain_back', explainBackSchema, explainBackPrompt(student, lessonTitle), isExplainBack);
+}
+
+const isChallenge = (v: unknown): v is ChallengeResult => rec(v) && typeof v.met === 'boolean' && typeof v.reason === 'string';
+
+/** After the quiz: judges a challenge that code cannot check, from the whole lesson. */
+export async function judgeChallenge(d: AiDeps, title: string, detection: string, transcript: TranscriptLine[]): Promise<ChallengeResult> {
+  return caller(d)(d.graderModel, 'challenge_judge', challengeSchema, challengePrompt(title, detection, transcript), isChallenge);
 }
 
 const isChapter = (v: unknown): v is Chapter => validateChapter(v).length === 0;

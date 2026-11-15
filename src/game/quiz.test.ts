@@ -35,6 +35,12 @@ describe('grading', () => {
     expect(gradeWritten(quiz[2], { ...row, supported_by_notes: true }).fraction).toBe(1);
   });
 
+  it('Inspection marking: a right answer the notes do not support gets nothing', () => {
+    const row = { student_id: 'aisha', score: 2, max: 2, supported_by_notes: false, feedback: 'ok' };
+    expect(gradeWritten(quiz[2], row, true).fraction).toBe(0);
+    expect(gradeWritten(quiz[2], { ...row, supported_by_notes: true }, true).fraction).toBe(1);
+  });
+
   it('survives odd grader numbers', () => {
     const row = { student_id: 'aisha', score: 5, max: 2, supported_by_notes: true, feedback: '' };
     expect(gradeWritten(quiz[2], row).fraction).toBe(1);
