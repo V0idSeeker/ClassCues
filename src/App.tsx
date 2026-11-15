@@ -8,11 +8,13 @@ import { AiError } from './ai/provider';
 import { studentPool } from './content';
 import { AFTER_QUIZ_REQUESTS, mustRingBell, quizReserve } from './game/budget';
 import { recordScore } from './game/course';
+import { followUpChapter, heldAtBell } from './game/followup';
 import { drawClass, lessonOver, mergeTurns, rememberLesson, startLesson } from './game/lesson';
 import { closestToAverage, computeReport, missingGoals } from './game/report';
 import type { AfterQuiz, Report as ReportType } from './game/report';
 import { askStudent, hearStudent, pickForClassQuestion, runQuiz, teachTurn } from './game/runLesson';
-import type { Chapter, LessonState, Turn } from './game/types';
+import type { Chapter, LessonState, Persona, Turn } from './game/types';
+import { addRun, loadRuns, saveRuns } from './progress';
 import { addLog, bumpUsed, clearLesson, hasSettings, helpSeen, markHelpSeen, loadGoodModel, loadLesson, loadMemory, loadScores, saveScores, saveGoodModel, loadSettings, loadSkipPrepare, saveMemory, loadUsed, saveLesson, saveSettings } from './storage';
 import type { Settings as SettingsType } from './storage';
 import Classroom from './ui/Classroom';
@@ -23,6 +25,9 @@ import Prepare from './ui/Prepare';
 import Report from './ui/Report';
 import Review from './ui/Review';
 import Settings from './ui/Settings';
+
+/** A lesson about to be taught. A follow-up keeps the same class and the wrong beliefs it was left with. */
+interface Plan { chapter: Chapter; personas?: Persona[]; held?: Record<string, string[]> }
 
 type Screen = 'menu' | 'settings' | 'modules' | 'prepare' | 'classroom' | 'quiz' | 'report' | 'review';
 
@@ -37,8 +42,8 @@ export default function App() {
   const openHelp = (entry = 'goal') => { setHelp(entry); markHelpSeen(); setFirstVisit(false); };
   const [lesson, setLesson] = useState<LessonState | null>(null);
   // The lesson being studied on the prepare screen, before it starts.
-  const [studying, setStudying] = useState<Chapter | null>(null);
-  const [report, setReport] = useState<{ report: ReportType; after: AfterQuiz; chapter: Chapter; best: number; bestBefore: number | null; lesson: LessonState } | null>(null);
+  const [studying, setStudying] = useState<Plan | null>(null);
+  const [report, setReport] = useState<{ report: ReportType; after: AfterQuiz; chapter: Chapter; best: number; bestBefore: number | null; lesson: LessonState; followUp: Plan | null } | null>(null);
   const [used, setUsed] = useState(loadUsed);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -106,13 +111,16 @@ export default function App() {
     if (saved) commit(saved);
   }, []);
 
-  function play(chapter: Chapter) {
+  function play({ chapter, personas, held }: Plan) {
     queue.current = [];
     setError('');
     clearLesson();
-    commit(startLesson(chapter, drawClass(studentPool, Math.random), Math.random, Date.now(), loadMemory()));
+    commit(startLesson(chapter, personas ?? drawClass(studentPool, Math.random), Math.random, Date.now(), loadMemory(), held));
     setScreen('classroom');
   }
+
+  // The study screen first, unless the player chose to skip it.
+  const study = (plan: Plan) => { if (loadSkipPrepare()) play(plan); else { setStudying(plan); setScreen('prepare'); } };
 
   // Sends queued turns one call at a time. Turns typed while a call runs are merged into the next call.
   async function pump() {
@@ -167,7 +175,9 @@ export default function App() {
       const before = loadScores();
       const scores = recordScore(before, s.chapter.id, result.classAverage, new Date().toISOString());
       saveScores(scores);
-      saveMemory(rememberLesson(loadMemory(), s));
+      const memory = loadMemory();
+      saveMemory(rememberLesson(memory, s));
+      saveRuns(addRun(loadRuns(), s.chapter.id, result.objectives));
       clearLesson();
       lessonRef.current = null;
       queue.current = [];
@@ -179,6 +189,9 @@ export default function App() {
       const said = teacherLines(s.transcript).length > 0;
       const after: AfterQuiz = { factCheck: { checked: said, errors: [] }, explain: null };
       if (said) after.factCheck.errors = await factCheck(deps, s.chapter, s.transcript).then(r => r.errors, () => null);
+      // Every student in class heard the mistakes: they remember them until the teacher corrects them.
+      const errors = after.factCheck.errors ?? [];
+      if (errors.length) saveMemory(rememberLesson(memory, s, errors.map(e => e.claim)));
       setProgress({ done: ++done, total });
       const student = s.students.find(st => st.persona.id === closestToAverage(result));
       if (student) {
@@ -187,7 +200,10 @@ export default function App() {
       }
       setProgress({ done: ++done, total });
 
-      setReport({ report: result, after, chapter: s.chapter, best: scores[s.chapter.id].best, bestBefore: before[s.chapter.id]?.best ?? null, lesson: s });
+      const held = heldAtBell(s, errors);
+      const fix = followUpChapter(s.chapter, result.objectives, held, errors);
+      const followUp = fix && { chapter: fix, personas: s.students.map(st => st.persona), held };
+      setReport({ report: result, after, chapter: s.chapter, best: scores[s.chapter.id].best, bestBefore: before[s.chapter.id]?.best ?? null, lesson: s, followUp });
       setScreen('report');
     } catch (e) {
       setError(explain(e));
@@ -226,12 +242,12 @@ export default function App() {
       )}
 
       {screen === 'modules' && (
-        <Modules deps={deps} lessonRunning={lesson !== null} onResume={() => setScreen('classroom')} onPlay={c => { if (loadSkipPrepare()) play(c); else { setStudying(c); setScreen('prepare'); } }} onSettings={() => setScreen('settings')}
+        <Modules deps={deps} lessonRunning={lesson !== null} onResume={() => setScreen('classroom')} onPlay={c => study({ chapter: c })} onSettings={() => setScreen('settings')}
           onMenu={() => setScreen('menu')} onHelp={() => openHelp('courses')} />
       )}
 
       {screen === 'prepare' && studying && (
-        <Prepare chapter={studying} onStart={() => play(studying)} onBack={() => setScreen('modules')} onHelp={() => openHelp('lesson')} />
+        <Prepare chapter={studying.chapter} onStart={() => play(studying)} onBack={() => setScreen('modules')} onHelp={() => openHelp('lesson')} />
       )}
 
       {screen === 'classroom' && lesson && (
@@ -263,7 +279,8 @@ export default function App() {
         </div>
       )}
 
-      {screen === 'report' && report && <Report report={report.report} after={report.after} chapter={report.chapter} best={report.best} bestBefore={report.bestBefore} onAgain={() => setScreen('modules')} onReview={() => setScreen('review')} onHelp={() => openHelp('report')} />}
+      {screen === 'report' && report && <Report report={report.report} after={report.after} chapter={report.chapter} best={report.best} bestBefore={report.bestBefore}
+        onFollowUp={report.followUp ? () => study(report.followUp!) : null} onAgain={() => setScreen('modules')} onReview={() => setScreen('review')} onHelp={() => openHelp('report')} />}
 
       {screen === 'review' && report && <Review lesson={report.lesson} errors={report.after.factCheck.errors ?? []} onBack={() => setScreen('report')} />}
 

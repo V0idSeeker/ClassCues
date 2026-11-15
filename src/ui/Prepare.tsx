@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Chapter } from '../game/types';
+import { loadRuns, oftenMissed } from '../progress';
 import { loadSkipPrepare, saveSkipPrepare } from '../storage';
 import StudyNotes from './StudyNotes';
 
@@ -8,6 +9,7 @@ interface Props { chapter: Chapter; onStart(): void; onBack(): void; onHelp(): v
 /** Study before teaching: the lesson's goals, notes and the wrong beliefs students will bring. */
 export default function Prepare({ chapter, onStart, onBack, onHelp }: Props) {
   const [skip, setSkip] = useState(loadSkipPrepare);
+  const [missed] = useState(() => oftenMissed(loadRuns(), chapter.id, chapter.objectives));
   return (
     <div className="page narrow">
       <div className="row">
@@ -18,6 +20,12 @@ export default function Prepare({ chapter, onStart, onBack, onHelp }: Props) {
         <button onClick={onHelp}>Help</button>
       </div>
       <div className="panel">
+        {missed.length > 0 && (
+          <>
+            <h2>Your classes often missed:</h2>
+            <ul>{missed.map(o => <li key={o.id}>{o.text}</li>)}</ul>
+          </>
+        )}
         <StudyNotes chapter={chapter} />
         <h2>How to teach it</h2>
         <ul>
