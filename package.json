@@ -2,6 +2,7 @@
   "name": "classcues",
   "private": true,
   "version": "0.7.1",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",

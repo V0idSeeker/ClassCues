@@ -41,7 +41,7 @@ Once opened, the game itself starts without a connection. Teaching still needs y
 You need [Node.js](https://nodejs.org) 20 or newer.
 
 ```bash
-git clone <this repository>
+git clone https://github.com/V0idSeeker/ClassCues.git
 cd ClassCues
 npm install
 npm run dev
@@ -275,3 +275,7 @@ Students cannot use what the AI model already knows:
 - Speaking with 🎤 uses your browser's speech recognition. In Chrome and Edge the audio is sent to Google or Microsoft to be turned into text. Its terms decide what happens to them.
 - Keys, lessons, scores and student memory are stored in your browser. Clearing the site's data removes them.
 - All students are fictional.
+
+## License
+
+MIT. See [LICENSE](LICENSE). You are free to use, change and share the game.
