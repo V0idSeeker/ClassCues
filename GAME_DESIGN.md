@@ -123,12 +123,14 @@ The older description below (three columns) is kept for history; where it disagr
 ### 0.4d Learning from mistakes, review and progression
 
 - **Follow-up lesson.** When the class missed goals (no student had them in notes, or a quiz average under 50%) or the fact check found mistakes, the report offers a follow-up: id `<id>-followup`, the same ten students, only the missed goals and their questions (all goals if only mistakes were found), and each student starts with the chapter's wrong beliefs they still held plus every fact-check claim. Its score is recorded under its own id, outside the course score.
-- **Mistakes remembered.** Class memory keeps the fact-check claims of each lesson. In later lessons, students who were present start with up to three of them as wrong beliefs, newest first; a belief a student dropped is forgotten for that student.
+- **Mistakes remembered.** Class memory keeps the fact-check claims of each lesson, but only for students whose notes show the claim (a note shares 3 meaningful words with it, or half of a short claim's words). In later lessons those students start with up to three of them as wrong beliefs, newest first; a belief a student dropped is forgotten for that student. A mistake the teacher disputes ("I disagree" on the report) is forgotten by everyone and does not count.
+- **Lesson score.** The class average minus 5 points per major and 2 per minor fact-check mistake (at most 15), never below 0. Best scores, course scores, rank and badges use the lesson score. The report shows the class average, the cost and the lesson score.
+- **Lesson notes during class.** Opening them is allowed but counted, and the report shows the count with a tip to teach from memory (teaching from notes gives little of the learning benefit).
 - **Often missed.** Each run's goal results are kept per lesson (last 10). Goals averaging under 50% over the last three runs show as "Often missed" on the lessons screen and the study screen.
 - **Review.** Each teacher turn records a snapshot (mood, bored and confused shares, hands up, goals covered). "Review the lesson" shows a chart of goals and mood over turns, the conversation grouped by turn, fact-check mistakes matched to the teacher line sharing the most words (at least three), and "class drifted" / "+N goals" markers.
 - **Challenges.** One of 15 teaching challenges is picked per lesson and shown in the top bar. Seven are checked in code from the transcript; eight by one AI call after the quiz (grader model). The daily-limit reserve includes it.
 - **Difficulty.** Easy (attention +0.15, only the carrier has wrong beliefs), Normal, Hard (attention −0.15, every student but the eager one has a wrong belief, the carrier three), Inspection (as Hard, and unsupported correct written answers score 0).
-- **Rank and badges.** Every finished lesson is recorded with its difficulty. Rank uses lessons taught and the average of each lesson's best score weighted by difficulty: Student Teacher, Substitute (1 lesson, 40%), Teacher (3, 55%), Senior Teacher (6, 70%), Head of Department (10, 80%). Eight badges mark milestones. Both show on the main menu and the report.
+- **Rank and badges.** Every finished lesson is recorded with its difficulty and lesson score. Rank uses lessons taught and, per lesson, the average of its last three plays weighted by difficulty (capped at 100): Student Teacher, Substitute (1 lesson, 40%), Teacher (3, 55%), Senior Teacher (6, 70%), Head of Department (10, 80%). Follow-up lessons do not count. Eight badges mark milestones; Spotless needs no mistakes in a lesson scoring 60% or more, and Always Improving needs three rising plays of one lesson, all at 50% or more and 10 points up in total. Both show on the main menu and the report.
 - **Share.** The report draws a report-card picture (lesson, course, scores, rank, difficulty, challenge, date, version) and shares it, or downloads it where sharing files is not supported. No answers, keys or typed text other than the lesson and course names.
 
 ### 0.5 AI calls and request budget
@@ -232,9 +234,9 @@ Limits:
 
 - **Unit tests** (Vitest) for scoring, gating and level validation, using fake AI responses.
 - **Scripted-lesson test.** A command-line script runs four scripted lessons against a real model: good, sloppy, wrong, and empty. It runs on a local model or on credit, never on a free daily limit (it needs about 170 requests). The AI and game logic must not depend on the browser page, so the script can reuse them.
-- **Pass marks**, averaged over 3 runs:
+- **Pass marks**, averaged over 5 runs (TS_RUNS). Each run draws a new class (TS_SEED repeats one), the same class for every lesson of that run, so lessons are compared pair by pair; the script prints the 95% range of each gap:
   - Good beats sloppy, and sloppy beats wrong, by at least 15 points each.
-  - Empty lesson (leak test): at most 10% on written questions, and multiple choice within chance (25% ± 10).
+  - Empty lesson (leak test): at most 10% on written questions, and no multiple-choice answer from the model (with no notes on a goal, code picks the answer at random). A student with nothing in their notebook or memory never counts as note-supported, whatever the grader says.
 - The reference models that define "playable" are picked in build step 1 and recorded here.
 
 **Definition of done for version 1:** a player can teach the built-in chapter and an imported PDF chapter from start to report, on OpenRouter and on one local preset, and the scripted-lesson test passes its marks.

@@ -60,6 +60,15 @@ export function loadPlays(): Play[] {
   }
 }
 
+/** Changes the newest play (after the teacher disputes a mistake), and returns all plays. */
+export function updateLastPlay(patch: Partial<Play>): Play[] {
+  const plays = loadPlays();
+  if (plays.length === 0) return plays;
+  const next = [...plays.slice(0, -1), { ...plays[plays.length - 1], ...patch }];
+  try { localStorage.setItem(PLAYS_KEY, JSON.stringify(next)); } catch { /* storage full or blocked: the in-memory result still holds */ }
+  return next;
+}
+
 export function addPlay(play: Play): Play[] {
   const plays = [...loadPlays(), play].slice(-MAX_PLAYS);
   try {

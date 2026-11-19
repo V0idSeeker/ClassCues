@@ -222,7 +222,7 @@ export const codexEn: CodexText = {
         'Remembered notes show in grey in the notebook. Students can use them to speak and in quizzes.',
         'A student who was not in a class remembers nothing of it.',
         'Teaching the same lesson again starts fresh, so a replay still measures that day\'s teaching.',
-        'Your mistakes found by the fact check are remembered too. In their next lessons, students who were there start out believing them (red in the notebook) until you correct them, up to three per student.',
+        'Your mistakes found by the fact check are remembered too. In their next lessons, students who wrote them down start out believing them (red in the notebook) until you correct them, up to three per student.',
         'Settings has "Make students forget earlier lessons".',
       ],
     },
@@ -248,7 +248,7 @@ export const codexEn: CodexText = {
       title: 'The report card',
       intro: 'After the quiz you see how the class did and why.',
       points: [
-        'Class average, and whether this is your first time, a new best, or your best so far.',
+        'Class average, the points your own mistakes cost, and the lesson score that results; and whether this is your first time, a new best, or your best so far.',
         'Three tips: goals nobody had, questions most students missed, wrong beliefs still held, hands left up.',
         'The goals table: how many students had each goal in their notes, and their average on its questions.',
         '"Your teaching, checked": anything you said or wrote that was wrong.',
@@ -261,9 +261,9 @@ export const codexEn: CodexText = {
       intro: 'After the quiz, the AI compares everything you said and wrote with the lesson\'s reference. Anything false or misleading is listed with what is right.',
       points: [
         'This is how you find out what you got wrong yourself: students write down your mistakes as facts.',
-        'Major mistakes are listed first.',
+        'Major mistakes are listed first. Each one takes points off your lesson score: major −5, minor −2, at most −15.',
         'Only wrong statements are listed, not things you left out.',
-        'The check is made by an AI and can be wrong. When in doubt, look it up.',
+        'The check is made by an AI and can be wrong. When in doubt, look it up, and press "I disagree": that mistake then costs nothing and the class forgets it.',
         'It uses one extra AI request per lesson.',
       ],
     },
@@ -299,7 +299,7 @@ export const codexEn: CodexText = {
     },
     'scores': {
       title: 'Scores and courses',
-      intro: 'Every finished lesson records its class average. Teach a lesson again to beat your best.',
+      intro: 'Every finished lesson records its lesson score: the class average minus points for your mistakes. Teach a lesson again to beat your best.',
       points: [
         'Each lesson shows its best score, last score and how many times you taught it.',
         'A course score is the average of the best scores of the lessons taught so far ("Course score 70% · 2 of 5 taught").',
@@ -319,7 +319,7 @@ export const codexEn: CodexText = {
       title: 'Rank and badges',
       intro: 'Your rank grows from Student Teacher to Substitute, Teacher, Senior Teacher and Head of Department as you teach more lessons with higher scores.',
       points: [
-        'Harder classes count more.',
+        'Harder classes count more. Each lesson counts by the average of its last three plays, and follow-up lessons do not count.',
         'Badges mark milestones: a first 80% class, a full course, challenges met, a lesson with no mistakes found.',
         'Both show on the main menu and the report.',
         '"Share" on the report makes a picture of your report card.',

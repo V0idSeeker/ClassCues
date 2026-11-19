@@ -7,8 +7,10 @@ import type { Difficulty } from './types';
 /** One finished lesson, as kept for rank and badges. */
 export interface Play {
   levelId: string;
-  /** Class average, 0 to 100. */
+  /** Lesson score, 0 to 100: the class average minus the mistake penalty (plays saved before 0.8 hold the class average). */
   percent: number;
+  /** Times the lesson notes were opened during class. Missing in older plays. */
+  peeks?: number;
   difficulty: Difficulty;
   /** null: no challenge, or it could not be judged. */
   challengeMet: boolean | null;
@@ -34,22 +36,34 @@ export interface Rank {
   name: string;
   /** Different lessons taught. */
   lessons: number;
-  /** Average over lessons of the best weighted class average, 0 to 100. */
+  /** Average over lessons of each lesson's recent weighted score, 0 to 100. */
   average: number;
   /** What the next rank needs, or null at the top. */
   next: { name: string; lessons: number; average: number } | null;
 }
 
+/** Plays per lesson that count toward rank: the most recent ones, so one lucky replay does not lift it. */
+export const RANK_RECENT_PLAYS = 3;
+
+/** Follow-up lessons practise a lesson already counted, so they stay out of rank and badges about lessons taught. */
+export const isFollowUp = (levelId: string) => levelId.endsWith('-followup');
+
 /**
- * Each lesson counts once, with its best class average times the difficulty weight (capped at 100).
- * Scores from before plays were kept count as Normal.
+ * Each lesson counts once: the average of its last RANK_RECENT_PLAYS plays, each times its difficulty weight (capped at 100).
+ * Scores from before plays were kept count as Normal, with their best. Follow-up lessons do not count.
  */
 export function rankOf(plays: Play[], scores: Scores = {}): Rank {
   const best = new Map<string, number>();
-  for (const [id, s] of Object.entries(scores)) best.set(id, s.best);
-  const fromPlays = new Map<string, number>();
-  for (const p of plays) fromPlays.set(p.levelId, Math.max(fromPlays.get(p.levelId) ?? 0, Math.min(100, p.percent * DIFFICULTY_WEIGHT[p.difficulty])));
-  for (const [id, v] of fromPlays) best.set(id, v);
+  for (const [id, s] of Object.entries(scores)) if (!isFollowUp(id)) best.set(id, s.best);
+  const byLevel = new Map<string, number[]>();
+  for (const p of plays) {
+    if (isFollowUp(p.levelId)) continue;
+    byLevel.set(p.levelId, [...(byLevel.get(p.levelId) ?? []), Math.min(100, p.percent * DIFFICULTY_WEIGHT[p.difficulty])]);
+  }
+  for (const [id, xs] of byLevel) {
+    const recent = xs.slice(-RANK_RECENT_PLAYS);
+    best.set(id, recent.reduce((a, b) => a + b, 0) / recent.length);
+  }
   const lessons = best.size;
   const average = lessons ? Math.round([...best.values()].reduce((a, b) => a + b, 0) / lessons) : 0;
   let at = 0;
@@ -57,6 +71,10 @@ export function rankOf(plays: Play[], scores: Scores = {}): Rank {
   const next = RANKS[at + 1] ?? null;
   return { name: rankName(at), lessons, average, next: next && { name: rankName(at + 1), ...next } };
 }
+
+export const SPOTLESS_MIN = 60;
+export const IMPROVER_MIN = 50;
+export const IMPROVER_GAIN = 10;
 
 export interface Badge { id: string; name: string; how: string }
 
@@ -75,12 +93,14 @@ export function earnedBadges(plays: Play[], courses: string[][], scores: Scores 
   const met = plays.filter(p => p.challengeMet === true).length;
   if (met >= 1) out.add('challenge');
   if (met >= 5) out.add('five-challenges');
-  if (plays.some(p => p.factErrors === 0)) out.add('no-mistakes');
+  // Spotless: no mistakes in a lesson that was also taught well, so one true sentence is not enough.
+  if (plays.some(p => p.factErrors === 0 && p.percent >= SPOTLESS_MIN)) out.add('no-mistakes');
   if (plays.some(p => (p.difficulty === 'hard' || p.difficulty === 'inspection') && p.percent >= 60)) out.add('tough-class');
   const byLevel = new Map<string, number[]>();
   for (const p of plays) byLevel.set(p.levelId, [...(byLevel.get(p.levelId) ?? []), p.percent]);
+  // Always Improving: three plays in a row that rise, all at least IMPROVER_MIN, gaining IMPROVER_GAIN in total (not luck, not sandbagging).
   for (const xs of byLevel.values()) {
-    if (xs.some((x, i) => i >= 2 && xs[i - 2] < xs[i - 1] && xs[i - 1] < x)) out.add('improver');
+    if (xs.some((x, i) => i >= 2 && xs[i - 2] < xs[i - 1] && xs[i - 1] < x && xs[i - 2] >= IMPROVER_MIN && x - xs[i - 2] >= IMPROVER_GAIN)) out.add('improver');
   }
   return out;
 }

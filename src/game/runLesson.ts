@@ -199,7 +199,10 @@ export async function runQuiz(
       notes: [...st.memory, ...st.notes.map(n => n.text)],
     })));
     for (const st of state.students) {
-      const row = r.results.find(x => x.student_id === st.persona.id);
+      const found = r.results.find(x => x.student_id === st.persona.id);
+      // A student with nothing in their notebook or memory cannot have a supported answer, whatever the grader says.
+      const blank = st.notes.length === 0 && st.memory.length === 0;
+      const row = found && blank ? { ...found, supported_by_notes: false } : found;
       grades.push(row ? gradeWritten(q, row, state.difficulty === 'inspection') : { student_id: st.persona.id, question_id: q.id, fraction: 0, feedback: t('report.notGraded') });
     }
     onProgress(++done, total);

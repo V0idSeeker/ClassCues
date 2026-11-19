@@ -87,3 +87,18 @@ export function computeReport(state: LessonState, answers: Record<string, Answer
 
   return { classAverage: pct(mean(students.map(s => s.percent / 100))), students, objectives, tips: tips.slice(0, 3) };
 }
+
+/** Points a fact-check mistake takes off the lesson score, and the most they can take off together. */
+export const MISTAKE_COST: Record<FactError['severity'], number> = { major: 5, minor: 2 };
+export const MAX_MISTAKE_COST = 15;
+
+/** Points taken off for the teacher's own mistakes. Mistakes the teacher disputes do not count. */
+export function mistakePenalty(errors: FactError[], disputed: string[] = []): number {
+  const counted = errors.filter(e => !disputed.includes(e.claim));
+  return Math.min(MAX_MISTAKE_COST, counted.reduce((n, e) => n + MISTAKE_COST[e.severity], 0));
+}
+
+/** The lesson score: the class average minus the mistake penalty, never below 0. This is what best scores and rank use. */
+export function lessonScore(classAverage: number, errors: FactError[], disputed: string[] = []): number {
+  return Math.max(0, classAverage - mistakePenalty(errors, disputed));
+}

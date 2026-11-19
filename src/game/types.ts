@@ -87,6 +87,8 @@ export interface LessonState {
   difficulty?: Difficulty;
   /** The id of this lesson's teaching challenge (src/game/challenges.ts). Missing in older saves. */
   challenge?: string;
+  /** How many times the teacher opened the lesson notes during class. Missing in older saves. */
+  peeks?: number;
 }
 
 /** How the class stood right after one teacher turn. */

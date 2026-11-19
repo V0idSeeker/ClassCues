@@ -222,7 +222,7 @@ export const codexEs: CodexText = {
         'Los apuntes recordados salen en gris en el cuaderno. Los alumnos pueden usarlos para hablar y en los exámenes.',
         'Un alumno que no estuvo en una clase no recuerda nada de ella.',
         'Volver a dar la misma lección empieza de cero, así que repetirla sigue midiendo cómo enseñaste ese día.',
-        'Tus errores encontrados en la revisión también se recuerdan. En sus siguientes lecciones, los alumnos que estuvieron empiezan creyéndolos (en rojo en el cuaderno) hasta que los corrijas, hasta tres por alumno.',
+        'Tus errores encontrados en la revisión también se recuerdan. En sus siguientes lecciones, los alumnos que los apuntaron empiezan creyéndolos (en rojo en el cuaderno) hasta que los corrijas, hasta tres por alumno.',
         'En Ajustes está "Hacer que los alumnos olviden las lecciones anteriores".',
       ],
     },
@@ -248,7 +248,7 @@ export const codexEs: CodexText = {
       title: 'El boletín de notas',
       intro: 'Después del examen ves cómo le ha ido a la clase y por qué.',
       points: [
-        'La media de la clase, y si es tu primera vez, un nuevo récord o tu mejor nota hasta ahora.',
+        'La media de la clase, los puntos que restan tus errores y la nota de la lección que resulta; y si es tu primera vez, un nuevo récord o tu mejor nota hasta ahora.',
         'Tres consejos: objetivos que nadie tenía, preguntas que fallaron casi todos, ideas erróneas que siguen ahí, manos sin atender.',
         'La tabla de objetivos: cuántos alumnos tenían cada objetivo en sus apuntes, y su media en las preguntas de ese objetivo.',
         '"Tu clase, revisada": todo lo que dijiste o escribiste que era incorrecto.',
@@ -261,9 +261,9 @@ export const codexEs: CodexText = {
       intro: 'Después del examen, la IA compara todo lo que dijiste y escribiste con la referencia de la lección. Lo que sea falso o engañoso aparece en una lista junto con lo correcto.',
       points: [
         'Así descubres en qué te equivocaste tú: los alumnos apuntan tus errores como si fueran hechos.',
-        'Los errores graves salen primero.',
+        'Los errores graves salen primero. Cada uno resta puntos a la nota de la lección: grave −5, leve −2, como mucho −15.',
         'Solo se enumeran las afirmaciones incorrectas, no lo que te dejaste.',
-        'La revisión la hace una IA y puede equivocarse. Si tienes dudas, búscalo.',
+        'La revisión la hace una IA y puede equivocarse. Si tienes dudas, búscalo y pulsa "No estoy de acuerdo": ese error deja de restar y la clase lo olvida.',
         'Usa una petición más a la IA por lección.',
       ],
     },
@@ -299,7 +299,7 @@ export const codexEs: CodexText = {
     },
     'scores': {
       title: 'Notas y cursos',
-      intro: 'Cada lección terminada guarda la media de su clase. Vuelve a dar una lección para superar tu mejor nota.',
+      intro: 'Cada lección terminada guarda su nota: la media de la clase menos los puntos de tus errores. Vuelve a dar una lección para superar tu mejor nota.',
       points: [
         'Cada lección muestra su mejor nota, su última nota y cuántas veces la has dado.',
         'La nota de un curso es la media de las mejores notas de las lecciones dadas hasta ahora ("Nota del curso 70% · 2 de 5 dadas").',
@@ -319,7 +319,7 @@ export const codexEs: CodexText = {
       title: 'Rango e insignias',
       intro: 'Tu rango sube de Profesor en prácticas a Profesor suplente, Profesor, Profesor titular y Jefe de departamento a medida que das más lecciones con mejores notas.',
       points: [
-        'Las clases más difíciles cuentan más.',
+        'Las clases más difíciles cuentan más. Cada lección cuenta por la media de sus tres últimas partidas, y las lecciones de repaso no cuentan.',
         'Las insignias marcan hitos: una primera clase con un 80%, un curso completo, retos superados, una lección sin errores encontrados.',
         'Ambos aparecen en el menú principal y en el boletín.',
         '"Compartir" en el boletín crea una imagen de tu boletín de notas.',

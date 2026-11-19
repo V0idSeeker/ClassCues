@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { builtInChapter, students } from '../content';
 import { startLesson } from './lesson';
 import type { Grade } from './quiz';
-import { closestToAverage, computeReport, missingGoals } from './report';
+import { closestToAverage, computeReport, lessonScore, missingGoals, mistakePenalty } from './report';
 import type { Report } from './report';
 
 const state = startLesson(builtInChapter, students, () => 0.5, 0);
@@ -59,5 +59,19 @@ describe('after the quiz', () => {
     expect(missing).not.toContain(o1.text);
     expect(missing).toContain(o2.text);
     expect(missing).toHaveLength(builtInChapter.objectives.length - 1);
+  });
+});
+
+describe('lesson score', () => {
+  const major = { claim: 'A', correction: 'a', severity: 'major' as const };
+  const minor = { claim: 'B', correction: 'b', severity: 'minor' as const };
+  it('takes 5 points per major mistake and 2 per minor one, at most 15', () => {
+    expect(mistakePenalty([])).toBe(0);
+    expect(mistakePenalty([major, minor])).toBe(7);
+    expect(mistakePenalty([major, major, major, major])).toBe(15);
+  });
+  it('does not count disputed mistakes, and never goes below 0', () => {
+    expect(lessonScore(80, [major, minor], ['A'])).toBe(78);
+    expect(lessonScore(3, [major])).toBe(0);
   });
 });

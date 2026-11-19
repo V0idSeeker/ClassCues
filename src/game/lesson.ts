@@ -1,3 +1,4 @@
+import { MIN_SHARED_WORDS, meaningfulWords } from './review';
 import { t } from '../i18n';
 import type { Rng } from './rng';
 import type { Archetype, Belief, Chapter, Difficulty, Emotion, LessonState, NoteTakerResult, Persona, Student, TranscriptLine, Turn } from './types';
@@ -49,8 +50,8 @@ export function mistakesFor(memory: ClassMemory, studentId: string): string[] {
 
 /**
  * After a lesson: every student keeps some of their notes, right or wrong. Only the last few lessons stay.
- * mistakes: what the fact check found wrong in this lesson's teaching. Every student in class now believes it,
- * on top of the earlier mistakes they did not drop during this lesson.
+ * mistakes: what the fact check found wrong in this lesson's teaching. A student keeps one only if their notes show it
+ * (see notedMistake), on top of the earlier mistakes they did not drop during this lesson.
  */
 export function rememberLesson(memory: ClassMemory, state: LessonState, mistakes: string[] = []): ClassMemory {
   const next: ClassMemory = { ...memory };
@@ -58,9 +59,38 @@ export function rememberLesson(memory: ClassMemory, state: LessonState, mistakes
     const before = (memory[s.persona.id] ?? []).filter(m => m.chapterId !== state.chapter.id);
     const notes = s.notes.slice(0, MEMORY_NOTES).map(n => n.text);
     const kept = mistakesFor(memory, s.persona.id).filter(t => s.beliefs.some(b => b.text === t));
-    const believed = [...new Set([...mistakes, ...kept])].slice(0, MEMORY_MISTAKES);
+    const believed = [...new Set([...mistakes.filter(m => notedMistake(s, m)), ...kept])].slice(0, MEMORY_MISTAKES);
     const entry = { chapterId: state.chapter.id, title: state.chapter.title, notes, ...(believed.length ? { mistakes: believed } : {}) };
     next[s.persona.id] = [...before, entry].slice(-MEMORY_LESSONS);
+  }
+  return next;
+}
+
+/**
+ * Whether a student's notes show a mistake: one note shares enough meaningful words with it
+ * (3, or half the claim's words when the claim is shorter than 6 words).
+ */
+export function notedMistake(student: Student, claim: string): boolean {
+  const words = meaningfulWords(claim);
+  const need = Math.max(1, Math.min(MIN_SHARED_WORDS, Math.ceil(words.size / 2)));
+  return student.notes.some(n => {
+    const note = meaningfulWords(n.text);
+    let shared = 0;
+    for (const w of words) if (note.has(w)) shared++;
+    return shared >= need;
+  });
+}
+
+/** Removes a disputed mistake from what every student remembers of that chapter. */
+export function forgetMistake(memory: ClassMemory, chapterId: string, claim: string): ClassMemory {
+  const next: ClassMemory = {};
+  for (const [id, lessons] of Object.entries(memory)) {
+    next[id] = lessons.map(m => {
+      if (m.chapterId !== chapterId || !m.mistakes?.includes(claim)) return m;
+      const mistakes = m.mistakes.filter(x => x !== claim);
+      const { mistakes: _gone, ...rest } = m;
+      return mistakes.length ? { ...rest, mistakes } : rest;
+    });
   }
   return next;
 }

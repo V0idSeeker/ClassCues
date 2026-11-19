@@ -218,6 +218,12 @@ describe('runQuiz', () => {
     expect(progress).toHaveBeenLastCalledWith(13, 13);
   });
 
+  it('caps a blank notebook at half marks even when the grader calls a full answer supported', async () => {
+    const ai = fakeAi({ grader: async (_q, rows) => ({ results: rows.map(r => ({ student_id: r.student_id, score: 2, max: 2, supported_by_notes: true, feedback: 'Correct.' })) }) });
+    const out = await runQuiz(start(), ai, () => 0, () => {});
+    expect(out.grades.find(g => g.student_id === 'aisha' && g.question_id === 'q3')!.fraction).toBe(0.5);
+  });
+
   it('gives zero when the grader skips a student or the student skips a question', async () => {
     const ai = fakeAi({ quizTaker: async () => ({ answers: [] }), grader: async () => ({ results: [] }) });
     const out = await runQuiz(start(), ai, () => 0, () => {});

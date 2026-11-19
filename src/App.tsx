@@ -9,15 +9,16 @@ import { inLanguage, studentPool } from './content';
 import { AFTER_QUIZ_REQUESTS, mustRingBell, quizReserve } from './game/budget';
 import { challengeById, challengeTitle, pickChallenge } from './game/challenges';
 import { recordScore } from './game/course';
+import type { Scores } from './game/course';
 import { followUpChapter, heldAtBell } from './game/followup';
-import { drawClass, lessonOver, mergeTurns, rememberLesson, startLesson } from './game/lesson';
+import { drawClass, forgetMistake, lessonOver, mergeTurns, rememberLesson, startLesson } from './game/lesson';
 import { earnedBadges, newBadges, rankOf } from './game/rank';
 import type { Badge, Rank } from './game/rank';
-import { closestToAverage, computeReport, missingGoals } from './game/report';
+import { closestToAverage, computeReport, lessonScore, missingGoals } from './game/report';
 import type { AfterQuiz, Report as ReportType } from './game/report';
 import { askStudent, hearStudent, pickForClassQuestion, runQuiz, teachTurn } from './game/runLesson';
 import type { Chapter, Difficulty, LessonState, Persona, Turn } from './game/types';
-import { addPlay, addRun, courseLessonIds, loadPlays, loadRuns, saveRuns } from './progress';
+import { addPlay, addRun, courseLessonIds, loadPlays, loadRuns, saveRuns, updateLastPlay } from './progress';
 import { addLog, bumpUsed, clearLesson, hasSettings, helpSeen, markHelpSeen, loadGoodModel, loadLesson, loadMemory, loadScores, saveScores, saveGoodModel, loadSettings, loadSkipPrepare, saveMemory, loadUsed, saveLesson, saveSettings } from './storage';
 import type { Settings as SettingsType } from './storage';
 import { setLang, t } from './i18n';
@@ -52,6 +53,8 @@ export default function App() {
   const [report, setReport] = useState<{
     report: ReportType; after: AfterQuiz; chapter: Chapter; best: number; bestBefore: number | null;
     difficulty: Difficulty; rank: Rank; badges: Badge[]; lesson: LessonState; followUp: Plan | null;
+    /** Lesson score (class average minus mistakes), mistakes the teacher disputed, and what is needed to re-save after a dispute. */
+    score: number; disputed: string[]; scoresBefore: Scores; at: string;
   } | null>(null);
   const [used, setUsed] = useState(loadUsed);
   const [busy, setBusy] = useState(false);
@@ -110,6 +113,9 @@ export default function App() {
   }, [deps]);
 
   function commit(state: LessonState) {
+    // A turn that started before the notes were opened returns a state without the newer peeks: keep the higher count.
+    const peeks = Math.max(state.peeks ?? 0, lessonRef.current?.peeks ?? 0);
+    if (peeks > 0 && peeks !== state.peeks) state = { ...state, peeks };
     lessonRef.current = state;
     setLesson(state);
     saveLesson(state, Date.now());
@@ -184,8 +190,7 @@ export default function App() {
       const out = await runQuiz(s, ai, Math.random, (done, total) => setProgress({ done, total: total + AFTER_QUIZ_REQUESTS }));
       const result = computeReport(s, out.answers, out.grades);
       const before = loadScores();
-      const scores = recordScore(before, s.chapter.id, result.classAverage, new Date().toISOString());
-      saveScores(scores);
+      const at = new Date().toISOString();
       const memory = loadMemory();
       saveMemory(rememberLesson(memory, s));
       saveRuns(addRun(loadRuns(), s.chapter.id, result.objectives));
@@ -204,6 +209,10 @@ export default function App() {
       const errors = after.factCheck.errors ?? [];
       if (errors.length) saveMemory(rememberLesson(memory, s, errors.map(e => e.claim)));
       setProgress({ done: ++done, total });
+      // The lesson score counts the teacher's own mistakes; it is what best scores and rank use.
+      const score = lessonScore(result.classAverage, errors);
+      const scores = recordScore(before, s.chapter.id, score, at);
+      saveScores(scores);
       const student = s.students.find(st => st.persona.id === closestToAverage(result));
       if (student) {
         const text = await explainBack(deps, student, s.chapter.title).then(r => r.explanation, () => null);
@@ -226,13 +235,14 @@ export default function App() {
       const courses = courseLessonIds();
       const playsBefore = loadPlays();
       const plays = addPlay({
-        levelId: s.chapter.id, percent: result.classAverage, difficulty, at: new Date().toISOString(),
+        levelId: s.chapter.id, percent: score, difficulty, at, ...(s.peeks ? { peeks: s.peeks } : {}),
         challengeMet: after.challenge?.met ?? null, factErrors: said ? after.factCheck.errors?.length ?? null : null,
       });
       const badges = newBadges(earnedBadges(playsBefore, courses, before), earnedBadges(plays, courses, scores));
       setReport({
         report: result, after, chapter: s.chapter, best: scores[s.chapter.id].best, bestBefore: before[s.chapter.id]?.best ?? null,
         difficulty, rank: rankOf(plays, scores), badges, lesson: s, followUp,
+        score, disputed: [], scoresBefore: before, at,
       });
       setScreen('report');
     } catch (e) {
@@ -240,6 +250,25 @@ export default function App() {
     } finally {
       running.current = false;
     }
+  }
+
+  /** The teacher disputes a fact-check mistake: it no longer costs points, and the class forgets it. */
+  function dispute(claim: string) {
+    if (!report || report.disputed.includes(claim)) return;
+    const disputed = [...report.disputed, claim];
+    const errors = (report.after.factCheck.errors ?? []).filter(e => !disputed.includes(e.claim));
+    saveMemory(forgetMistake(loadMemory(), report.chapter.id, claim));
+    const score = lessonScore(report.report.classAverage, errors);
+    const scores = recordScore(report.scoresBefore, report.chapter.id, score, report.at);
+    saveScores(scores);
+    const plays = updateLastPlay({ percent: score, factErrors: errors.length });
+    const s = report.lesson;
+    const held = heldAtBell(s, errors);
+    const fix = followUpChapter(s.chapter, report.report.objectives, held, errors);
+    setReport({
+      ...report, disputed, score, best: scores[report.chapter.id].best, rank: rankOf(plays, scores),
+      followUp: fix && { chapter: fix, personas: s.students.map(st => st.persona), held },
+    });
   }
 
   // The bell rings by itself at the turn cap, the time cap, or when a free daily limit is nearly used up.
@@ -292,6 +321,7 @@ export default function App() {
           onAsk={(id, q) => void act(s => askStudent(s, id, q, ai))}
           onAskClass={q => void act(s => askStudent(s, pickForClassQuestion(s, Math.random).persona.id, q, ai))}
           onBell={() => void bell()}
+          onPeek={() => { const s = lessonRef.current; if (s) commit({ ...s, peeks: (s.peeks ?? 0) + 1 }); }}
           onRetry={() => void pump()}
           onSettings={() => setScreen('settings')}
           onLevels={() => setScreen('modules')}
@@ -311,7 +341,7 @@ export default function App() {
         </div>
       )}
 
-      {screen === 'report' && report && <Report {...report}
+      {screen === 'report' && report && <Report {...report} onDispute={dispute}
         onFollowUp={report.followUp ? () => study(report.followUp!) : null} onAgain={() => setScreen('modules')} onReview={() => setScreen('review')} onHelp={() => openHelp('report')} />}
 
       {screen === 'review' && report && <Review lesson={report.lesson} errors={report.after.factCheck.errors ?? []} onBack={() => setScreen('report')} />}

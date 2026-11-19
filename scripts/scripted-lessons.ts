@@ -64,12 +64,15 @@ const ai: Ai = {
   grader: (...a) => patient(() => raw.grader(...a)),
 };
 
-const RUNS = Number(env.TS_RUNS ?? 3);
+const RUNS = Number(env.TS_RUNS ?? 5);
+// Each run draws a new class; the same seed is used for every lesson in that run, so lessons are compared on the same class.
+// TS_SEED repeats an earlier test.
+const SEED = Number(env.TS_SEED ?? Math.floor(Math.random() * 1e6));
 // TS_LESSONS=empty (comma list) runs only those lessons; checks needing a lesson that did not run are skipped.
 const LESSONS = env.TS_LESSONS?.split(',') ?? ['good', 'sloppy', 'wrong', 'empty'];
 const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
 
-interface Score { total: number; written: number; mcq: number }
+interface Score { total: number; written: number; mcq: number; mcqByModel: number }
 
 async function runOnce(turns: Turn[], seed: number): Promise<Score> {
   const rng = mulberry32(seed);
@@ -86,27 +89,48 @@ async function runOnce(turns: Turn[], seed: number): Promise<Score> {
   const { answers, grades } = await runQuiz(state, ai, rng, () => {});
   const typeOf = (qid: string) => builtInChapter.quiz.find(q => q.id === qid)!.type;
   const pctOf = (type: string) => 100 * mean(grades.filter(g => typeOf(g.question_id) === type).map(g => g.fraction));
-  return { total: computeReport(state, answers, grades).classAverage, written: pctOf('short'), mcq: pctOf('mcq') };
+  // Multiple-choice answers the model gave: without a note on the goal, code picks the answer at random instead.
+  const mcqByModel = Object.values(answers).flat().filter(a => typeOf(a.question_id) === 'mcq' && !a.byCode).length;
+  return { total: computeReport(state, answers, grades).classAverage, written: pctOf('short'), mcq: pctOf('mcq'), mcqByModel };
 }
 
 const results: Record<string, Score> = {};
+const perRun: Record<string, Score[]> = {};
+console.log(`seed ${SEED}, ${RUNS} runs`);
 for (const name of LESSONS) {
   const turns = JSON.parse(readFileSync(new URL(`./transcripts/${name}.json`, import.meta.url), 'utf8')) as Turn[];
   const runs: Score[] = [];
   for (let i = 0; i < RUNS; i++) {
-    runs.push(await runOnce(turns, 1000 + i));
+    runs.push(await runOnce(turns, SEED + i));
     console.log(`${name} run ${i + 1}/${RUNS}: total ${runs[i].total.toFixed(0)}%, written ${runs[i].written.toFixed(0)}%, multiple choice ${runs[i].mcq.toFixed(0)}%`);
   }
-  results[name] = { total: mean(runs.map(r => r.total)), written: mean(runs.map(r => r.written)), mcq: mean(runs.map(r => r.mcq)) };
+  perRun[name] = runs;
+  results[name] = { total: mean(runs.map(r => r.total)), written: mean(runs.map(r => r.written)), mcq: mean(runs.map(r => r.mcq)), mcqByModel: runs.reduce((n, r) => n + r.mcqByModel, 0) };
 }
 
-const { good, sloppy, wrong, empty } = results;
+/** Mean of the paired gaps (run i of a vs run i of b, same class) and a 95% t-interval. */
+function gap(a: Score[], b: Score[]): { mean: number; low: number; high: number } {
+  const d = a.map((r, i) => r.total - b[i].total);
+  const m = mean(d);
+  if (d.length < 2) return { mean: m, low: m, high: m };
+  const sd = Math.sqrt(d.reduce((n, x) => n + (x - m) ** 2, 0) / (d.length - 1));
+  const T95: Record<number, number> = { 1: 12.71, 2: 4.3, 3: 3.18, 4: 2.78, 5: 2.57, 6: 2.45, 7: 2.36, 8: 2.31, 9: 2.26 };
+  const half = ((T95[d.length - 1] ?? 2.0) * sd) / Math.sqrt(d.length);
+  return { mean: m, low: m - half, high: m + half };
+}
+
+const { empty } = results;
 const checks: [string, boolean][] = [];
-if (good && sloppy) checks.push([`good beats sloppy by 15+ points (${good.total.toFixed(0)} vs ${sloppy.total.toFixed(0)})`, good.total - sloppy.total >= 15]);
-if (sloppy && wrong) checks.push([`sloppy beats wrong by 15+ points (${sloppy.total.toFixed(0)} vs ${wrong.total.toFixed(0)})`, sloppy.total - wrong.total >= 15]);
+for (const [hi, lo] of [['good', 'sloppy'], ['sloppy', 'wrong']] as const) {
+  if (!perRun[hi] || !perRun[lo]) continue;
+  const g = gap(perRun[hi], perRun[lo]);
+  const sure = g.low >= 15 ? 'sure' : 'not sure yet: run more';
+  checks.push([`${hi} beats ${lo} by 15+ points (gap ${g.mean.toFixed(0)}, 95% range ${g.low.toFixed(0)} to ${g.high.toFixed(0)}, ${sure})`, g.mean >= 15]);
+}
 if (empty) {
-  checks.push([`leak test: empty lesson written score at most 10% (${empty.written.toFixed(0)}%)`, empty.written <= 10]);
-  checks.push([`leak test: empty lesson multiple choice within chance, 25% ± 10 (${empty.mcq.toFixed(0)}%)`, Math.abs(empty.mcq - 25) <= 10]);
+  checks.push([`leak test: empty lesson written score at most 10% (${empty.written.toFixed(0)}%; runs ${perRun.empty.map(r => r.written.toFixed(0)).join('/')})`, empty.written <= 10]);
+  // Without notes, code picks multiple-choice answers at random, so the model must never answer one.
+  checks.push([`leak test: no multiple-choice answer in the empty lesson came from the model (${empty.mcqByModel} did)`, empty.mcqByModel === 0]);
 }
 
 console.log(`\nModel: ${env.TS_MODEL} · grader: ${env.TS_GRADER_MODEL ?? env.TS_MODEL} · requests: ${requests}`);

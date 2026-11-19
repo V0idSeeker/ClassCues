@@ -222,7 +222,7 @@ export const codexFr: CodexText = {
         'Les notes retenues apparaissent en gris dans le cahier. Les élèves peuvent s’en servir pour parler et à l’interro.',
         'Un élève absent d’un cours ne s’en souvient de rien.',
         'Refaire la même leçon repart de zéro : une nouvelle partie mesure toujours l’enseignement du jour.',
-        'Vos erreurs trouvées par la vérification sont retenues aussi. Lors des leçons suivantes, les élèves présents commencent en y croyant (en rouge dans le cahier) jusqu’à ce que vous les corrigiez, trois au plus par élève.',
+        'Vos erreurs trouvées par la vérification sont retenues aussi. Lors des leçons suivantes, les élèves qui les ont notées commencent en y croyant (en rouge dans le cahier) jusqu’à ce que vous les corrigiez, trois au plus par élève.',
         'Les Réglages proposent « Faire oublier les leçons précédentes ».',
       ],
     },
@@ -248,7 +248,7 @@ export const codexFr: CodexText = {
       title: 'Le bulletin',
       intro: 'Après l’interro, vous voyez comment la classe s’en est sortie, et pourquoi.',
       points: [
-        'La moyenne de la classe, et s’il s’agit de votre première fois, d’un nouveau record ou de votre record actuel.',
+        'La moyenne de la classe, les points que coûtent vos erreurs et la note de la leçon qui en résulte ; et s’il s’agit de votre première fois, d’un nouveau record ou de votre record actuel.',
         'Trois conseils : objectifs que personne n’avait, questions ratées par la plupart, idées fausses restantes, mains encore levées.',
         'Le tableau des objectifs : combien d’élèves avaient chaque objectif dans leurs notes, et leur moyenne aux questions correspondantes.',
         '« Votre cours, vérifié » : tout ce que vous avez dit ou écrit de faux.',
@@ -261,9 +261,9 @@ export const codexFr: CodexText = {
       intro: 'Après l’interro, l’IA compare tout ce que vous avez dit et écrit avec le texte de référence de la leçon. Tout ce qui est faux ou trompeur est listé avec la version juste.',
       points: [
         'C’est ainsi que vous découvrez vos propres erreurs : les élèves notent vos erreurs comme des faits.',
-        'Les erreurs graves sont listées en premier.',
+        'Les erreurs graves sont listées en premier. Chacune retire des points à la note de la leçon : grave −5, mineure −2, au plus −15.',
         'Seules les affirmations fausses sont listées, pas ce que vous avez oublié.',
-        'La vérification est faite par une IA et peut se tromper. En cas de doute, vérifiez.',
+        'La vérification est faite par une IA et peut se tromper. En cas de doute, vérifiez, et appuyez sur « Je conteste » : l’erreur ne coûte alors rien et la classe l’oublie.',
         'Elle utilise une requête IA de plus par leçon.',
       ],
     },
@@ -299,7 +299,7 @@ export const codexFr: CodexText = {
     },
     'scores': {
       title: 'Scores et cours',
-      intro: 'Chaque leçon terminée enregistre la moyenne de la classe. Refaites une leçon pour battre votre record.',
+      intro: 'Chaque leçon terminée enregistre sa note : la moyenne de la classe moins les points de vos erreurs. Refaites une leçon pour battre votre record.',
       points: [
         'Chaque leçon affiche son meilleur score, son dernier score et le nombre de fois où vous l’avez enseignée.',
         'Le score d’un cours est la moyenne des meilleurs scores des leçons déjà enseignées (« Score du cours 70 % · 2 sur 5 enseignées »).',
@@ -319,7 +319,7 @@ export const codexFr: CodexText = {
       title: 'Grade et badges',
       intro: 'Votre grade passe de Stagiaire à Remplaçant, Professeur, Professeur confirmé puis Chef de département à mesure que vous enseignez plus de leçons avec de meilleurs scores.',
       points: [
-        'Les classes plus dures comptent davantage.',
+        'Les classes plus dures comptent davantage. Chaque leçon compte pour la moyenne de ses trois dernières parties, et les leçons de rattrapage ne comptent pas.',
         'Les badges marquent des étapes : une première classe à 80 %, un cours complet, des défis réussis, une leçon sans erreur trouvée.',
         'Les deux s’affichent dans le menu principal et sur le bulletin.',
         '« Partager » sur le bulletin crée une image de votre bulletin.',

@@ -134,7 +134,7 @@
       "confidence": 0.3
     },
     "learning_style": "needs simple words and one idea at a time",
-    "personality": "Struggles and knows it. Tries hard, gets lost quickly, grateful for simple explanations.",
+    "personality": "Joined late after changing schools and missed the basics. Tries hard, gets lost quickly, grateful for simple explanations.",
     "openingLines": [
       "Is today hard?",
       "I did not get last time.",
@@ -343,7 +343,7 @@
     "look": {
       "hair": "short",
       "hairColor": "#c9a25a",
-      "skin": "#f6d3b3",
+      "skin": "#6b4226",
       "shirt": "#6f8f4a",
       "glasses": false
     },
@@ -509,7 +509,7 @@
       "confidence": 0.25
     },
     "learning_style": "needs one small step at a time",
-    "personality": "Tries hard but loses the thread quickly. Lights up when something finally makes sense.",
+    "personality": "Missed two weeks while ill and is still catching up. Loses the thread quickly, lights up when something finally makes sense.",
     "openingLines": [
       "Can you go slowly?",
       "I did not understand last time.",
@@ -534,7 +534,7 @@
       "confidence": 0.35
     },
     "learning_style": "needs to see it done before trying",
-    "personality": "Kind and unsure. Nods along even when lost, so you have to check.",
+    "personality": "Kind and unsure since a bad test last term. Nods along even when lost, so you have to check.",
     "openingLines": [
       "Is this going to be hard?",
       "I will try my best.",
@@ -543,7 +543,7 @@
     "look": {
       "hair": "short",
       "hairColor": "#1f1b26",
-      "skin": "#6b4226",
+      "skin": "#f6d3b3",
       "shirt": "#4fa66a",
       "glasses": false
     },

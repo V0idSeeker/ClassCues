@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { builtInChapter, studentPool, students } from '../content';
 import {
   LESSON_MS, MAX_TURNS, applyNotes, atmosphere, boardText, drawClass, memoryFor, rememberLesson, boardAdded, classClock, coverage, hasObjective, lessonOver,
-  mergeTurns, mistakesFor, patchStudent, pickReactor, shouldReact, startLesson, visibleBoard,
+  forgetMistake, mergeTurns, mistakesFor, notedMistake, patchStudent, pickReactor, shouldReact, startLesson, visibleBoard,
 } from './lesson';
 import type { ClassMemory } from './lesson';
 import type { NoteTakerResult } from './types';
@@ -154,22 +154,44 @@ describe('remembered mistakes', () => {
   const mistakeBeliefs = (s: ReturnType<typeof start>, id: string) => find(s, id).beliefs.filter(b => b.id.startsWith('m')).map(b => b.text);
   const next = (memory: ClassMemory) => startLesson({ ...builtInChapter, id: 'ch2', title: 'Loops' }, students, () => 0.5, 0, memory);
 
-  it('gives every student of the class the teacher’s mistakes as wrong beliefs in any later lesson', () => {
-    const memory = rememberLesson({}, start(), ['x = 1 makes x equal to 1 forever']);
+  // Gives every student, or only those listed, a note with this text.
+  const noting = (s: ReturnType<typeof start>, text: string, ids?: string[]) => ({
+    ...s, students: s.students.map(st => (!ids || ids.includes(st.persona.id) ? { ...st, notes: [...st.notes, { text, objective: 'obj-1', distorted: false }] } : st)),
+  });
+  const claim = 'x = 1 makes x equal to 1 forever';
+
+  it('gives the teacher’s mistakes, as wrong beliefs in any later lesson, only to students whose notes show them', () => {
+    const memory = rememberLesson({}, noting(start(), 'x equal to 1 forever', ['aisha', 'leo']), [claim]);
     const s = next(memory);
-    for (const st of s.students) expect(mistakeBeliefs(s, st.persona.id)).toEqual(['x = 1 makes x equal to 1 forever']);
+    expect(mistakeBeliefs(s, 'aisha')).toEqual([claim]);
+    expect(mistakeBeliefs(s, 'leo')).toEqual([claim]);
+    expect(mistakeBeliefs(s, 'maya')).toEqual([]);
     // Also when the same lesson is taught again.
-    expect(mistakeBeliefs(startLesson(builtInChapter, students, () => 0.5, 0, memory), 'aisha')).toEqual(['x = 1 makes x equal to 1 forever']);
+    expect(mistakeBeliefs(startLesson(builtInChapter, students, () => 0.5, 0, memory), 'aisha')).toEqual([claim]);
+  });
+
+  it('a note shows a mistake when it shares enough meaningful words with it', () => {
+    const s = noting(start(), 'x equal 1 forever', ['aisha']);
+    expect(notedMistake(find(s, 'aisha'), claim)).toBe(true);
+    expect(notedMistake(find(s, 'maya'), claim)).toBe(false);
+    expect(notedMistake(find(noting(start(), 'loops repeat code', ['aisha']), 'aisha'), claim)).toBe(false);
   });
 
   it('keeps at most three, newest first', () => {
-    let memory = rememberLesson({}, start(), ['old 1', 'old 2']);
-    memory = rememberLesson(memory, next(memory), ['new 1', 'new 2']);
-    expect(mistakesFor(memory, 'aisha')).toEqual(['new 1', 'new 2', 'old 1']);
+    let memory = rememberLesson({}, noting(start(), 'wrong idea alpha wrong idea beta'), ['wrong idea alpha', 'wrong idea beta']);
+    memory = rememberLesson(memory, noting(next(memory), 'later mistake gamma later mistake delta'), ['later mistake gamma', 'later mistake delta']);
+    expect(mistakesFor(memory, 'aisha')).toEqual(['later mistake gamma', 'later mistake delta', 'wrong idea alpha']);
+  });
+
+  it('forgets a mistake the teacher disputed', () => {
+    const memory = rememberLesson({}, noting(start(), 'wrong idea alpha wrong idea beta'), ['wrong idea alpha', 'wrong idea beta']);
+    const after = forgetMistake(memory, builtInChapter.id, 'wrong idea alpha');
+    expect(mistakesFor(after, 'aisha')).toEqual(['wrong idea beta']);
+    expect(forgetMistake(after, builtInChapter.id, 'wrong idea beta').aisha[0]).not.toHaveProperty('mistakes');
   });
 
   it('forgets a mistake once the student dropped it during a lesson', () => {
-    const memory = rememberLesson({}, start(), ['wrong A', 'wrong B']);
+    const memory = rememberLesson({}, noting(start(), 'wrong A wrong B'), ['wrong A', 'wrong B']);
     let s = next(memory);
     const a = find(s, 'aisha').beliefs.find(b => b.text === 'wrong A')!;
     s = applyNotes(s, { students: [{ id: 'aisha', new_notes: [], beliefs_dropped: [a.id], emotion: 'HAPPY' }] }, () => 0);

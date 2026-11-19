@@ -24,8 +24,14 @@ describe('rank', () => {
     expect(rankOf(Array.from({ length: 10 }, (_, i) => play(`l${i}`, 50))).name).toBe('Substitute');
   });
 
-  it('counts each lesson once, at its best', () => {
-    expect(rankOf([play('a', 20), play('a', 60), play('a', 30)])).toMatchObject({ lessons: 1, average: 60 });
+  it('counts each lesson once, by the average of its last three plays', () => {
+    expect(rankOf([play('a', 20), play('a', 60), play('a', 30)])).toMatchObject({ lessons: 1, average: 37 });
+    expect(rankOf([play('a', 20), play('a', 60), play('a', 30), play('a', 90)])).toMatchObject({ lessons: 1, average: 60 });
+  });
+
+  it('leaves follow-up lessons out', () => {
+    expect(rankOf([play('a-followup', 90)])).toMatchObject({ lessons: 0, average: 0 });
+    expect(rankOf([play('a', 50), play('a-followup', 90)])).toMatchObject({ lessons: 1, average: 50 });
   });
 
   it('harder classes count more, capped at 100', () => {
@@ -50,8 +56,9 @@ describe('badges', () => {
     expect(earnedBadges([play('a', 10, { challengeMet: true })], []).has('challenge')).toBe(true);
     expect(earnedBadges(Array.from({ length: 4 }, () => play('a', 10, { challengeMet: true })), []).has('five-challenges')).toBe(false);
     expect(earnedBadges(Array.from({ length: 5 }, () => play('a', 10, { challengeMet: true })), []).has('five-challenges')).toBe(true);
-    expect(earnedBadges([play('a', 10, { factErrors: 0 })], []).has('no-mistakes')).toBe(true);
-    expect(earnedBadges([play('a', 10, { factErrors: null })], []).has('no-mistakes')).toBe(false);
+    expect(earnedBadges([play('a', 60, { factErrors: 0 })], []).has('no-mistakes')).toBe(true);
+    expect(earnedBadges([play('a', 59, { factErrors: 0 })], []).has('no-mistakes')).toBe(false);
+    expect(earnedBadges([play('a', 90, { factErrors: null })], []).has('no-mistakes')).toBe(false);
     expect(earnedBadges([play('a', 60, { difficulty: 'hard' })], []).has('tough-class')).toBe(true);
     expect(earnedBadges([play('a', 60, { difficulty: 'inspection' })], []).has('tough-class')).toBe(true);
     expect(earnedBadges([play('a', 59, { difficulty: 'hard' }), play('a', 90)], []).has('tough-class')).toBe(false);
@@ -62,10 +69,11 @@ describe('badges', () => {
     expect(earnedBadges([play('a', 10), play('b', 10)], [['a', 'b']]).has('full-course')).toBe(true);
   });
 
-  it('always improving: three plays of one lesson in a row, each better', () => {
-    expect(earnedBadges([play('a', 10), play('b', 5), play('a', 20), play('a', 30)], []).has('improver')).toBe(true);
-    expect(earnedBadges([play('a', 10), play('a', 20), play('a', 20)], []).has('improver')).toBe(false);
-    expect(earnedBadges([play('a', 30), play('a', 10), play('a', 20)], []).has('improver')).toBe(false);
+  it('always improving: three plays of one lesson in a row, each better, all at 50% or more, 10 points up in total', () => {
+    expect(earnedBadges([play('a', 50), play('b', 5), play('a', 55), play('a', 61)], []).has('improver')).toBe(true);
+    expect(earnedBadges([play('a', 50), play('a', 55), play('a', 55)], []).has('improver')).toBe(false);
+    expect(earnedBadges([play('a', 10), play('a', 20), play('a', 30)], []).has('improver')).toBe(false);
+    expect(earnedBadges([play('a', 50), play('a', 52), play('a', 55)], []).has('improver')).toBe(false);
   });
 
   it('lists only the badges this lesson earned', () => {

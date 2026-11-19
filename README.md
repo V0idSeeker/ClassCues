@@ -23,7 +23,7 @@ The point of the game is to learn a subject by teaching it. Students ask why thi
 - Turn your own **PDFs into courses**: one PDF or several, cut into lessons at chapter starts or into equal parts. The game writes goals and a quiz for each lesson, and you can edit all of it.
 - Teach by typing, writing on boards (several, like slides), and, with a model that reads pictures, drawing on them.
 - Call on students, ask the class, hear raised hands. Students have different personalities, moods and wrong beliefs. They hear each other, react to each other and remember earlier lessons, including the mistakes you taught them.
-- Get a report after each quiz: class average, each student's answers and why they lost points, and three tips.
+- Get a report after each quiz: class average, your lesson score (the class average minus points for mistakes in your own teaching), each student's answers and why they lost points, and three tips.
 - Keep a best score per lesson and a score per course. Export and share lessons or whole courses as files.
 
 ## Install it as an app
@@ -141,15 +141,16 @@ The game has a guide built in: **How to play** on the main menu, **Help** on eve
    - **Call on** and **Ask the class** invite questions when you have typed nothing.
    - Click a desk with a raised hand to hear the student.
 5. **Ring the bell.** Students take the quiz from their notes only. You get the report, which also includes:
-   - **Your teaching, checked**: anything you said or wrote that was wrong, with the correction (an AI check, it can be wrong).
+   - **Your teaching, checked**: anything you said or wrote that was wrong, with the correction. Each mistake takes points off your lesson score (major −5, minor −2, at most −15). The check is made by AI and can be wrong: press **I disagree** and that mistake no longer counts and the class forgets it.
+   - How many times you opened the lesson notes during class. Explaining from memory is what makes you learn, so try a lesson without them.
    - **In their own words**: a typical student explains the lesson back to you from their notebook, and the goals missing from their notes are listed.
    - **Challenge**: whether you met this lesson's teaching challenge (shown in the top bar during class).
    - **Review the lesson**: a turn-by-turn replay with a chart of goals and class mood, and your mistakes pinned to the line where you said them.
    - **Teach a follow-up lesson**: the same class, only the goals they missed, and they now believe the mistakes you made. Correct them.
    - **Share**: a picture of your report card.
-6. **Try again** to beat your best score. Lessons where your classes keep missing a goal show it as "Often missed" on the lessons and study screens.
+6. **Try again** to beat your best lesson score. Lessons where your classes keep missing a goal show it as "Often missed" on the lessons and study screens.
 
-Your **rank** (Student Teacher up to Head of Department) and **badges** grow with lessons taught, scores, challenges met and difficulty. They show on the main menu.
+Your **rank** (Student Teacher up to Head of Department) and **badges** grow with lessons taught, scores, challenges met and difficulty. Rank uses the average of each lesson's last three plays, so one lucky replay does not lift it, and follow-up lessons do not count. They show on the main menu.
 
 **Difficulty** (Settings): Easy, Normal, Hard, or Inspection, where a correct answer the student's notes do not support gets no marks.
 
