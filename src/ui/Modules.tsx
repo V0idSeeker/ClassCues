@@ -9,7 +9,7 @@ import { normalizeChapter, packLessons, unpackLessons, validateChapter } from '.
 import { loadRuns, oftenMissed } from '../progress';
 import { loadLevels, loadScores, saveLevels } from '../storage';
 
-interface Props { deps: AiDeps; lessonRunning: boolean; onPlay(c: Chapter): void; onResume(): void; onSettings(): void; onMenu(): void; onHelp(): void }
+interface Props { deps: AiDeps; lessonRunning: boolean; dueCount: number; onRecall(): void; onPlay(c: Chapter): void; onResume(): void; onSettings(): void; onMenu(): void; onHelp(): void }
 /** The PDFs the player picked: every page's text in order, and which pages to use. */
 interface Source { names: string[]; pages: string[]; from: number; to: number; title: string; count: number; how: 'chapters' | 'equal' }
 
@@ -270,6 +270,12 @@ export default function Modules(p: Props) {
       {p.lessonRunning && <p className="dim">{t('lessons.running')}</p>}
       {getLang() !== 'en' && <p className="dim">{t('common.builtInEnglish')}</p>}
       {notice && <p className="ok" role="status">{notice}</p>}
+      {p.dueCount > 0 && (
+        <div className="panel row" style={{ marginTop: 12 }}>
+          <span className="grow"><b>{t('lessons.due', { count: p.dueCount })}</b> {t('lessons.dueWhy')}</span>
+          <button className="go" onClick={p.onRecall}>{t('lessons.reviewNow')}</button>
+        </div>
+      )}
 
       {groups.map(g => {
         const total = courseScore(scores, g.lessons.map(l => l.id));

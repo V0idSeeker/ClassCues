@@ -1,7 +1,8 @@
 import type { QuizQuestion } from './types';
 
 /** Requests after the quiz: the fact check, one student explaining the lesson back, and judging the challenge. */
-export const AFTER_QUIZ_REQUESTS = 3;
+/** Fact check, explain-back, challenge judge, and the teacher's own written question. */
+export const AFTER_QUIZ_REQUESTS = 4;
 
 /** Requests the bell needs: one per student, one grading call per written question, and the after-quiz requests. */
 export function quizReserve(studentCount: number, quiz: QuizQuestion[]): number {

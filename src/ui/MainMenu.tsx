@@ -14,6 +14,8 @@ interface Props {
   firstVisit: boolean;
   onContinue(): void;
   onStart(): void;
+  /** A three-turn demo with ready-made students; offered until an AI is set up. */
+  onDemo: (() => void) | null;
   onHelp(): void;
   onSettings(): void;
 }
@@ -52,6 +54,7 @@ export default function MainMenu(p: Props) {
         </div>
         {p.lessonTitle && <button className="go" onClick={p.onContinue}>{t('menu.continue', { title: p.lessonTitle })}</button>}
         <button className={p.lessonTitle ? '' : 'go'} onClick={p.onStart}>{p.lessonTitle ? t('menu.another') : t('menu.start')}</button>
+        {p.onDemo && <button className="gold" onClick={p.onDemo}>{t('menu.demo')}</button>}
         <button className={p.firstVisit ? 'gold' : ''} onClick={p.onHelp}>{p.firstVisit ? t('menu.startHere') : t('menu.howToPlay')}</button>
         <button onClick={p.onSettings}>{t('common.settings')}</button>
         <p className="dim version">{t('app.version', { version: __APP_VERSION__ })}</p>

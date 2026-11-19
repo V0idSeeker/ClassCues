@@ -150,7 +150,7 @@ export const codexEs: CodexText = {
     },
     'moods': {
       title: 'Estados de ánimo y burbujas',
-      intro: 'Cada alumno muestra cómo se siente con su cara y una burbuja junto a la cabeza. Una mano levantada siempre tiene prioridad sobre el ánimo.',
+      intro: 'Cada alumno muestra cómo se siente con su cara y una burbuja junto a la cabeza. Una mano levantada siempre tiene prioridad sobre el ánimo. Los alumnos tímidos esconden que están perdidos: parecen tranquilos hasta que haces una pregunta a la clase o les hablas.',
       points: [
         'El ánimo pasa de un turno al siguiente; no se reinicia.',
         'Un alumno aburrido toma menos apuntes, así que el aburrimiento cuesta puntos en el examen.',
@@ -191,7 +191,7 @@ export const codexEs: CodexText = {
       intro: 'Algunos alumnos empiezan la lección creyendo algo falso sobre el tema, como "el signo = significa igual, como en mates". Salen de la propia lección.',
       points: [
         'El portador de ideas erróneas tiene dos, el alumno con dificultades una, y otros dos alumnos una cada uno.',
-        'Una idea errónea se mantiene hasta que la corriges con claridad. Además, tuerce los apuntes relacionados.',
+        'Una idea errónea se mantiene hasta que la corriges con claridad. Los alumnos seguros de sí necesitan que nombres la idea errónea y digas por qué está mal; oír la respuesta correcta no les basta. Además, tuerce los apuntes relacionados.',
         'Los alumnos que aún la tienen al sonar el timbre responden el examen con ella. El boletín los enumera.',
         'Di cuál es la idea errónea y por qué está mal, no solo la idea correcta.',
       ],
@@ -246,7 +246,7 @@ export const codexEs: CodexText = {
     },
     'report': {
       title: 'El boletín de notas',
-      intro: 'Después del examen ves cómo le ha ido a la clase y por qué.',
+      intro: 'Mientras la clase hace el examen, tú respondes de memoria a tres de sus preguntas. Después ves cómo le ha ido a la clase y por qué, y cómo te ha ido a ti.',
       points: [
         'La media de la clase, los puntos que restan tus errores y la nota de la lección que resulta; y si es tu primera vez, un nuevo récord o tu mejor nota hasta ahora.',
         'Tres consejos: objetivos que nadie tenía, preguntas que fallaron casi todos, ideas erróneas que siguen ahí, manos sin atender.',
@@ -299,7 +299,7 @@ export const codexEs: CodexText = {
     },
     'scores': {
       title: 'Notas y cursos',
-      intro: 'Cada lección terminada guarda su nota: la media de la clase menos los puntos de tus errores. Vuelve a dar una lección para superar tu mejor nota.',
+      intro: 'Cada lección terminada guarda su nota: la media de la clase menos los puntos de tus errores. Vuelve a dar una lección para superar tu mejor nota. Los objetivos que fallaste tú, o que ningún alumno tenía en sus apuntes, vuelven para repasar en la pantalla de lecciones tras 1, 3 y 7 días.',
       points: [
         'Cada lección muestra su mejor nota, su última nota y cuántas veces la has dado.',
         'La nota de un curso es la media de las mejores notas de las lecciones dadas hasta ahora ("Nota del curso 70% · 2 de 5 dadas").',

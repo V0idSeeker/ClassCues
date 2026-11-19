@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Badge, Rank } from '../game/rank';
 import { mistakePenalty } from '../game/report';
 import type { AfterQuiz, Report as ReportType } from '../game/report';
+import type { TicketResult } from '../game/ticket';
 import type { Chapter, Difficulty, LessonState } from '../game/types';
 import { shareCard } from './shareCard';
 import { t } from '../i18n';
@@ -11,6 +12,11 @@ interface Props {
   difficulty: Difficulty; rank: Rank; badges: Badge[];
   /** Lesson score: the class average minus the mistakes that were not disputed. */
   score: number; disputed: string[]; lesson: LessonState;
+  /** The teacher's own answers during the quiz; null when skipped. */
+  you: TicketResult | null;
+  /** A demo lesson: nothing was saved; offer to set up an AI. */
+  demo: boolean;
+  onSetUp(): void;
   onDispute(claim: string): void;
   /** Starts a follow-up lesson on what the class missed; null when there is nothing to fix. */
   onFollowUp: (() => void) | null;
@@ -18,7 +24,7 @@ interface Props {
 }
 
 
-export default function Report({ report, after, chapter, best, bestBefore, difficulty, rank, badges, score, disputed, lesson, onDispute, onFollowUp, onAgain, onReview, onHelp }: Props) {
+export default function Report({ report, after, chapter, best, bestBefore, difficulty, rank, badges, score, disputed, lesson, you, demo, onSetUp, onDispute, onFollowUp, onAgain, onReview, onHelp }: Props) {
   const [shared, setShared] = useState('');
   const challenge = after.challenge;
   async function share() {
@@ -56,6 +62,12 @@ export default function Report({ report, after, chapter, best, bestBefore, diffi
         <button onClick={onHelp}>{t('report.meaning')}</button>
       </div>
       {shared && <p className="dim" role="status">{shared}</p>}
+      {demo && (
+        <div className="panel row demo-banner" style={{ marginTop: 12 }}>
+          <span className="grow">{t('demo.banner')}</span>
+          <button className="go" onClick={onSetUp}>{t('demo.setUp')}</button>
+        </div>
+      )}
 
       <div className="panel" style={{ marginTop: 12 }}>
         <h2>{t('report.rank', { rank: rank.name })}</h2>
@@ -106,6 +118,25 @@ export default function Report({ report, after, chapter, best, bestBefore, diffi
         ) : after.factCheck.checked && after.factCheck.errors === null
           ? <p>{t('report.uncheckedGoals')}</p>
           : <p>{t('report.wellTaught')}</p>}
+      </div>
+
+      <div className="panel" style={{ marginTop: 12 }}>
+        <h2>{t('report.you')}</h2>
+        {you === null ? <p>{t('report.youSkipped')}</p> : (
+          <>
+            <p><b>{t('report.youScore', { percent: you.percent, average: report.classAverage })}</b></p>
+            {you.percent < report.classAverage && <p>{t('report.youBehind')}</p>}
+            <ol>
+              {you.items.map(i => (
+                <li key={i.question.id}>
+                  <p>{i.question.prompt}</p>
+                  <p className={i.fraction >= 1 ? 'ok' : i.fraction > 0 ? '' : 'error'}>{t('report.youAnswer', { answer: i.answer || t('report.noAnswer') })} · {Math.round(i.fraction * 100)}%</p>
+                  {i.fraction < 1 && <p className="dim">{t('report.youKey', { key: i.question.answer_key })}{i.feedback && i.question.type !== 'mcq' ? ` · ${i.feedback}` : ''}</p>}
+                </li>
+              ))}
+            </ol>
+          </>
+        )}
       </div>
 
       {explain && (

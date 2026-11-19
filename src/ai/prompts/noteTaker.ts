@@ -15,7 +15,9 @@ export function noteTakerPrompt(state: LessonState, boardAdded: string, say: str
         '- If the teacher taught nothing new, new_notes is an empty list.',
         '- If the teacher said something factually wrong, students write it down as said.',
         '- A student may bend a note toward one of their wrong_beliefs. Then set distorted to true.',
-        '- If the teacher clearly corrected one of a student\'s wrong_beliefs, put its id in beliefs_dropped.',
+        '- If the teacher clearly corrected one of a student\'s wrong_beliefs, put its id in beliefs_dropped. How easily depends on confidence:',
+        '  - A student with confidence 0.6 or more drops a belief only when the teacher named the wrong idea, said why it is wrong (a reason or a counter-example) and gave the right one. Hearing only the right answer is not enough: they keep the belief, and may note the new idea as distorted.',
+        '  - A student with lower confidence drops it when the teacher clearly states the right idea.',
         '- objective is the id of the objective the note is about, or null.',
         '- emotion is how that student feels right now. Start from feels_now: moods carry over, they do not reset each turn.',
         '- Moods spread. When class_atmosphere shows many classmates bored or confused, a student drifts the same way.',
@@ -34,7 +36,7 @@ export function noteTakerPrompt(state: LessonState, boardAdded: string, say: str
     },
     withPicture(facts(
       { objectives: state.chapter.objectives },
-      { students: state.students.map(s => ({ id: s.persona.id, attention: s.persona.traits.attention, learning_style: s.persona.learning_style, feels_now: s.emotion, wrong_beliefs: s.beliefs })) },
+      { students: state.students.map(s => ({ id: s.persona.id, attention: s.persona.traits.attention, confidence: s.persona.traits.confidence, learning_style: s.persona.learning_style, feels_now: s.emotion, wrong_beliefs: s.beliefs })) },
       { class_atmosphere: (({ bored, confused, teacherTurnsSinceStudentSpoke }) => ({
         share_bored: bored, share_confused: confused, teacher_turns_since_a_student_spoke: teacherTurnsSinceStudentSpoke,
       }))(atmosphere(state)) },

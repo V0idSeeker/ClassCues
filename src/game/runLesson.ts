@@ -1,5 +1,5 @@
 import { t } from '../i18n';
-import { EMOTIONS, applyNotes, atmosphere, coverage, boardAdded, patchStudent, pickReactor, pictureKey, shouldReact } from './lesson';
+import { EMOTIONS, applyNotes, atmosphere, checkStudents, coverage, boardAdded, patchStudent, pickReactor, pictureKey, shouldReact } from './lesson';
 import { gradeMcq, gradeWritten, planQuiz } from './quiz';
 import type { Answer, Grade } from './quiz';
 import { pick } from './rng';
@@ -63,8 +63,11 @@ async function runTurn(
   if (say) lines.push({ who: 'teacher', text: say });
   if (added) lines.push({ who: 'board', text: added });
   if (picture) lines.push({ who: 'board', text: t('class.newPicture') });
+  // A question to the class shows how everyone really feels; naming a student shows how that one feels.
+  const named0 = say ? namedStudent(state, say) : null;
+  const checked = say.includes('?') ? state.students.map(s => s.persona.id) : named0 ? [named0.persona.id] : [];
   let next: LessonState = {
-    ...state, transcript: [...state.transcript, ...lines], ...boards, turns: state.turns + 1,
+    ...state, transcript: [...state.transcript, ...lines], ...boards, turns: state.turns + 1, checked,
     seenPictures: picture ? [...state.seenPictures, pictureKey(picture)] : state.seenPictures,
   };
 
@@ -139,7 +142,7 @@ export function hearStudent(state: LessonState, studentId: string): LessonState 
   const s = byId(state, studentId);
   if (!s.pendingLine) return state;
   return {
-    ...patchStudent(state, studentId, { handUp: false, pendingLine: null }),
+    ...checkStudents(patchStudent(state, studentId, { handUp: false, pendingLine: null }), [studentId]),
     transcript: [...state.transcript, { who: s.persona.name, text: s.pendingLine }],
   };
 }
@@ -150,7 +153,7 @@ export async function askStudent(state: LessonState, studentId: string, question
   const asked: LessonState = { ...state, transcript: [...state.transcript, { who: 'teacher', text: question.trim() }] };
   const r = await ai.answer(asked, s, question.trim());
   return {
-    ...patchStudent(asked, studentId, { emotion: feeling(r.emotion, s.emotion), handUp: false, pendingLine: null }),
+    ...checkStudents(patchStudent(asked, studentId, { emotion: feeling(r.emotion, s.emotion), handUp: false, pendingLine: null }), [studentId]),
     transcript: [...asked.transcript, { who: s.persona.name, text: r.answer.trim() }],
   };
 }

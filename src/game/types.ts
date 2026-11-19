@@ -89,6 +89,10 @@ export interface LessonState {
   challenge?: string;
   /** How many times the teacher opened the lesson notes during class. Missing in older saves. */
   peeks?: number;
+  /** Students the teacher checked on since their last turn (named, called on, or a question to the class): shy students show confusion only then. */
+  checked?: string[];
+  /** A demo lesson with ready-made students (src/game/demo.ts): no AI, nothing saved. */
+  demo?: boolean;
 }
 
 /** How the class stood right after one teacher turn. */

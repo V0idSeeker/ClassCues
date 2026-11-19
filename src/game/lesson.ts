@@ -1,4 +1,5 @@
 import { MIN_SHARED_WORDS, meaningfulWords } from './review';
+import { DEMO_TURNS } from './demo';
 import { t } from '../i18n';
 import type { Rng } from './rng';
 import type { Archetype, Belief, Chapter, Difficulty, Emotion, LessonState, NoteTakerResult, Persona, Student, TranscriptLine, Turn } from './types';
@@ -278,7 +279,7 @@ export function shouldReact(turns: number, lastReactionAt: number, now: number):
 }
 
 export function lessonOver(state: LessonState, now: number): boolean {
-  return state.turns >= MAX_TURNS || now - state.startedAt >= LESSON_MS;
+  return state.turns >= (state.demo ? DEMO_TURNS : MAX_TURNS) || now - state.startedAt >= LESSON_MS;
 }
 
 export function mergeTurns(turns: Turn[]): Turn {
@@ -294,4 +295,18 @@ export function classClock(state: LessonState, now: number): string {
   const elapsed = Math.min(LESSON_MS, Math.max(0, now - state.startedAt));
   const seconds = Math.floor((elapsed * 45 * 60) / LESSON_MS);
   return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+}
+
+/** Students less confident than this hide their confusion: they look calm until the teacher checks on them. */
+export const HIDES_CONFUSION_BELOW = 0.4;
+
+/** How a student looks to the teacher. A shy, confused student looks NEUTRAL unless checked on since the teacher's last turn. */
+export function shownEmotion(state: LessonState, s: Student): Emotion {
+  if (s.emotion !== 'CONFUSED' || s.persona.traits.confidence >= HIDES_CONFUSION_BELOW) return s.emotion;
+  return state.checked?.includes(s.persona.id) ? 'CONFUSED' : 'NEUTRAL';
+}
+
+/** Marks students as checked on: their real feelings show until the teacher's next turn. */
+export function checkStudents(state: LessonState, ids: string[]): LessonState {
+  return { ...state, checked: [...new Set([...(state.checked ?? []), ...ids])] };
 }

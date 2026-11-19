@@ -45,6 +45,9 @@ const K = { settings: 'ts.settings', key: 'ts.key', used: 'ts.used', lesson: 'ts
 /** True once the player has saved settings at least once. */
 export const hasSettings = (): boolean => localStorage.getItem(K.settings) !== null;
 
+/** An AI can be called: there is a key, or the address is a model on this computer (which needs none). */
+export const aiReady = (s: { apiKey: string; baseUrl: string }): boolean => s.apiKey.trim() !== '' || /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])[:/]/.test(s.baseUrl);
+
 // ponytail: levels live in localStorage (a level is a few KB, so hundreds fit). Move to IndexedDB if players hit the 5 MB limit.
 export function loadLevels(): Chapter[] {
   return read<Chapter[]>(localStorage, K.levels) ?? [];

@@ -11,6 +11,8 @@ export interface Play {
   percent: number;
   /** Times the lesson notes were opened during class. Missing in older plays. */
   peeks?: number;
+  /** The teacher's own score on their questions during the quiz, 0 to 100; missing when skipped. */
+  mastery?: number;
   difficulty: Difficulty;
   /** null: no challenge, or it could not be judged. */
   challengeMet: boolean | null;

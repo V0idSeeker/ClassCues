@@ -1,5 +1,6 @@
 // What the game keeps about finished lessons: goal results per run (for often-missed goals),
 // and every play (for teacher rank and badges).
+import type { ReviewItem } from './game/spaced';
 import { builtInCourses } from './content';
 import type { Play } from './game/rank';
 import { loadLevels } from './storage';
@@ -82,4 +83,22 @@ export function courseLessonIds(): string[][] {
   const byCourse = new Map<string, string[]>();
   for (const l of loadLevels()) if (l.course) byCourse.set(l.course, [...(byCourse.get(l.course) ?? []), l.id]);
   return [...builtInCourses.map(c => c.lessons.map(l => l.id)), ...byCourse.values()];
+}
+
+// ---------- Goals due for spaced review (src/game/spaced.ts).
+
+const REVIEW_KEY = 'ts.review';
+
+export function loadReview(): ReviewItem[] {
+  try {
+    const raw = localStorage.getItem(REVIEW_KEY);
+    const v = raw ? JSON.parse(raw) : [];
+    return Array.isArray(v) ? v.filter(i => i && typeof i.lessonId === 'string' && typeof i.objectiveId === 'string' && typeof i.due === 'number') : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveReview(items: ReviewItem[]): void {
+  try { localStorage.setItem(REVIEW_KEY, JSON.stringify(items)); } catch { /* storage full or blocked: review is a nice-to-have */ }
 }

@@ -150,7 +150,7 @@ export const codexFr: CodexText = {
     },
     'moods': {
       title: 'Humeurs et bulles au-dessus des têtes',
-      intro: 'Chaque élève montre ce qu’il ressent par son visage et une bulle à côté de sa tête. Une main levée passe toujours avant l’humeur.',
+      intro: 'Chaque élève montre ce qu’il ressent par son visage et une bulle à côté de sa tête. Une main levée passe toujours avant l’humeur. Les élèves timides cachent qu’ils sont perdus : ils ont l’air calmes jusqu’à ce que vous posiez une question à la classe ou que vous leur parliez.',
       points: [
         'Les humeurs se gardent d’un tour à l’autre ; elles ne repartent pas de zéro.',
         'Un élève qui s’ennuie prend moins de notes : l’ennui coûte des points à l’interro.',
@@ -191,7 +191,7 @@ export const codexFr: CodexText = {
       intro: 'Certains élèves commencent la leçon en croyant quelque chose de faux sur le sujet, comme « le signe = veut dire égal, comme en maths ». Elles viennent de la leçon elle-même.',
       points: [
         'Le porteur d’idées fausses en a deux, l’élève en difficulté une, et deux autres élèves une chacun.',
-        'Une idée fausse reste tant que vous ne l’avez pas clairement corrigée. Elle fausse aussi les notes qui s’y rapportent.',
+        'Une idée fausse reste tant que vous ne l’avez pas clairement corrigée. Les élèves sûrs d’eux ont besoin que vous nommiez l’idée fausse et disiez pourquoi elle est fausse ; entendre la bonne réponse ne leur suffit pas. Elle fausse aussi les notes qui s’y rapportent.',
         'Les élèves qui y croient encore à la sonnerie répondent à l’interro avec. Le bulletin les liste.',
         'Dites quelle est l’idée fausse et pourquoi elle est fausse, pas seulement la bonne idée.',
       ],
@@ -246,7 +246,7 @@ export const codexFr: CodexText = {
     },
     'report': {
       title: 'Le bulletin',
-      intro: 'Après l’interro, vous voyez comment la classe s’en est sortie, et pourquoi.',
+      intro: 'Pendant que la classe fait l’interro, vous répondez de mémoire à trois de ses questions. Ensuite vous voyez comment la classe s’en est sortie, et pourquoi, et comment vous vous en êtes sorti vous-même.',
       points: [
         'La moyenne de la classe, les points que coûtent vos erreurs et la note de la leçon qui en résulte ; et s’il s’agit de votre première fois, d’un nouveau record ou de votre record actuel.',
         'Trois conseils : objectifs que personne n’avait, questions ratées par la plupart, idées fausses restantes, mains encore levées.',
@@ -299,7 +299,7 @@ export const codexFr: CodexText = {
     },
     'scores': {
       title: 'Scores et cours',
-      intro: 'Chaque leçon terminée enregistre sa note : la moyenne de la classe moins les points de vos erreurs. Refaites une leçon pour battre votre record.',
+      intro: 'Chaque leçon terminée enregistre sa note : la moyenne de la classe moins les points de vos erreurs. Refaites une leçon pour battre votre record. Les objectifs que vous avez ratés vous-même, ou qu’aucun élève n’avait dans ses notes, reviennent à réviser sur l’écran des leçons après 1, 3 et 7 jours.',
       points: [
         'Chaque leçon affiche son meilleur score, son dernier score et le nombre de fois où vous l’avez enseignée.',
         'Le score d’un cours est la moyenne des meilleurs scores des leçons déjà enseignées (« Score du cours 70 % · 2 sur 5 enseignées »).',

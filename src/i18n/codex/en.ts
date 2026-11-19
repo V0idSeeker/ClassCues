@@ -150,7 +150,7 @@ export const codexEn: CodexText = {
     },
     'moods': {
       title: 'Moods and the bubbles above heads',
-      intro: 'Each student shows how they feel with their face and a bubble beside their head. A raised hand always wins over the mood.',
+      intro: 'Each student shows how they feel with their face and a bubble beside their head. A raised hand always wins over the mood. Shy students hide their confusion: they look calm until you ask the class a question or speak to them.',
       points: [
         'Moods carry over from turn to turn; they do not reset.',
         'A bored student writes down fewer notes, so boredom costs points in the quiz.',
@@ -191,7 +191,7 @@ export const codexEn: CodexText = {
       intro: 'Some students start the lesson believing something false about the topic, like "the = sign means equal, like in maths". These come from the lesson itself.',
       points: [
         'The wrong-belief carrier has two, the struggling student one, and two other students one each.',
-        'A belief stays until you correct it clearly. It also bends related notes.',
+        'A belief stays until you correct it clearly. Confident students need you to name the wrong idea and say why it is wrong; hearing the right answer is not enough for them. It also bends related notes.',
         'Students who still hold a belief at the bell answer the quiz with it. The report lists them.',
         'Say what the wrong idea is and why it is wrong, not only the right idea.',
       ],
@@ -246,7 +246,7 @@ export const codexEn: CodexText = {
     },
     'report': {
       title: 'The report card',
-      intro: 'After the quiz you see how the class did and why.',
+      intro: 'While the class takes the quiz, you answer three of its questions from memory. Then you see how the class did and why, and how you did yourself.',
       points: [
         'Class average, the points your own mistakes cost, and the lesson score that results; and whether this is your first time, a new best, or your best so far.',
         'Three tips: goals nobody had, questions most students missed, wrong beliefs still held, hands left up.',
@@ -299,7 +299,7 @@ export const codexEn: CodexText = {
     },
     'scores': {
       title: 'Scores and courses',
-      intro: 'Every finished lesson records its lesson score: the class average minus points for your mistakes. Teach a lesson again to beat your best.',
+      intro: 'Every finished lesson records its lesson score: the class average minus points for your mistakes. Teach a lesson again to beat your best. Goals you got wrong yourself, or that no student had in their notes, come back for review on the lessons screen after 1, 3 and 7 days.',
       points: [
         'Each lesson shows its best score, last score and how many times you taught it.',
         'A course score is the average of the best scores of the lessons taught so far ("Course score 70% · 2 of 5 taught").',

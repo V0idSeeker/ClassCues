@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { coverage } from '../game/lesson';
+import { coverage, shownEmotion } from '../game/lesson';
 import type { LessonState, Turn } from '../game/types';
 import { loadTips, saveTips } from '../storage';
 import { speak, stopSpeaking } from '../voice';
@@ -78,7 +78,9 @@ export default function Classroom(p: Props) {
   useEffect(() => { if (panel === 'notebook') setNotesSeen(notesNow); }, [panel, notesNow]);
   const newNotes = !realistic && notesNow > notesSeen;
 
-  const student = state.students.find(s => s.persona.id === sel) ?? state.students[0];
+  // What the teacher can see: shy students hide their confusion until checked on.
+  const shown = state.students.map(s => ({ ...s, emotion: shownEmotion(state, s) }));
+  const student = shown.find(s => s.persona.id === sel) ?? shown[0];
   const inNotes = coverage(state);
   const goalsReached = state.chapter.objectives.filter(o => inNotes[o.id] > 0).length;
   const hands = state.students.filter(s => s.handUp);
@@ -110,7 +112,7 @@ export default function Classroom(p: Props) {
       />
 
       <div className="class-main">
-        <StageColumn students={state.students} selected={student.persona.id} talking={talking} boards={boards} canSeePictures={p.canSeePictures} onPick={pick} />
+        <StageColumn students={shown} selected={student.persona.id} talking={talking} boards={boards} canSeePictures={p.canSeePictures} onPick={pick} />
 
         <aside className="rail">
           <StudentCard student={student} handsUp={hands.length} notebookOpen={panel === 'notebook'} newNotes={newNotes} help={help}

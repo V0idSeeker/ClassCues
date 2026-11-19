@@ -23,6 +23,9 @@ The point of the game is to learn a subject by teaching it. Students ask why thi
 - Turn your own **PDFs into courses**: one PDF or several, cut into lessons at chapter starts or into equal parts. The game writes goals and a quiz for each lesson, and you can edit all of it.
 - Teach by typing, writing on boards (several, like slides), and, with a model that reads pictures, drawing on them.
 - Call on students, ask the class, hear raised hands. Students have different personalities, moods and wrong beliefs. They hear each other, react to each other and remember earlier lessons, including the mistakes you taught them.
+- While your class takes the quiz, answer three of its questions yourself, from memory. The report shows your score next to the class's.
+- Goals you got wrong, or that no student had in their notes, come back for a short review after 1, 3 and 7 days.
+- No AI key yet? Try a three-turn demo lesson with simple ready-made students from the main menu.
 - Get a report after each quiz: class average, your lesson score (the class average minus points for mistakes in your own teaching), each student's answers and why they lost points, and three tips.
 - Keep a best score per lesson and a score per course. Export and share lessons or whole courses as files.
 

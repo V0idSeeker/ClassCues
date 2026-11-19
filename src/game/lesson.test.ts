@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { builtInChapter, studentPool, students } from '../content';
 import {
   LESSON_MS, MAX_TURNS, applyNotes, atmosphere, boardText, drawClass, memoryFor, rememberLesson, boardAdded, classClock, coverage, hasObjective, lessonOver,
-  forgetMistake, mergeTurns, mistakesFor, notedMistake, patchStudent, pickReactor, shouldReact, startLesson, visibleBoard,
+  HIDES_CONFUSION_BELOW, checkStudents, forgetMistake, mergeTurns, mistakesFor, notedMistake, patchStudent, shownEmotion, pickReactor, shouldReact, startLesson, visibleBoard,
 } from './lesson';
 import type { ClassMemory } from './lesson';
 import type { NoteTakerResult } from './types';
@@ -303,5 +303,25 @@ describe('reactions', () => {
     expect(pickReactor(s, () => 0.99)!.persona.id).toBe(s.students[0].persona.id);
     s = patchStudent(s, s.students[0].persona.id, { handUp: true });
     expect(pickReactor(s, () => 0.5)).toBeNull();
+  });
+});
+
+describe('hidden confusion', () => {
+  it('a shy student looks calm while confused, until the teacher checks on them', () => {
+    let s = start();
+    const shy = s.students.find(st => st.persona.traits.confidence < HIDES_CONFUSION_BELOW)!;
+    const bold = s.students.find(st => st.persona.traits.confidence >= HIDES_CONFUSION_BELOW)!;
+    s = patchStudent(patchStudent(s, shy.persona.id, { emotion: 'CONFUSED' }), bold.persona.id, { emotion: 'CONFUSED' });
+    expect(shownEmotion(s, find(s, shy.persona.id))).toBe('NEUTRAL');
+    expect(shownEmotion(s, find(s, bold.persona.id))).toBe('CONFUSED');
+    s = checkStudents(s, [shy.persona.id]);
+    expect(shownEmotion(s, find(s, shy.persona.id))).toBe('CONFUSED');
+  });
+
+  it('other feelings always show', () => {
+    let s = start();
+    const shy = s.students.find(st => st.persona.traits.confidence < HIDES_CONFUSION_BELOW)!;
+    s = patchStudent(s, shy.persona.id, { emotion: 'BORED' });
+    expect(shownEmotion(s, find(s, shy.persona.id))).toBe('BORED');
   });
 });
